@@ -1,0 +1,21 @@
+# ET-NAGraphSAGE 의존성 (Python 3.10, CUDA 12.8 기준)
+# 설치: pip install -r requirements.txt
+#
+# ※ PyTorch는 CUDA 버전에 맞춰 별도 설치 권장:
+#   pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/cu128
+#   (CUDA 버전이 다르면 https://pytorch.org 에서 맞는 명령 확인)
+
+torch==2.7.0
+numpy==2.2.6
+pandas==2.2.3
+scipy==1.15.3
+scikit-learn==1.7.2
+matplotlib==3.10.9
+tqdm==4.67.1
+PyYAML==6.0.2
+
+# ── Mamba 전용 (로컬 서버에서만 필요, 컴파일 요함) ─────────────
+# 학교 서버는 Mamba 실험을 하지 않으므로 설치 불필요.
+# 필요 시:  pip install mamba-ssm==2.3.2.post1 einops==0.8.2
+# einops==0.8.2
+# mamba-ssm==2.3.2.post1

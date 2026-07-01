@@ -85,11 +85,22 @@ results/              # 서버별 결과 로그
 
 ## 환경
 
+Python 3.10, CUDA 12.8 기준.
+
 ```bash
+# conda 환경 생성 후
+conda create -n tna_research python=3.10 -y
 conda activate tna_research
+
+# PyTorch는 CUDA 버전에 맞춰 설치 (예: cu128)
+pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/cu128
+
+# 나머지 의존성
+pip install -r requirements.txt
 ```
-- PyTorch 2.7.0 (CUDA 12.8), scipy(cKDTree), pandas, matplotlib
-- Mamba 실험은 `mamba_ssm` 필요 (컴파일) — **로컬 서버에서만 실행**
+
+- 핵심: PyTorch 2.7.0, numpy, pandas, scipy(cKDTree), scikit-learn, matplotlib, tqdm, PyYAML
+- **Mamba 실험**은 `mamba-ssm` + `einops` 필요 (컴파일) — **로컬 서버에서만**. `requirements.txt` 하단 주석 참고. 학교 서버는 설치 불필요.
 
 ## 실행 예시
 

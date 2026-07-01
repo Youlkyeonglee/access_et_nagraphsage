@@ -46,8 +46,12 @@
 git clone https://github.com/Youlkyeonglee/access_et_nagraphsage.git
 cd access_et_nagraphsage
 
-# 2) conda 환경
-conda activate tna_research   # 없으면 requirements 설치
+# 2) conda 환경 (없으면 새로 생성)
+conda create -n tna_research python=3.10 -y
+conda activate tna_research
+pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/cu128   # CUDA 버전 맞춰서
+pip install -r requirements.txt
+#   ※ 학교 서버는 Mamba 안 하므로 mamba-ssm 설치 불필요
 
 # 3) 데이터 경로 확인 — 학교 서버의 실제 경로로 맞출 것
 grep data_dir configs/et_nagraphsage.yaml
