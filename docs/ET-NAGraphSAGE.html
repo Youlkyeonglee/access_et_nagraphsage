@@ -268,10 +268,21 @@
       <ul class="sub" id="sub-experiment">
         <li><a data-page="experiment" data-anchor="exp-dataset">데이터셋</a></li>
         <li><a data-page="experiment" data-anchor="exp-dataloader">데이터로더</a></li>
-        <li><a data-page="experiment" data-anchor="exp-ablation">Ablation</a></li>
         <li><a data-page="experiment" data-anchor="exp-baseline">비교 모델</a></li>
         <li><a data-page="experiment" data-anchor="exp-metric">평가 지표</a></li>
         <li><a data-page="experiment-status">실험 현황</a></li>
+      </ul>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link has-children" data-page="ablation">
+        Ablation 상세 <span class="chevron">▶</span>
+      </a>
+      <ul class="sub" id="sub-ablation">
+        <li><a data-page="ablation-a">A · 인코더 타입</a></li>
+        <li><a data-page="ablation-b">B · 시퀀스 길이 T</a></li>
+        <li><a data-page="ablation-c">C · 시계열 대상 ★</a></li>
+        <li><a data-page="ablation-d">D · 공간 구조</a></li>
+        <li><a data-page="ablation-e">E · 이웃 선택 정책 ★</a></li>
       </ul>
     </li>
     <li class="toc-item">
@@ -995,7 +1006,19 @@ edge_feat = [
     </table>
 
     <h3 id="exp-ablation"><span class="ic">🔬</span> 5.3 Ablation 설계</h3>
-    <div class="grid g2">
+    <div class="callout tip">
+      <span class="ci">📂</span>
+      <div><b>Ablation 상세는 그룹별 전용 페이지로 분리되었다.</b> 왼쪽 메뉴 <b>「Ablation 상세」</b> → A/B/C/D/E 각 페이지에서 목적·경우의 수·실행 명령·결과를 확인하라.
+      <br>바로가기:
+      <a href="#" data-goto="ablation-a"><b>A 인코더</b></a> ·
+      <a href="#" data-goto="ablation-b"><b>B 길이T</b></a> ·
+      <a href="#" data-goto="ablation-c"><b>C 시계열대상★</b></a> ·
+      <a href="#" data-goto="ablation-d"><b>D 공간구조</b></a> ·
+      <a href="#" data-goto="ablation-e"><b>E 이웃정책★</b></a></div>
+    </div>
+    <details style="margin-top:10px;">
+    <summary style="cursor:pointer;color:var(--mute);font-size:13px;">(구 요약 카드 보기)</summary>
+    <div class="grid g2" style="margin-top:10px;">
       <div class="card">
         <h4>Group A — temporal encoder 타입</h4>
         <ul class="dash">
@@ -1063,6 +1086,7 @@ edge_feat = [
         </p>
       </div>
     </div>
+    </details>
 
     <h3 id="exp-baseline"><span class="ic">📊</span> 5.4 비교 모델</h3>
     <table>
@@ -1091,6 +1115,183 @@ edge_feat = [
       </tbody>
     </table>
     <footer>ET-NAGraphSAGE 연구 계획서 v0.3.0 · 2026-06-28</footer>
+  </div>
+
+  <!-- ▸ Ablation 개요 -->
+  <div class="page" id="page-ablation">
+    <div class="sec-head"><div class="sec-num">5A</div><h2>Ablation Study 개요</h2></div>
+    <p class="sec-desc">각 Ablation은 <b>한 요소만</b> 바꿔 그 요소의 기여를 측정한다. 왼쪽 메뉴에서 그룹별 상세 페이지로 이동.</p>
+
+    <div class="callout tip">
+      <span class="ci">🧭</span>
+      <div><b>읽는 법:</b> 각 그룹 페이지는 ① 무엇을 왜 검증하는지 ② 경우의 수(옵션별 의미) ③ 실행 명령 ④ 현재 결과/상태 순으로 정리돼 있다. 실험 실행 전 해당 페이지를 먼저 읽고 이해할 것.</div>
+    </div>
+
+    <div class="callout info" style="margin-top:12px;">
+      <span class="ci">📐</span>
+      <div><b>기준(Base) config:</b> T=10, GRU+Attention, node+edge 시계열, 2-hop(K1=6,K2=4), hybrid 이웃, CE+LS0.1, 500 epoch. 각 Ablation은 이 기준에서 <b>한 축만</b> 변경한다.</div>
+    </div>
+
+    <h3 style="margin-top:22px;">그룹 요약</h3>
+    <table>
+      <thead><tr><th>그룹</th><th>변수</th><th>경우의 수</th><th>상태</th><th>핵심 결과</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#" data-goto="ablation-a"><b>A</b></a></td><td>Temporal Encoder</td><td>GRU / LSTM / Mamba / Transformer</td><td><span class="badge b-green">거의 완료</span></td><td>GRU 최고 (93.85%)</td></tr>
+        <tr><td><a href="#" data-goto="ablation-b"><b>B</b></a></td><td>시퀀스 길이 T</td><td>1 / 5 / 10 / 15</td><td><span class="badge b-green">거의 완료</span></td><td>T=10 최적</td></tr>
+        <tr style="background:#fff7ed"><td><a href="#" data-goto="ablation-c"><b>C ★</b></a></td><td>시계열 대상</td><td>node / edge / node+edge</td><td><span class="badge b-red">필수·진행예정</span></td><td>node+edge만 완료</td></tr>
+        <tr><td><a href="#" data-goto="ablation-d"><b>D</b></a></td><td>공간 구조</td><td>1-hop / 2-hop / K1,K2 / d_e</td><td><span class="badge b-green">주요 완료</span></td><td>K1=10 최고 (94.33%)</td></tr>
+        <tr style="background:#fff7ed"><td><a href="#" data-goto="ablation-e"><b>E ★</b></a></td><td>이웃 선택 정책</td><td>count / radius / hybrid</td><td><span class="badge b-red">필수·진행예정</span></td><td>hybrid만 완료</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px;color:var(--mute);margin-top:8px;">★ = 논문 필수 (novelty·공정성 직접 증거). C·E는 코드 구현 완료(2026-07-01), Server B에서 실행 예정.</p>
+    <footer>ET-NAGraphSAGE 연구 계획서 v0.3.3 · 2026-07-01</footer>
+  </div>
+
+  <!-- ▸ Ablation A -->
+  <div class="page" id="page-ablation-a">
+    <div class="sec-head"><div class="sec-num">A</div><h2>Ablation A — Temporal Encoder 타입</h2></div>
+    <div class="callout tip"><span class="ci">🎯</span><div><b>목적:</b> 시계열 인코더 종류가 성능에 미치는 영향 측정. 어떤 인코더가 T프레임 kinematic 시퀀스를 가장 잘 압축하는가?</div></div>
+
+    <h3 style="margin-top:20px;">경우의 수</h3>
+    <table>
+      <thead><tr><th>옵션</th><th>설명</th><th>Test Acc</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr style="background:#f0fdf4"><td><b>GRU</b></td><td>게이트 순환망. 파라미터 적고 T=10에 충분</td><td><b>93.85%</b></td><td><span class="badge b-green">채택</span></td></tr>
+        <tr><td>LSTM</td><td>셀 상태 추가. GRU보다 파라미터↑</td><td>93.39%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td>Mamba</td><td>SSM 기반. 장기 시퀀스 강점이나 T=10엔 과함, 과적합</td><td>93.23%</td><td><span class="badge b-green">완료(Server A 전용)</span></td></tr>
+        <tr><td>Transformer</td><td>self-attention. 비교군</td><td>—</td><td><span class="badge b-gray">미구현</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout info" style="margin-top:12px;"><span class="ci">💡</span><div><b>결론:</b> GRU가 최고. T=10 짧은 시퀀스에서 Mamba/LSTM의 추가 용량은 과적합만 유발. <b>GRU를 기준 인코더로 채택.</b> Transformer는 완결성 위해 여유 시 추가(현재 <code>temporal_encoder.py</code> 미지원).</div></div>
+
+    <h3 style="margin-top:20px;">실행 방법</h3>
+    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
+      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
+      &nbsp;&nbsp;--encoder_type [gru|lstm|mamba] --experiment et_nag_A_&lt;enc&gt;
+    </div>
+    <p style="font-size:12.5px;color:var(--mute);margin-top:8px;">⚠️ Mamba는 <b>Server A 전용</b> (mamba_ssm 컴파일 필요).</p>
+    <footer>ET-NAGraphSAGE · Ablation A · v0.3.3</footer>
+  </div>
+
+  <!-- ▸ Ablation B -->
+  <div class="page" id="page-ablation-b">
+    <div class="sec-head"><div class="sec-num">B</div><h2>Ablation B — 시퀀스 길이 T</h2></div>
+    <div class="callout tip"><span class="ci">🎯</span><div><b>목적:</b> 과거 몇 프레임을 봐야 상태를 잘 분류하는가? 너무 짧으면 시간 정보 부족, 너무 길면 샘플 감소·노이즈.</div></div>
+
+    <h3 style="margin-top:20px;">경우의 수</h3>
+    <table>
+      <thead><tr><th>옵션</th><th>의미</th><th>Test Acc</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>T=1</td><td>단일 프레임 (시계열 없음, NAGraphSAGE 조건과 동일)</td><td>92.51%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td>T=5</td><td>1초 (@5fps)</td><td>—</td><td><span class="badge b-gray">선택</span></td></tr>
+        <tr style="background:#f0fdf4"><td><b>T=10</b></td><td>2초 — 기본값</td><td><b>93.85%</b></td><td><span class="badge b-green">최적</span></td></tr>
+        <tr><td>T=15</td><td>3초 (샘플 585k로 감소)</td><td>93.66%</td><td><span class="badge b-green">완료</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout info" style="margin-top:12px;"><span class="ci">💡</span><div><b>결론:</b> <b>T=10이 최적.</b> T=1→10에서 LaneChange 74.15%→79.52% (+5.37%p) — 시계열 정보가 차선변경 구별에 결정적임을 실증. T=15는 샘플 감소로 오히려 하락.</div></div>
+
+    <h3 style="margin-top:20px;">실행 방법</h3>
+    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
+      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
+      &nbsp;&nbsp;--T [1|5|10|15] --experiment et_nag_B_T&lt;n&gt;
+    </div>
+    <footer>ET-NAGraphSAGE · Ablation B · v0.3.3</footer>
+  </div>
+
+  <!-- ▸ Ablation C -->
+  <div class="page" id="page-ablation-c">
+    <div class="sec-head"><div class="sec-num">C</div><h2>Ablation C — 시계열 대상 ★핵심</h2></div>
+    <div class="callout err"><span class="ci">🎯</span><div><b>목적 (논문 필수):</b> "노드와 엣지를 <b>모두</b> 시계열로 인코딩한 것"이 본 연구의 핵심 novelty다. 이를 증명하려면 각 스트림을 껐을 때 성능이 떨어짐을 보여야 한다. <b>이 ablation 없으면 논문 주장이 성립하지 않는다.</b></div></div>
+
+    <h3 style="margin-top:20px;">경우의 수</h3>
+    <table>
+      <thead><tr><th>옵션</th><th>node 시계열</th><th>edge 시계열</th><th>의미</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td><b>node-only</b></td><td>✓ (T프레임)</td><td>✗ (마지막 프레임만)</td><td>엣지 시계열 제거 — 엣지 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (B1)</span></td></tr>
+        <tr><td><b>edge-only</b></td><td>✗ (마지막 프레임만)</td><td>✓ (T프레임)</td><td>노드 시계열 제거 — 노드 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (B2)</span></td></tr>
+        <tr style="background:#f0fdf4"><td><b>node+edge (제안)</b></td><td>✓</td><td>✓</td><td>둘 다 시계열 — 제안 방법</td><td><span class="badge b-green">완료 (기준 94.15%)</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn" style="margin-top:12px;"><span class="ci">🔬</span><div><b>기대 결과:</b> node-only·edge-only <b>둘 다 node+edge(94.15%)보다 낮아야</b> "노드·엣지 시계열이 모두 필요하다"가 증명된다. 특히 <b>node-only가 크게 낮으면</b> = 엣지 시계열이 핵심이라는 본 연구의 주장이 강해진다.</div></div>
+
+    <h3 style="margin-top:20px;">구현 방식</h3>
+    <p style="font-size:13px;color:var(--mute);line-height:1.8;">
+      <code>et_nagraphsage.py</code>의 <code>temporal_target</code> 파라미터로 제어. 비활성 스트림은 시퀀스를
+      <b>마지막 프레임만 슬라이스</b>(T=1)하여 시계열 동역학을 제거한다. 인코더 구조는 동일하게 유지되어
+      공정 비교가 된다.
+    </p>
+
+    <h3 style="margin-top:16px;">실행 방법 (Server B)</h3>
+    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
+      # B1: node-only<br>
+      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
+      &nbsp;&nbsp;--temporal_target node --experiment et_nag_C_nodeonly_ep500<br><br>
+      # B2: edge-only<br>
+      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
+      &nbsp;&nbsp;--temporal_target edge --experiment et_nag_C_edgeonly_ep500
+    </div>
+    <footer>ET-NAGraphSAGE · Ablation C (핵심) · v0.3.3</footer>
+  </div>
+
+  <!-- ▸ Ablation D -->
+  <div class="page" id="page-ablation-d">
+    <div class="sec-head"><div class="sec-num">D</div><h2>Ablation D — 공간 구조</h2></div>
+    <div class="callout tip"><span class="ci">🎯</span><div><b>목적:</b> 공간 집계 범위(hop 수·이웃 수)와 엣지 인코더 차원이 성능에 미치는 영향. NAGraphSAGE(5-hop)와의 격차 원인 규명.</div></div>
+
+    <h3 style="margin-top:20px;">경우의 수 및 결과</h3>
+    <table>
+      <thead><tr><th>축</th><th>옵션</th><th>Test Acc</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="3">hop / 이웃</td><td>1-hop</td><td>93.85%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td>2-hop (K1=6,K2=4)</td><td>94.15%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr style="background:#f0fdf4"><td><b>2-hop (K1=10,K2=6)</b></td><td><b>94.33%</b></td><td><span class="badge b-green">최고</span></td></tr>
+        <tr><td rowspan="2">엣지 차원 d_e</td><td>d_e=32 (기본)</td><td>93.85%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td>d_e=64</td><td>93.45%</td><td><span class="badge b-green">개선 없음</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout info" style="margin-top:12px;"><span class="ci">💡</span><div><b>결론:</b> <b>공간 receptive field 확대가 핵심.</b> 1-hop→2-hop(+0.30%p), K1=6→10(+0.18%p) 모두 향상. NAGraphSAGE 격차의 정체가 receptive field임을 확인. d_e 확대는 효과 없음(32로 충분).</div></div>
+
+    <h3 style="margin-top:20px;">실행 방법</h3>
+    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
+      # 이웃 수는 config의 K_max / K_max2로 조정<br>
+      # (예: configs/et_nagraphsage_2hop_k10.yaml → K_max:10, K_max2:6)<br>
+      python train.py --config configs/et_nagraphsage_2hop_k10.yaml
+    </div>
+    <footer>ET-NAGraphSAGE · Ablation D · v0.3.3</footer>
+  </div>
+
+  <!-- ▸ Ablation E -->
+  <div class="page" id="page-ablation-e">
+    <div class="sec-head"><div class="sec-num">E</div><h2>Ablation E — 이웃 선택 정책 ★</h2></div>
+    <div class="callout err"><span class="ci">🎯</span><div><b>목적 (공정성 필수):</b> 이웃을 <b>어떻게 고르는가</b>가 성능에 영향을 준다. NAGraphSAGE 최고 기록(94.54%)은 <b>count 방식</b>이었는데 우리는 hybrid를 썼다. 정책을 맞추거나 비교하지 않으면 "아키텍처 덕분인지 이웃 정책 덕분인지" 구분이 안 된다.</div></div>
+
+    <h3 style="margin-top:20px;">경우의 수</h3>
+    <table>
+      <thead><tr><th>정책</th><th>정의</th><th>특성</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td><b>count</b></td><td>반경 무관, 최근접 K대</td><td>항상 K대 확보 (멀어도 포함). NAGraphSAGE 최고기록 방식</td><td><span class="badge b-red">진행예정 (B3)</span></td></tr>
+        <tr><td><b>radius</b></td><td>반경 r 내 전부 (K_max 상한)</td><td>밀집도 반영, 개수 가변</td><td><span class="badge b-red">진행예정 (B4)</span></td></tr>
+        <tr style="background:#f0fdf4"><td><b>hybrid (현재)</b></td><td>반경 r 내 최근접 K대</td><td>둘의 절충 — 현재 모든 실험이 이 방식</td><td><span class="badge b-green">완료 (기준 94.15%)</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn" style="margin-top:12px;"><span class="ci">🔬</span><div><b>왜 중요한가:</b> count 결과가 hybrid와 비슷하면 → 우리 성능이 이웃 정책이 아닌 <b>아키텍처 덕분</b>임이 입증돼 공정 비교 confound가 제거된다. 반대면 정책 영향을 논문에 명시해야 한다.</div></div>
+
+    <h3 style="margin-top:20px;">구현 방식</h3>
+    <p style="font-size:13px;color:var(--mute);line-height:1.8;">
+      <code>data_manager.py</code>의 <code>neighbor_mode</code> 파라미터로 제어.
+      count는 KD-tree <code>query(k)</code>로 최근접 K대, radius/hybrid는 <code>query_ball_point(r)</code> 후 처리.
+    </p>
+
+    <h3 style="margin-top:16px;">실행 방법 (Server B)</h3>
+    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
+      # B3: count<br>
+      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
+      &nbsp;&nbsp;--neighbor_mode count --experiment et_nag_E_count_ep500<br><br>
+      # B4: radius<br>
+      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
+      &nbsp;&nbsp;--neighbor_mode radius --experiment et_nag_E_radius_ep500
+    </div>
+    <footer>ET-NAGraphSAGE · Ablation E · v0.3.3</footer>
   </div>
 
   <!-- ▸ 연구 기여 -->
@@ -2816,6 +3017,17 @@ Mamba Block:
       // 링크의 data-page가 부모와 다를 때만 parentId 전달 (독립 페이지 케이스)
       const parentId = (parentSubId && parentSubId !== pageId) ? parentSubId : null;
       navigateTo(pageId, anchor, true, parentId);
+    });
+  });
+
+  // ── 본문 내 교차 링크 (data-goto) ───────────────────────────
+  document.querySelectorAll('[data-goto]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const target = el.dataset.goto;
+      // ablation-* 페이지는 sub-ablation 아코디언 하위 → 부모 열어두기
+      const parentId = subMenus['ablation'] && target.startsWith('ablation-') ? 'ablation' : null;
+      navigateTo(target, null, true, parentId);
     });
   });
 
