@@ -348,6 +348,7 @@ def parse_args():
     parser.add_argument('--T',            type=int,   default=None)
     parser.add_argument('--encoder_type', type=str,   default=None)
     parser.add_argument('--d_e',          type=int,   default=None)
+    parser.add_argument('--hidden_dim',   type=int,   default=None)
     parser.add_argument('--num_layers',   type=int,   default=None)
     parser.add_argument('--kl_weight',    type=float, default=None)
     parser.add_argument('--gamma',        type=float, default=None)
@@ -366,6 +367,9 @@ def parse_args():
                         choices=['both', 'node', 'edge'])
     parser.add_argument('--neighbor_mode',     type=str,   default=None,
                         choices=['hybrid', 'count', 'radius'])
+    parser.add_argument('--radius',            type=float, default=None)
+    parser.add_argument('--K_max',             type=int,   default=None)
+    parser.add_argument('--K_max2',            type=int,   default=None)
     return parser.parse_args()
 
 
@@ -379,6 +383,7 @@ if __name__ == '__main__':
     if args.T            is not None: cfg['graph']['T']              = args.T
     if args.encoder_type is not None: cfg['model']['encoder_type']   = args.encoder_type
     if args.d_e          is not None: cfg['model']['d_e']            = args.d_e
+    if args.hidden_dim   is not None: cfg['model']['hidden_dim']     = args.hidden_dim
     if args.num_layers   is not None: cfg['model']['num_layers']     = args.num_layers
     if args.kl_weight    is not None: cfg['loss']['kl_weight']       = args.kl_weight
     if args.gamma        is not None: cfg['loss']['gamma']           = args.gamma
@@ -395,6 +400,9 @@ if __name__ == '__main__':
     if args.loss_type        is not None: cfg['loss']['type']                   = args.loss_type
     if args.temporal_target  is not None: cfg['model']['temporal_target']       = args.temporal_target
     if args.neighbor_mode    is not None: cfg['graph']['neighbor_mode']         = args.neighbor_mode
+    if args.radius           is not None: cfg['graph']['radius']                = args.radius
+    if args.K_max            is not None: cfg['graph']['K_max']                 = args.K_max
+    if args.K_max2           is not None: cfg['graph']['K_max2']                = args.K_max2
 
     # experiment 이름 자동 생성 (미지정 시)
     if cfg.get('experiment') in (None, 'baseline_gru_t10'):

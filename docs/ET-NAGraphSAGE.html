@@ -1143,7 +1143,7 @@ edge_feat = [
         <tr style="background:#fff7ed"><td><a href="#" data-goto="ablation-e"><b>E ★</b></a></td><td>이웃 선택 정책</td><td>count / radius / hybrid</td><td><span class="badge b-red">필수·진행예정</span></td><td>hybrid만 완료</td></tr>
       </tbody>
     </table>
-    <p style="font-size:12.5px;color:var(--mute);margin-top:8px;">★ = 논문 필수 (novelty·공정성 직접 증거). C·E는 코드 구현 완료(2026-07-01), Server B에서 실행 예정.</p>
+    <p style="font-size:12.5px;color:var(--mute);margin-top:8px;">★ = 논문 필수 (novelty·공정성 직접 증거). C·E는 코드 구현 완료(2026-07-01), 학교 서버에서 실행 예정.</p>
     <footer>ET-NAGraphSAGE 연구 계획서 v0.3.3 · 2026-07-01</footer>
   </div>
 
@@ -1158,7 +1158,7 @@ edge_feat = [
       <tbody>
         <tr style="background:#f0fdf4"><td><b>GRU</b></td><td>게이트 순환망. 파라미터 적고 T=10에 충분</td><td><b>93.85%</b></td><td><span class="badge b-green">채택</span></td></tr>
         <tr><td>LSTM</td><td>셀 상태 추가. GRU보다 파라미터↑</td><td>93.39%</td><td><span class="badge b-green">완료</span></td></tr>
-        <tr><td>Mamba</td><td>SSM 기반. 장기 시퀀스 강점이나 T=10엔 과함, 과적합</td><td>93.23%</td><td><span class="badge b-green">완료(Server A 전용)</span></td></tr>
+        <tr><td>Mamba</td><td>SSM 기반. 장기 시퀀스 강점이나 T=10엔 과함, 과적합</td><td>93.23%</td><td><span class="badge b-green">완료(로컬 전용)</span></td></tr>
         <tr><td>Transformer</td><td>self-attention. 비교군</td><td>—</td><td><span class="badge b-gray">미구현</span></td></tr>
       </tbody>
     </table>
@@ -1169,7 +1169,7 @@ edge_feat = [
       python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
       &nbsp;&nbsp;--encoder_type [gru|lstm|mamba] --experiment et_nag_A_&lt;enc&gt;
     </div>
-    <p style="font-size:12.5px;color:var(--mute);margin-top:8px;">⚠️ Mamba는 <b>Server A 전용</b> (mamba_ssm 컴파일 필요).</p>
+    <p style="font-size:12.5px;color:var(--mute);margin-top:8px;">⚠️ Mamba는 <b>로컬 서버 전용</b> (mamba_ssm 컴파일 필요).</p>
     <footer>ET-NAGraphSAGE · Ablation A · v0.3.3</footer>
   </div>
 
@@ -1207,8 +1207,8 @@ edge_feat = [
     <table>
       <thead><tr><th>옵션</th><th>node 시계열</th><th>edge 시계열</th><th>의미</th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td><b>node-only</b></td><td>✓ (T프레임)</td><td>✗ (마지막 프레임만)</td><td>엣지 시계열 제거 — 엣지 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (B1)</span></td></tr>
-        <tr><td><b>edge-only</b></td><td>✗ (마지막 프레임만)</td><td>✓ (T프레임)</td><td>노드 시계열 제거 — 노드 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (B2)</span></td></tr>
+        <tr><td><b>node-only</b></td><td>✓ (T프레임)</td><td>✗ (마지막 프레임만)</td><td>엣지 시계열 제거 — 엣지 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (C-node)</span></td></tr>
+        <tr><td><b>edge-only</b></td><td>✗ (마지막 프레임만)</td><td>✓ (T프레임)</td><td>노드 시계열 제거 — 노드 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (C-edge)</span></td></tr>
         <tr style="background:#f0fdf4"><td><b>node+edge (제안)</b></td><td>✓</td><td>✓</td><td>둘 다 시계열 — 제안 방법</td><td><span class="badge b-green">완료 (기준 94.15%)</span></td></tr>
       </tbody>
     </table>
@@ -1221,43 +1221,72 @@ edge_feat = [
       공정 비교가 된다.
     </p>
 
-    <h3 style="margin-top:16px;">실행 방법 (Server B)</h3>
+    <h3 style="margin-top:16px;">실행 방법 (학교 서버)</h3>
     <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
-      # B1: node-only<br>
+      # C-node: node-only<br>
       python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
-      &nbsp;&nbsp;--temporal_target node --experiment et_nag_C_nodeonly_ep500<br><br>
-      # B2: edge-only<br>
+      &nbsp;&nbsp;--temporal_target node --experiment C-node<br><br>
+      # C-edge: edge-only<br>
       python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
-      &nbsp;&nbsp;--temporal_target edge --experiment et_nag_C_edgeonly_ep500
+      &nbsp;&nbsp;--temporal_target edge --experiment C-edge
     </div>
     <footer>ET-NAGraphSAGE · Ablation C (핵심) · v0.3.3</footer>
   </div>
 
   <!-- ▸ Ablation D -->
   <div class="page" id="page-ablation-d">
-    <div class="sec-head"><div class="sec-num">D</div><h2>Ablation D — 공간 구조</h2></div>
-    <div class="callout tip"><span class="ci">🎯</span><div><b>목적:</b> 공간 집계 범위(hop 수·이웃 수)와 엣지 인코더 차원이 성능에 미치는 영향. NAGraphSAGE(5-hop)와의 격차 원인 규명.</div></div>
+    <div class="sec-head"><div class="sec-num">D</div><h2>Ablation D — 공간 구조 & 모델 용량</h2></div>
+    <div class="callout tip"><span class="ci">🎯</span><div><b>목적:</b> 공간 집계 범위(hop·이웃 수), 엣지 차원, <b>모델 채널 폭(hidden_dim)</b>이 성능에 미치는 영향. NAGraphSAGE와의 격차 원인 규명.</div></div>
 
-    <h3 style="margin-top:20px;">경우의 수 및 결과</h3>
+    <div class="callout err" style="margin-top:12px;"><span class="ci">🔑</span><div><b>중요 발견 (2026-07-01):</b> NAGraphSAGE 최고(94.64%) 모델은 <b>파라미터 1,250,061개</b>인데 우리 최고 모델은 <b>172,549개</b> — <b>약 7배 작다.</b> 채널 폭(<code>hidden_dim</code>)을 한 번도 안 키웠기 때문. 이것이 격차의 유력한 원인.</div></div>
+
+    <h3 style="margin-top:20px;">D-1. hop / 이웃 수 (receptive field)</h3>
     <table>
-      <thead><tr><th>축</th><th>옵션</th><th>Test Acc</th><th>상태</th></tr></thead>
+      <thead><tr><th>옵션</th><th>Test Acc</th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td rowspan="3">hop / 이웃</td><td>1-hop</td><td>93.85%</td><td><span class="badge b-green">완료</span></td></tr>
-        <tr><td>2-hop (K1=6,K2=4)</td><td>94.15%</td><td><span class="badge b-green">완료</span></td></tr>
-        <tr style="background:#f0fdf4"><td><b>2-hop (K1=10,K2=6)</b></td><td><b>94.33%</b></td><td><span class="badge b-green">최고</span></td></tr>
-        <tr><td rowspan="2">엣지 차원 d_e</td><td>d_e=32 (기본)</td><td>93.85%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td>1-hop</td><td>93.85%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td>2-hop (K1=6, K2=4)</td><td>94.15%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr style="background:#f0fdf4"><td><b>2-hop (K1=10, K2=6)</b></td><td><b>94.33%</b></td><td><span class="badge b-green">최고</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">D-2. 엣지 인코더 차원 d_e</h3>
+    <table>
+      <thead><tr><th>옵션</th><th>Test Acc</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>d_e=32 (기본)</td><td>93.85%</td><td><span class="badge b-green">완료</span></td></tr>
         <tr><td>d_e=64</td><td>93.45%</td><td><span class="badge b-green">개선 없음</span></td></tr>
       </tbody>
     </table>
-    <div class="callout info" style="margin-top:12px;"><span class="ci">💡</span><div><b>결론:</b> <b>공간 receptive field 확대가 핵심.</b> 1-hop→2-hop(+0.30%p), K1=6→10(+0.18%p) 모두 향상. NAGraphSAGE 격차의 정체가 receptive field임을 확인. d_e 확대는 효과 없음(32로 충분).</div></div>
 
-    <h3 style="margin-top:20px;">실행 방법</h3>
-    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
-      # 이웃 수는 config의 K_max / K_max2로 조정<br>
-      # (예: configs/et_nagraphsage_2hop_k10.yaml → K_max:10, K_max2:6)<br>
+    <h3 style="margin-top:18px;">D-3. 채널 폭 hidden_dim (모델 용량) ★신규 — 학교 서버</h3>
+    <p style="font-size:12.5px;color:var(--mute);margin-bottom:8px;">
+      NAGraphSAGE(1.25M)와 용량을 맞추는 축. <code>hidden_dim=384</code>이면 파라미터가 1.39M로 NAGraphSAGE급.
+    </p>
+    <table>
+      <thead><tr><th>실험 ID</th><th>hidden_dim</th><th>파라미터 수</th><th>NAGraphSAGE 대비</th><th>우선</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr style="background:#f0fdf4"><td><code>D-h128</code> (기준)</td><td>128</td><td>172,549</td><td>0.14× (7배 작음)</td><td>기준</td><td><span class="badge b-green">완료 94.33%</span></td></tr>
+        <tr><td><code>D-h192</code></td><td>192</td><td>367,493</td><td>0.29×</td><td>★★</td><td><span class="badge b-red">대기</span></td></tr>
+        <tr><td><code>D-h256</code></td><td>256</td><td>636,165</td><td>0.51×</td><td>★★</td><td><span class="badge b-red">대기</span></td></tr>
+        <tr><td><code>D-h384</code></td><td>384</td><td>1,394,693</td><td>1.12× (동급)</td><td>★★</td><td><span class="badge b-red">대기</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn" style="margin-top:10px;"><span class="ci">🔬</span><div><b>가설:</b> 우리 모델은 용량 부족으로 표현력 한계일 수 있다. hidden_dim을 키워 NAGraphSAGE 용량(1.25M)에 근접시키면 성능이 오를 가능성. 단, 과적합 주의(dropout 0.5·wd·label smoothing로 완화). <b>최고 구조(K1=10+SupCon)에 hidden_dim 확대를 결합</b>하는 것이 목표.</div></div>
+
+    <div class="callout info" style="margin-top:12px;"><span class="ci">💡</span><div><b>현재까지 결론:</b> receptive field 확대(1-hop→2-hop→K1=10)가 핵심 효과. d_e는 효과 없음. <b>hidden_dim(채널 폭)은 미탐색 — 용량 7배 격차라 유력한 향상 축.</b></div></div>
+
+    <h3 style="margin-top:20px;">실행 방법 (학교 서버)</h3>
+    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12px;font-family:monospace;line-height:1.75;">
+      CFG=configs/et_nagraphsage_2hop_base_ep500.yaml<br><br>
+      # D-3: 채널 폭 실험 (hidden_dim)<br>
+      python train.py --config $CFG --hidden_dim 192 --experiment D-h192<br>
+      python train.py --config $CFG --hidden_dim 256 --experiment D-h256<br>
+      python train.py --config $CFG --hidden_dim 384 --experiment D-h384<br><br>
+      # D-1: 이웃 수 (config로 조정)<br>
       python train.py --config configs/et_nagraphsage_2hop_k10.yaml
     </div>
-    <footer>ET-NAGraphSAGE · Ablation D · v0.3.3</footer>
+    <footer>ET-NAGraphSAGE · Ablation D · v0.3.4</footer>
   </div>
 
   <!-- ▸ Ablation E -->
@@ -1265,33 +1294,69 @@ edge_feat = [
     <div class="sec-head"><div class="sec-num">E</div><h2>Ablation E — 이웃 선택 정책 ★</h2></div>
     <div class="callout err"><span class="ci">🎯</span><div><b>목적 (공정성 필수):</b> 이웃을 <b>어떻게 고르는가</b>가 성능에 영향을 준다. NAGraphSAGE 최고 기록(94.54%)은 <b>count 방식</b>이었는데 우리는 hybrid를 썼다. 정책을 맞추거나 비교하지 않으면 "아키텍처 덕분인지 이웃 정책 덕분인지" 구분이 안 된다.</div></div>
 
-    <h3 style="margin-top:20px;">경우의 수</h3>
+    <h3 style="margin-top:20px;">세 가지 정책 정의</h3>
     <table>
-      <thead><tr><th>정책</th><th>정의</th><th>특성</th><th>상태</th></tr></thead>
+      <thead><tr><th>정책 (mode)</th><th>정의</th><th>관련 파라미터</th><th>특성</th></tr></thead>
       <tbody>
-        <tr><td><b>count</b></td><td>반경 무관, 최근접 K대</td><td>항상 K대 확보 (멀어도 포함). NAGraphSAGE 최고기록 방식</td><td><span class="badge b-red">진행예정 (B3)</span></td></tr>
-        <tr><td><b>radius</b></td><td>반경 r 내 전부 (K_max 상한)</td><td>밀집도 반영, 개수 가변</td><td><span class="badge b-red">진행예정 (B4)</span></td></tr>
-        <tr style="background:#f0fdf4"><td><b>hybrid (현재)</b></td><td>반경 r 내 최근접 K대</td><td>둘의 절충 — 현재 모든 실험이 이 방식</td><td><span class="badge b-green">완료 (기준 94.15%)</span></td></tr>
+        <tr><td><b>count</b></td><td>반경 무관, 최근접 K대</td><td><b>K</b> (radius 무시)</td><td>항상 K대 확보 (멀어도 포함). NAGraphSAGE 최고기록 방식</td></tr>
+        <tr><td><b>radius</b></td><td>반경 r 내 전부 (K는 상한)</td><td><b>r</b> (K는 cap)</td><td>밀집도 반영, 개수 가변</td></tr>
+        <tr style="background:#f0fdf4"><td><b>hybrid</b> (현재)</td><td>반경 r 내 최근접 K대</td><td><b>r + K</b> 둘 다</td><td>둘의 절충 — 현재 모든 실험이 이 방식</td></tr>
       </tbody>
     </table>
-    <div class="callout warn" style="margin-top:12px;"><span class="ci">🔬</span><div><b>왜 중요한가:</b> count 결과가 hybrid와 비슷하면 → 우리 성능이 이웃 정책이 아닌 <b>아키텍처 덕분</b>임이 입증돼 공정 비교 confound가 제거된다. 반대면 정책 영향을 논문에 명시해야 한다.</div></div>
+
+    <h3 style="margin-top:20px;">전체 실험 조합 (mode × r × K)</h3>
+    <p style="font-size:12.5px;color:var(--mute);margin-bottom:8px;">
+      기준(굵게)은 hybrid/r=20/K1=6·K2=4 = 현재 94.15%. 각 조합은 한 줄 명령으로 실행 가능
+      (<code>--neighbor_mode</code>, <code>--radius</code>, <code>--K_max</code>, <code>--K_max2</code>).
+      count는 radius 무의미(—), radius는 K가 상한(cap)일 뿐.
+    </p>
+    <table>
+      <thead><tr>
+        <th>실험 ID</th><th>mode</th><th>radius r</th><th>K1(K_max)</th><th>K2(K_max2)</th><th>우선</th><th>목적</th><th>상태</th>
+      </tr></thead>
+      <tbody>
+        <tr style="background:#f0fdf4"><td><code>E-base</code></td><td>hybrid</td><td>20</td><td>6</td><td>4</td><td>기준</td><td>모든 조합의 비교 기준 (=현재 2-hop)</td><td><span class="badge b-green">완료 94.15%</span></td></tr>
+        <tr style="background:#fef2f2"><td colspan="8" style="font-weight:bold;font-size:12px;">① 정책 비교 (r=20, K=6·4 고정) — ★핵심</td></tr>
+        <tr><td><code>E-count-K6</code></td><td>count</td><td>—</td><td>6</td><td>4</td><td>★★</td><td>NAGraphSAGE 방식과 공정비교 (핵심)</td><td><span class="badge b-red">대기</span></td></tr>
+        <tr><td><code>E-radius-r20</code></td><td>radius</td><td>20</td><td>(cap)</td><td>(cap)</td><td>★★</td><td>반경 내 전부 집계 효과</td><td><span class="badge b-red">대기</span></td></tr>
+        <tr style="background:#fffbeb"><td colspan="8" style="font-weight:bold;font-size:12px;">② 반경 민감도 (hybrid 고정, r 변화)</td></tr>
+        <tr><td><code>E-hybrid-r10</code></td><td>hybrid</td><td>10</td><td>6</td><td>4</td><td>★</td><td>좁은 반경 (밀집 이웃만)</td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr><td><code>E-hybrid-r30</code></td><td>hybrid</td><td>30</td><td>6</td><td>4</td><td>★</td><td>넓은 반경 (원거리 상호작용)</td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#fffbeb"><td colspan="8" style="font-weight:bold;font-size:12px;">③ count K 민감도 (count 고정, K 변화)</td></tr>
+        <tr><td><code>E-count-K5</code></td><td>count</td><td>—</td><td>5</td><td>4</td><td>★</td><td>NAGraphSAGE best(count 5) 재현</td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr><td><code>E-count-K10</code></td><td>count</td><td>—</td><td>10</td><td>6</td><td>★</td><td>count + 넓은 이웃 (D와 교차)</td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#fffbeb"><td colspan="8" style="font-weight:bold;font-size:12px;">④ 반경 민감도 (radius 정책, r 변화)</td></tr>
+        <tr><td><code>E-radius-r10</code></td><td>radius</td><td>10</td><td>(cap)</td><td>(cap)</td><td>☆</td><td>좁은 반경 전부</td><td><span class="badge b-gray">선택</span></td></tr>
+        <tr><td><code>E-radius-r30</code></td><td>radius</td><td>30</td><td>(cap)</td><td>(cap)</td><td>☆</td><td>넓은 반경 전부</td><td><span class="badge b-gray">선택</span></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--mute);margin-top:6px;">
+      ★★ 필수 · ★ 권장 · ☆ 여유 시. 총 9개 조합 (기준 포함). ①번 그룹(정책 비교)이 논문 핵심.
+    </p>
+
+    <div class="callout warn" style="margin-top:12px;"><span class="ci">🔬</span><div><b>왜 중요한가:</b> <code>E-count-K6</code> 결과가 <code>E-base</code>(hybrid)와 비슷하면 → 우리 성능이 이웃 정책이 아닌 <b>아키텍처 덕분</b>임이 입증돼 공정 비교 confound가 제거된다. 반대면 정책 영향을 논문에 명시. 반경/K 민감도(②③④)는 r=20·K=6 선택의 타당성 근거가 된다.</div></div>
 
     <h3 style="margin-top:20px;">구현 방식</h3>
     <p style="font-size:13px;color:var(--mute);line-height:1.8;">
-      <code>data_manager.py</code>의 <code>neighbor_mode</code> 파라미터로 제어.
+      <code>data_manager.py</code>의 <code>neighbor_mode</code>로 정책 제어.
       count는 KD-tree <code>query(k)</code>로 최근접 K대, radius/hybrid는 <code>query_ball_point(r)</code> 후 처리.
+      r·K는 <code>--radius / --K_max / --K_max2</code> CLI로 조합.
     </p>
 
-    <h3 style="margin-top:16px;">실행 방법 (Server B)</h3>
-    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12.5px;font-family:monospace;line-height:1.8;">
-      # B3: count<br>
-      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
-      &nbsp;&nbsp;--neighbor_mode count --experiment et_nag_E_count_ep500<br><br>
-      # B4: radius<br>
-      python train.py --config configs/et_nagraphsage_2hop_base_ep500.yaml \<br>
-      &nbsp;&nbsp;--neighbor_mode radius --experiment et_nag_E_radius_ep500
+    <h3 style="margin-top:16px;">실행 방법 (학교 서버) — 조합 예시</h3>
+    <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12px;font-family:monospace;line-height:1.75;">
+      CFG=configs/et_nagraphsage_2hop_base_ep500.yaml<br><br>
+      # ① 정책 비교 (핵심)<br>
+      python train.py --config $CFG --neighbor_mode count  --experiment E-count-K6<br>
+      python train.py --config $CFG --neighbor_mode radius --experiment E-radius-r20<br><br>
+      # ② 반경 민감도<br>
+      python train.py --config $CFG --neighbor_mode hybrid --radius 10 --experiment E-hybrid-r10<br>
+      python train.py --config $CFG --neighbor_mode hybrid --radius 30 --experiment E-hybrid-r30<br><br>
+      # ③ count K 민감도<br>
+      python train.py --config $CFG --neighbor_mode count --K_max 5  --K_max2 4 --experiment E-count-K5<br>
+      python train.py --config $CFG --neighbor_mode count --K_max 10 --K_max2 6 --experiment E-count-K10
     </div>
-    <footer>ET-NAGraphSAGE · Ablation E · v0.3.3</footer>
+    <footer>ET-NAGraphSAGE · Ablation E · v0.3.4</footer>
   </div>
 
   <!-- ▸ 연구 기여 -->
@@ -2619,26 +2684,35 @@ Mamba Block:
       </tbody>
     </table>
 
-    <h3 style="margin-top:24px;">다중 서버 실험 분담 (Server A / Server B)</h3>
+    <h3 style="margin-top:24px;">다중 서버 실험 분담 (로컬 / 학교)</h3>
     <div class="callout info" style="margin-bottom:12px;">
       <span class="ci">🖥️</span>
-      <div><b>GitHub 협업:</b> <code>Youlkyeonglee/access_et_nagraphsage</code> · 조율 파일 <code>RUN_QUEUE.md</code> · 결과는 <code>results/server_A.md</code>·<code>results/server_B.md</code> 분리 기록(충돌 방지). <b>Mamba 학습은 Server A 전용</b>(mamba_ssm 컴파일 필요), Server B(학교 서버)는 비-Mamba만.</div>
+      <div><b>GitHub 협업:</b> <code>Youlkyeonglee/access_et_nagraphsage</code> · 조율 파일 <code>RUN_QUEUE.md</code> · 결과는 <code>results/local.md</code>·<code>results/school.md</code> 분리 기록(충돌 방지). <b>Mamba 학습은 로컬 서버 전용</b>(mamba_ssm 컴파일 필요), 학교 서버는 비-Mamba만.</div>
+    </div>
+    <div class="callout tip" style="margin-bottom:12px;">
+      <span class="ci">🏷️</span>
+      <div><b>용어 통일:</b> 글자 A~E는 <b>Ablation 그룹에만</b> 사용. 실험 ID는 <code>그룹-변형</code> 형식(예: <code>C-node</code>, <code>E-count</code>)이라 이름만 봐도 어느 Ablation인지 안다. 서버는 <b>로컬/학교</b>로 부른다(A/B 글자 안 씀).</div>
     </div>
     <table>
-      <thead><tr><th>서버</th><th>#</th><th>실험</th><th>Ablation</th><th>제어 인자</th><th>상태</th></tr></thead>
+      <thead><tr><th>서버</th><th>실험 ID</th><th>Ablation 그룹</th><th>변형 / 제어 인자</th><th>상태</th></tr></thead>
       <tbody>
-        <tr style="background:#eff6ff"><td rowspan="2"><b>Server A</b><br>(원본)</td><td>A1~A3</td><td>500ep 3종 (2-hop+SupCon / K1=10 / K1=10+SupCon)</td><td>D</td><td>—</td><td><span class="badge b-amber">진행중</span></td></tr>
-        <tr style="background:#eff6ff"><td>A4~A5</td><td>Mamba+2-hop, 최종모델×seed 1~4</td><td>A, I</td><td>Mamba 전용, seed</td><td><span class="badge b-gray">대기</span></td></tr>
-        <tr style="background:#f0fdf4"><td rowspan="4"><b>Server B</b><br>(학교 서버)</td><td>B1</td><td>node-only temporal</td><td><b>C ★필수</b></td><td><code>--temporal_target node</code></td><td><span class="badge b-gray">대기</span></td></tr>
-        <tr style="background:#f0fdf4"><td>B2</td><td>edge-only temporal</td><td><b>C ★필수</b></td><td><code>--temporal_target edge</code></td><td><span class="badge b-gray">대기</span></td></tr>
-        <tr style="background:#f0fdf4"><td>B3</td><td>이웃 정책 count</td><td>E</td><td><code>--neighbor_mode count</code></td><td><span class="badge b-gray">대기</span></td></tr>
-        <tr style="background:#f0fdf4"><td>B4</td><td>이웃 정책 radius</td><td>E</td><td><code>--neighbor_mode radius</code></td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#eff6ff"><td rowspan="4"><b>로컬 서버</b><br>(원본, Mamba)</td><td><code>D-supcon-ep500</code></td><td>D 공간구조 +SupCon</td><td>2-hop+SupCon 500ep</td><td><span class="badge b-amber">진행중</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>D-k10-ep500</code></td><td>D 공간구조</td><td>K1=10 (대조군)</td><td><span class="badge b-amber">진행중</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>D-k10-supcon-ep500</code></td><td>D +SupCon</td><td>K1=10+SupCon (본命)</td><td><span class="badge b-amber">진행중</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>A-mamba</code> / <code>seed-final</code></td><td>A 인코더 / 유의성</td><td>Mamba 전용, seed 1~4</td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#f0fdf4"><td rowspan="7"><b>학교 서버</b><br>(비-Mamba)</td><td><code>C-node</code></td><td><b>C 시계열대상 ★</b></td><td>node-only · <code>--temporal_target node</code></td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#f0fdf4"><td><code>C-edge</code></td><td><b>C 시계열대상 ★</b></td><td>edge-only · <code>--temporal_target edge</code></td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#fef2f2"><td><code>D-h192</code></td><td><b>D 채널폭 ★신규</b></td><td>hidden_dim 192 · <code>--hidden_dim 192</code></td><td><span class="badge b-red">대기</span></td></tr>
+        <tr style="background:#fef2f2"><td><code>D-h256</code></td><td><b>D 채널폭 ★신규</b></td><td>hidden_dim 256 · <code>--hidden_dim 256</code></td><td><span class="badge b-red">대기</span></td></tr>
+        <tr style="background:#fef2f2"><td><code>D-h384</code></td><td><b>D 채널폭 ★신규</b></td><td>hidden_dim 384 (≈NAGraphSAGE 용량) · <code>--hidden_dim 384</code></td><td><span class="badge b-red">대기</span></td></tr>
+        <tr style="background:#f0fdf4"><td><code>E-count-K6</code></td><td>E 이웃정책</td><td>count · <code>--neighbor_mode count</code></td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#f0fdf4"><td><code>E-radius-r20</code></td><td>E 이웃정책</td><td>radius · <code>--neighbor_mode radius</code></td><td><span class="badge b-gray">대기</span></td></tr>
       </tbody>
     </table>
     <p style="font-size:12.5px;color:var(--mute);margin-top:8px;">
-      Server B 전용 base config: <code>configs/et_nagraphsage_2hop_base_ep500.yaml</code> (2-hop, 500ep, SupCon 없음).
-      B1~B4 상세 명령은 <code>RUN_QUEUE.md §3</code>. 코드 구현 완료(2026-07-01): <code>et_nagraphsage.py</code>(temporal_target), <code>data_manager.py</code>(neighbor_mode).
-      기준 비교값 = 2-hop base(both/hybrid) 94.15%. B5(Transformer)는 인코더 미구현으로 보류.
+      학교 서버 base config: <code>configs/et_nagraphsage_2hop_base_ep500.yaml</code> (2-hop, 500ep, SupCon 없음).
+      상세 명령은 <code>RUN_QUEUE.md §3</code>. 코드 구현 완료(2026-07-01): <code>et_nagraphsage.py</code>(temporal_target), <code>data_manager.py</code>(neighbor_mode), <code>train.py</code>(--hidden_dim/--radius/--K_max).
+      기준 비교값 = 2-hop(node+edge / hybrid) 94.15%. <b>채널폭(D-h*)은 NAGraphSAGE 용량 격차(7배) 해소용 — 유력 향상 축.</b> <code>A-transformer</code>는 인코더 미구현으로 보류.
     </p>
 
     <h3 style="margin-top:24px;">결과 시각화</h3>
@@ -2730,6 +2804,11 @@ Mamba Block:
           <td>3</td><td>2 (32·64)</td><td><span class="badge b-gray">16(선택)</span></td>
         </tr>
         <tr style="background:#fff7ed">
+          <td><b>D4</b></td><td>채널 폭 hidden_dim ★신규</td>
+          <td>128 / 192 / 256 / 384</td>
+          <td>4</td><td>1 (128)</td><td><span class="badge b-red">192·256·384</span></td>
+        </tr>
+        <tr style="background:#fff7ed">
           <td><b>E</b></td><td>이웃 선택 정책 ★신규</td>
           <td>count(K) / radius(r) / hybrid(r+K)</td>
           <td>3</td><td>1 (hybrid)</td><td><span class="badge b-red">count, radius</span></td>
@@ -2760,9 +2839,10 @@ Mamba Block:
       <span class="ci">🎯</span>
       <div><b>우선순위 (붉은색 = 논문 필수):</b><br>
         <b>1순위 — C(시계열 대상):</b> node-only / edge-only. "node+edge가 novelty"의 직접 증거. <b>없으면 논문 성립 불가.</b><br>
-        <b>2순위 — I(다중 seed):</b> 최종 모델 seed 5개. "통계적으로 유의미한 향상" 주장의 근거.<br>
-        <b>3순위 — E(이웃 정책):</b> count/radius. NAGraphSAGE 최고 기록이 count 모드였으므로 공정 비교 confound 제거.<br>
-        나머지(A-Transformer, B-T5, D 확장, F)는 여유 GPU에서 보강.
+        <b>2순위 — D4(채널 폭):</b> hidden_dim 192/256/384. NAGraphSAGE 대비 <b>용량 7배 격차</b> 해소 — 유력 향상 축.<br>
+        <b>3순위 — I(다중 seed):</b> 최종 모델 seed 5개. "통계적으로 유의미한 향상" 주장의 근거.<br>
+        <b>4순위 — E(이웃 정책):</b> count/radius. NAGraphSAGE 최고 기록이 count 모드였으므로 공정 비교 confound 제거.<br>
+        나머지(A-Transformer, B-T5)는 여유 GPU에서 보강.
       </div>
     </div>
 
@@ -2770,16 +2850,16 @@ Mamba Block:
     <table>
       <thead><tr><th>#</th><th>실험</th><th>그룹</th><th>변경점</th><th>목적</th></tr></thead>
       <tbody>
-        <tr style="background:#fff7ed"><td>1</td><td>node-only temporal</td><td>C</td><td>엣지 시계열 제거(현재프레임만)</td><td>엣지 시계열 기여 격리</td></tr>
-        <tr style="background:#fff7ed"><td>2</td><td>edge-only temporal</td><td>C</td><td>노드 시계열 제거</td><td>노드 시계열 기여 격리</td></tr>
+        <tr style="background:#fff7ed"><td>1</td><td>node-only / edge-only temporal</td><td>C</td><td><code>--temporal_target node|edge</code></td><td>시계열 대상 기여 격리 (novelty)</td></tr>
+        <tr style="background:#fef2f2"><td>2</td><td>채널 폭 h192 / h256 / h384</td><td>D4</td><td><code>--hidden_dim</code></td><td>NAGraphSAGE 용량(1.25M) 격차 해소</td></tr>
         <tr style="background:#fff7ed"><td>3</td><td>최종모델 × seed 1~4</td><td>I</td><td>seed 4개 추가</td><td>평균±std, 유의성 검정</td></tr>
-        <tr><td>4</td><td>count / radius 정책</td><td>E</td><td>이웃 선택 방식 2종</td><td>NAGraphSAGE 공정비교</td></tr>
+        <tr><td>4</td><td>이웃 정책 조합 (count/radius/r·K)</td><td>E</td><td><code>--neighbor_mode/--radius/--K_max</code></td><td>NAGraphSAGE 공정비교</td></tr>
         <tr><td>5</td><td>Baseline 재현 (DCRNN/AGCRN/DSAB-RGAT/LaneMCGNN)</td><td>비교</td><td>비교군 구현</td><td>Main Comparison 표</td></tr>
         <tr><td>6</td><td>Transformer 인코더 / T=5</td><td>A,B</td><td>ablation 보강</td><td>완결성</td></tr>
       </tbody>
     </table>
 
-    <footer>ET-NAGraphSAGE 연구 계획서 v0.3.3 · 2026-07-01</footer>
+    <footer>ET-NAGraphSAGE 연구 계획서 v0.3.4 · 2026-07-01</footer>
   </div>
 
   <!-- ▸ 연구 로그 -->

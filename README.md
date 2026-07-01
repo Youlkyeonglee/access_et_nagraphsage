@@ -89,7 +89,7 @@ results/              # 서버별 결과 로그
 conda activate tna_research
 ```
 - PyTorch 2.7.0 (CUDA 12.8), scipy(cKDTree), pandas, matplotlib
-- Mamba 실험은 `mamba_ssm` 필요 (컴파일) — **Server A(원본)에서만 실행**
+- Mamba 실험은 `mamba_ssm` 필요 (컴파일) — **로컬 서버에서만 실행**
 
 ## 실행 예시
 
@@ -104,9 +104,14 @@ python train.py --config configs/et_nagraphsage.yaml --T 1
 ## 다중 서버 협업
 
 `RUN_QUEUE.md` 참조. 요약:
-- **Server A** (원본): Mamba 계열 + 문서/보드 관리
-- **Server B** (학교 서버): 비-Mamba 실험 (Mamba 금지)
-- 결과는 `results/server_A.md` / `results/server_B.md`에 분리 기록 (충돌 방지)
+- **로컬 서버** (원본): Mamba 계열 + 문서/보드 관리
+- **학교 서버** (원격): 비-Mamba 실험 (Mamba 금지)
+- 결과는 `results/local.md` / `results/school.md`에 분리 기록 (충돌 방지)
+
+### 용어 (혼동 방지)
+- **Ablation 그룹**: A(인코더) · B(시퀀스길이) · C(시계열대상) · D(공간구조) · E(이웃정책) — 글자는 여기에만
+- **실험 ID**: `그룹-변형` (예: `C-node`, `E-count`) — 어느 Ablation인지 이름으로 식별
+- **서버**: 로컬 / 학교 (A/B 글자 안 씀)
 
 ## 현재 최고 성능 (150 epoch 기준, 500ep 검증중)
 
