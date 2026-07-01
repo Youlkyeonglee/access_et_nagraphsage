@@ -1,0 +1,48 @@
+# ET-NAGraphSAGE 2-hop — K1=10, K2=6 (GPU 1)
+# NAGraphSAGE K=10에 맞춰 이웃 수 확대 (기존 K1=6, K2=4 → K1=10, K2=6)
+# 공간 receptive field 확대가 NAGraphSAGE 격차 원인이라는 가설 검증
+# 메모리 증가(2.5x)로 batch_size 4096→2048 축소
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+graph:
+  T:      10
+  radius: 20.0
+  K_max:  10    # 6 → 10
+  K_max2: 6     # 4 → 6
+
+model:
+  node_dim:      6
+  edge_dim:      5
+  hidden_dim:    128
+  d_e:           32
+  encoder_type:  gru
+  use_attention: true
+  use_2hop:      true
+  num_classes:   3
+  dropout:       0.5
+
+train:
+  batch_size:   2048    # K1*K2=60이라 메모리 축소
+  num_epochs:   150
+  lr:           0.001
+  weight_decay: 1.0e-4
+  scheduler:    cosine
+  patience:     30
+  num_workers:  8
+  use_amp:      true
+
+loss:
+  type:              ce
+  kl_weight:         0.0
+  label_smoothing:   0.1
+  use_class_weights: false
+
+seed:       42
+save_dir:   /home/oem/TNA_research/checkpoints/
+log_dir:    /home/oem/TNA_research/logs/
+experiment: et_nagraphsage_2hop_k10

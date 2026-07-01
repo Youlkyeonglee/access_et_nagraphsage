@@ -1,0 +1,51 @@
+# ET-NAGraphSAGE 2-hop + SupCon — 500 Epoch (NAGraphSAGE 예산 일치, GPU 0)
+# NAGraphSAGE 94.54%는 500 epoch, best epoch 484로 거의 끝까지 상승했음.
+# 우리 2-hop+SupCon은 150 epoch(~140에서 멈춤)에서 94.32%.
+# 동일 예산(500ep, patience 150, cosine T_max=500)으로 공정 비교 + 상승 여력 확인.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+graph:
+  T:      10
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  node_dim:      6
+  edge_dim:      5
+  hidden_dim:    128
+  d_e:           32
+  encoder_type:  gru
+  use_attention: true
+  use_2hop:      true
+  num_classes:   3
+  dropout:       0.5
+  proj_dim:      64
+
+train:
+  batch_size:   4096
+  num_epochs:   500
+  lr:           0.001
+  weight_decay: 1.0e-4
+  scheduler:    cosine
+  patience:     150
+  num_workers:  8
+  use_amp:      true
+
+loss:
+  type:              ce
+  kl_weight:         0.0
+  label_smoothing:   0.1
+  use_class_weights: false
+  supcon_weight:     0.1
+  supcon_temp:       0.07
+
+seed:       42
+save_dir:   /home/oem/TNA_research/checkpoints/
+log_dir:    /home/oem/TNA_research/logs/
+experiment: et_nagraphsage_2hop_supcon_ep500

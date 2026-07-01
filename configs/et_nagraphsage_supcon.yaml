@@ -1,0 +1,50 @@
+# ET-NAGraphSAGE — Supervised Contrastive Loss (Exp-B)
+# 기존 T=10 GRU cosine 1-hop 최고 설정에 SupCon loss 추가
+# LC/Normal 임베딩 경계를 명시적으로 벌려 분리도 향상
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+graph:
+  T:      10
+  radius: 20.0
+  K_max:  6
+  K_max2: 0      # 1-hop 기준 — SupCon 효과만 격리
+
+model:
+  node_dim:      6
+  edge_dim:      5
+  hidden_dim:    128
+  d_e:           32
+  encoder_type:  gru
+  use_attention: true
+  use_2hop:      false
+  num_classes:   3
+  dropout:       0.3
+  proj_dim:      64   # SupCon projection head 출력 차원
+
+train:
+  batch_size:   16384
+  num_epochs:   150
+  lr:           0.001
+  weight_decay: 1.0e-5
+  scheduler:    cosine
+  patience:     30
+  num_workers:  8
+  use_amp:      true
+
+loss:
+  type:               ce
+  kl_weight:          0.0
+  use_class_weights:  false
+  label_smoothing:    0.0
+  supcon_weight:      0.1    # λ_supcon (CE + λ * L_SupCon)
+  supcon_temp:        0.07   # SupCon temperature τ
+
+seed:       42
+save_dir:   /home/oem/TNA_research/checkpoints/
+log_dir:    /home/oem/TNA_research/logs/
+experiment: et_nagraphsage_supcon_T10

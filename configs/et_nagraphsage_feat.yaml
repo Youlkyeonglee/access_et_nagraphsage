@@ -1,0 +1,47 @@
+# ET-NAGraphSAGE — Feature-Enhanced (Exp-A)
+# 기존 T=10 GRU cosine 1-hop 최고 설정에 feature 보강만 추가
+# node_dim 6→8 (vel_x, vel_z 추가), edge_dim 5→7 (rel_pos_x, rel_pos_z 추가)
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+graph:
+  T:      10
+  radius: 20.0
+  K_max:  6
+  K_max2: 0      # 1-hop 기준 — feature 효과만 격리
+
+model:
+  node_dim:      8    # 기존 6 → vel_x, vel_z 추가
+  edge_dim:      7    # 기존 5 → rel_pos_x, rel_pos_z 추가
+  hidden_dim:    128
+  d_e:           32
+  encoder_type:  gru
+  use_attention: true
+  use_2hop:      false
+  num_classes:   3
+  dropout:       0.3
+
+train:
+  batch_size:   16384
+  num_epochs:   150
+  lr:           0.001
+  weight_decay: 1.0e-5
+  scheduler:    cosine
+  patience:     30
+  num_workers:  8
+  use_amp:      true
+
+loss:
+  type:               ce
+  kl_weight:          0.0
+  use_class_weights:  false
+  label_smoothing:    0.0
+
+seed:       42
+save_dir:   /home/oem/TNA_research/checkpoints/
+log_dir:    /home/oem/TNA_research/logs/
+experiment: et_nagraphsage_feat_T10

@@ -1,0 +1,47 @@
+# ET-NAGraphSAGE 2-hop K1=10 (SupCon 없음) — 500 Epoch (GPU 1, 대조군)
+# K1=10+SupCon 대비 SupCon 결합 효과를 격리하기 위한 대조군.
+# 150ep에서 94.33%였고 끝까지 상승 → 500ep 예산에서 천장 확인.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+graph:
+  T:      10
+  radius: 20.0
+  K_max:  10
+  K_max2: 6
+
+model:
+  node_dim:      6
+  edge_dim:      5
+  hidden_dim:    128
+  d_e:           32
+  encoder_type:  gru
+  use_attention: true
+  use_2hop:      true
+  num_classes:   3
+  dropout:       0.5
+
+train:
+  batch_size:   2048
+  num_epochs:   500
+  lr:           0.001
+  weight_decay: 1.0e-4
+  scheduler:    cosine
+  patience:     150
+  num_workers:  8
+  use_amp:      true
+
+loss:
+  type:              ce
+  kl_weight:         0.0
+  label_smoothing:   0.1
+  use_class_weights: false
+
+seed:       42
+save_dir:   /home/oem/TNA_research/checkpoints/
+log_dir:    /home/oem/TNA_research/logs/
+experiment: et_nagraphsage_2hop_k10_ep500
