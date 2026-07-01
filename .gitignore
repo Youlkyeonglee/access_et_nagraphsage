@@ -1,0 +1,30 @@
+# 대용량 / 로컬 산출물 (서버마다 로컬 생성)
+# mamba_ssm 라이브러리 클론 (254M, 각 서버 별도 설치)
+mamba/
+# 학습 체크포인트 (서버 로컬)
+checkpoints/
+# 학습 로그 (서버 로컬)
+logs/
+cache/
+runs/
+
+# 데이터 (두 서버에 이미 동일하게 존재)
+data/
+*.csv
+
+# 파이썬
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.ipynb_checkpoints/
+
+# pip 오타 산출물
+=1.4.0
+=1.13.0
+
+# 저작권 PDF, 공유 저장소 제외
+docs/IEEE_TII_25_9364_20260401_rev1_0_NAGraphSAGE.pdf
+
+# OS
+.DS_Store
