@@ -181,6 +181,7 @@ def train(cfg: dict):
         train_ratio=cfg['data']['train_ratio'],
         val_ratio=cfg['data']['val_ratio'],
         num_workers=cfg['train']['num_workers'],
+        neighbor_mode=cfg['graph'].get('neighbor_mode', 'hybrid'),
     )
 
     # ── 모델 ────────────────────────────────────────────────────────────────
@@ -196,6 +197,7 @@ def train(cfg: dict):
         use_2hop=m.get('use_2hop', True),
         num_classes=m['num_classes'],
         dropout=m['dropout'],
+        temporal_target=m.get('temporal_target', 'both'),
     ).to(device)
 
     print(f"파라미터: {model.count_parameters():,}개  |  device: {device}")
@@ -360,6 +362,10 @@ def parse_args():
     parser.add_argument('--dropout',           type=float, default=None)
     parser.add_argument('--weight_decay',      type=float, default=None)
     parser.add_argument('--loss_type',         type=str,   default=None)
+    parser.add_argument('--temporal_target',   type=str,   default=None,
+                        choices=['both', 'node', 'edge'])
+    parser.add_argument('--neighbor_mode',     type=str,   default=None,
+                        choices=['hybrid', 'count', 'radius'])
     return parser.parse_args()
 
 
@@ -387,6 +393,8 @@ if __name__ == '__main__':
     if args.dropout          is not None: cfg['model']['dropout']               = args.dropout
     if args.weight_decay     is not None: cfg['train']['weight_decay']          = args.weight_decay
     if args.loss_type        is not None: cfg['loss']['type']                   = args.loss_type
+    if args.temporal_target  is not None: cfg['model']['temporal_target']       = args.temporal_target
+    if args.neighbor_mode    is not None: cfg['graph']['neighbor_mode']         = args.neighbor_mode
 
     # experiment 이름 자동 생성 (미지정 시)
     if cfg.get('experiment') in (None, 'baseline_gru_t10'):

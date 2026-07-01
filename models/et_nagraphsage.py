@@ -148,12 +148,22 @@ class ETNAGraphSAGE(nn.Module):
         use_2hop:     bool  = True,
         num_classes:  int   = 3,
         dropout:      float = 0.3,
+        temporal_target: str = 'both',   # 'both' | 'node' | 'edge' (Ablation C)
     ):
         super().__init__()
         self.hidden_dim   = hidden_dim
         self.d_e          = d_e
         self.T            = T
         self.use_2hop     = use_2hop
+
+        # Ablation C: 어느 스트림에 시계열 인코딩을 적용할지
+        #   'both' (제안): node·edge 모두 T프레임 시계열
+        #   'node'       : node만 시계열, edge는 마지막 프레임만 (시간정보 제거)
+        #   'edge'       : edge만 시계열, node는 마지막 프레임만
+        assert temporal_target in ('both', 'node', 'edge')
+        self.temporal_target = temporal_target
+        self.temporal_node   = temporal_target in ('both', 'node')
+        self.temporal_edge   = temporal_target in ('both', 'edge')
 
         # ── STAGE 1: Temporal Encoders ─────────────────────────────────────
         enc_kwargs = dict(encoder_type=encoder_type, use_attention=use_attention)
@@ -182,19 +192,30 @@ class ETNAGraphSAGE(nn.Module):
 
         B, K1, T, _ = nbr_node_seqs.shape
 
+        # ── Ablation C: 비활성 스트림은 마지막 프레임만 사용 (시계열 제거) ──
+        if not self.temporal_node:
+            node_seq       = node_seq[:, -1:, :]
+            nbr_node_seqs  = nbr_node_seqs[:, :, -1:, :]
+            nbr2_node_seqs = nbr2_node_seqs[:, :, :, -1:, :]
+        if not self.temporal_edge:
+            edge_seqs      = edge_seqs[:, :, -1:, :]
+            nbr2_edge_seqs = nbr2_edge_seqs[:, :, :, -1:, :]
+        Tn = node_seq.shape[1]     # node 시퀀스 길이 (1 또는 T)
+        Te = edge_seqs.shape[2]    # edge 시퀀스 길이 (1 또는 T)
+
         # ── STAGE 1: Temporal Encoding ─────────────────────────────────────
         # ego
         h_ego = self.node_encoder(node_seq)                     # [B, d]
 
         # 1-hop neighbors
         h_nbr = self.node_encoder(
-            nbr_node_seqs.view(B * K1, T, -1)                  # [B*K1, T, 6]
+            nbr_node_seqs.view(B * K1, Tn, -1)                 # [B*K1, Tn, 6]
         ).view(B, K1, -1)                                       # [B, K1, d]
         h_nbr = h_nbr * nbr_mask.unsqueeze(-1)
 
         # 1-hop edges (ego → nbr)
         e1 = self.edge_encoder(
-            edge_seqs.view(B * K1, T, -1)
+            edge_seqs.view(B * K1, Te, -1)
         ).view(B, K1, -1)                                       # [B, K1, d_e]
         e1 = e1 * nbr_mask.unsqueeze(-1)
 
@@ -204,13 +225,13 @@ class ETNAGraphSAGE(nn.Module):
 
             # 2-hop neighbor temporal encoding
             h_nbr2 = self.node_encoder(
-                nbr2_node_seqs.view(B * K1 * K2, T, -1)
+                nbr2_node_seqs.view(B * K1 * K2, Tn, -1)
             ).view(B, K1, K2, -1)                              # [B, K1, K2, d]
             h_nbr2 = h_nbr2 * nbr2_mask.unsqueeze(-1)
 
             # 2-hop edge temporal encoding (nbr → nbr2)
             e2 = self.edge_encoder(
-                nbr2_edge_seqs.view(B * K1 * K2, T, -1)
+                nbr2_edge_seqs.view(B * K1 * K2, Te, -1)
             ).view(B, K1, K2, -1)                              # [B, K1, K2, d_e]
             e2 = e2 * nbr2_mask.unsqueeze(-1)
 

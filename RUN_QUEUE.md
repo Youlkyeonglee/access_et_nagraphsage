@@ -74,14 +74,17 @@ git push origin main
 
 ### Server B 배정 (비-Mamba)
 
-| # | 우선 | 실험 | 명령 | 상태 |
-|---|---|---|---|---|
-| B1 | ★★★ | node-only temporal (Ablation C) | `아래 3.1 참조` | ⬜ 대기 |
-| B2 | ★★★ | edge-only temporal (Ablation C) | `아래 3.2 참조` | ⬜ 대기 |
-| B3 | ★★ | 이웃 정책 count (Ablation E) | `아래 3.3 참조` | ⬜ 대기 |
-| B4 | ★★ | 이웃 정책 radius (Ablation E) | `아래 3.4 참조` | ⬜ 대기 |
-| B5 | ★ | Transformer 인코더 (Ablation A) | `--encoder_type transformer` | ⬜ 대기 |
-| B6 | ★ | T=5 (Ablation B) | `--T 5` | ⬜ 대기 |
+| # | 우선 | 실험 | 상태 |
+|---|---|---|---|
+| B1 | ★★★ | node-only temporal (Ablation C) — 3.1 | ⬜ 대기 |
+| B2 | ★★★ | edge-only temporal (Ablation C) — 3.2 | ⬜ 대기 |
+| B3 | ★★ | 이웃 정책 count (Ablation E) — 3.3 | ⬜ 대기 |
+| B4 | ★★ | 이웃 정책 radius (Ablation E) — 3.4 | ⬜ 대기 |
+| B5 | ★ | Transformer 인코더 (Ablation A) — 3.5 | ⬜ 대기 |
+| B6 | ★ | T=5 (Ablation B) — 3.6 | ⬜ 대기 |
+
+> B1~B4는 코드 구현 완료(2026-07-01, Server A). `--temporal_target`, `--neighbor_mode` CLI로 제어.
+> **기준 비교값**: 2-hop base(both/hybrid) = 94.15%(150ep). C/E는 이 값과 비교한다.
 
 ### Server A 배정 (Mamba + 진행중)
 
@@ -95,31 +98,77 @@ git push origin main
 
 ---
 
-## 3.1 ~ 3.4 상세 명령 (Server B)
+## 3.1 ~ 3.6 상세 명령 (Server B)
 
-> ⚠️ 아래 실험들은 **Ablation C/E 코드가 아직 미구현**이다. Server A가 구현·커밋 후
-> 이 섹션에 정확한 명령을 채운다. 그 전까지 B5(Transformer), B6(T=5)부터 진행 가능.
+모두 `configs/et_nagraphsage_2hop_base_ep500.yaml` (2-hop, 500ep, patience150) 기준.
+GPU 번호(`CUDA_VISIBLE_DEVICES`)는 Server B의 빈 GPU로 조정할 것.
+**실행 전 `git pull origin main` 필수.** 데이터 경로가 다르면 config의 `data_dir` 로컬 수정.
 
-**B5 — Transformer 인코더 (지금 실행 가능)**
+**B1 — node-only temporal (엣지 시계열 제거)** ★★★
 ```bash
 git pull origin main
 CUDA_VISIBLE_DEVICES=0 python train.py \
-  --config configs/et_nagraphsage_2hop_supcon_ep500.yaml \
-  --encoder_type transformer \
-  --experiment et_nagraphsage_2hop_transformer_ep500 \
-  > /tmp/transformer_ep500.log 2>&1 &
+  --config configs/et_nagraphsage_2hop_base_ep500.yaml \
+  --temporal_target node \
+  --experiment et_nag_C_nodeonly_ep500 \
+  > /tmp/C_nodeonly.log 2>&1 &
 ```
-※ `temporal_encoder.py`가 transformer 타입을 지원하는지 먼저 확인 (미지원 시 Server A가 추가).
+목적: 엣지 시계열의 기여 격리. **node+edge(94.15%)보다 낮아야** "엣지 시계열이 필요하다"가 증명됨.
 
-**B6 — T=5 (지금 실행 가능)**
+**B2 — edge-only temporal (노드 시계열 제거)** ★★★
 ```bash
 git pull origin main
-CUDA_VISIBLE_DEVICES=1 python train_supcon.py \
-  --config configs/et_nagraphsage_2hop_supcon_ep500.yaml \
-  --T 5 \
-  --experiment et_nagraphsage_2hop_supcon_T5_ep500 \
-  > /tmp/supcon_T5.log 2>&1 &
+CUDA_VISIBLE_DEVICES=1 python train.py \
+  --config configs/et_nagraphsage_2hop_base_ep500.yaml \
+  --temporal_target edge \
+  --experiment et_nag_C_edgeonly_ep500 \
+  > /tmp/C_edgeonly.log 2>&1 &
 ```
+목적: 노드 시계열의 기여 격리.
+
+**B3 — 이웃 정책 count (반경 무관 최근접 K대)** ★★
+```bash
+git pull origin main
+CUDA_VISIBLE_DEVICES=2 python train.py \
+  --config configs/et_nagraphsage_2hop_base_ep500.yaml \
+  --neighbor_mode count \
+  --experiment et_nag_E_count_ep500 \
+  > /tmp/E_count.log 2>&1 &
+```
+목적: NAGraphSAGE 최고기록이 count 방식이었음 → 공정 비교 confound 제거.
+
+**B4 — 이웃 정책 radius (반경 내 전부)** ★★
+```bash
+git pull origin main
+CUDA_VISIBLE_DEVICES=3 python train.py \
+  --config configs/et_nagraphsage_2hop_base_ep500.yaml \
+  --neighbor_mode radius \
+  --experiment et_nag_E_radius_ep500 \
+  > /tmp/E_radius.log 2>&1 &
+```
+
+**B5 — Transformer 인코더** ★ ⛔ **아직 실행 불가**
+> `temporal_encoder.py`는 현재 gru/lstm/mamba만 지원. transformer 미구현.
+> Server A가 구현·커밋 후 아래 명령 사용 가능. (그때까지 B1~B4, B6 먼저)
+```bash
+# (구현 후) git pull origin main
+# CUDA_VISIBLE_DEVICES=0 python train.py \
+#   --config configs/et_nagraphsage_2hop_base_ep500.yaml \
+#   --encoder_type transformer \
+#   --experiment et_nag_A_transformer_ep500 > /tmp/A_transformer.log 2>&1 &
+```
+
+**B6 — T=5** ★
+```bash
+git pull origin main
+CUDA_VISIBLE_DEVICES=1 python train.py \
+  --config configs/et_nagraphsage_2hop_base_ep500.yaml \
+  --T 5 \
+  --experiment et_nag_B_T5_ep500 \
+  > /tmp/B_T5.log 2>&1 &
+```
+
+> 결과 확인: 각 로그 끝의 `Test Acc (State_Acc)` 및 클래스별 정확도를 `results/server_B.md`에 기록.
 
 ---
 

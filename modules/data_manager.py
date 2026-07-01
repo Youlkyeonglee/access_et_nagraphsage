@@ -190,16 +190,23 @@ class TemporalVehicleDataset(Dataset):
         split: str         = 'train',
         train_ratio: float = 0.70,
         val_ratio: float   = 0.15,
+        neighbor_mode: str = 'hybrid',   # 'hybrid' | 'count' | 'radius' (Ablation E)
         verbose: bool      = True,
     ):
-        self.T           = T
-        self.radius      = radius
-        self.K           = K_max
-        self.K2          = K_max2
-        self.use_2hop    = (K_max2 > 0)
-        self.split       = split
-        self.train_ratio = train_ratio
-        self.val_ratio   = val_ratio
+        self.T             = T
+        self.radius        = radius
+        self.K             = K_max
+        self.K2            = K_max2
+        self.use_2hop      = (K_max2 > 0)
+        self.split         = split
+        self.train_ratio   = train_ratio
+        self.val_ratio     = val_ratio
+        # Ablation E: 이웃 선택 정책
+        #   'hybrid' (기본): 반경 r 내에서 최근접 K대 (radius 필터 + count 상한)
+        #   'count'        : 반경 무관, 최근접 K대 (NAGraphSAGE 최고기록 방식)
+        #   'radius'       : 반경 r 내 전부 (K_max로 상한, 개수 가변)
+        assert neighbor_mode in ('hybrid', 'count', 'radius')
+        self.neighbor_mode = neighbor_mode
 
         self.samples: List[Tuple[str, int, List[int]]] = []
 
@@ -230,7 +237,16 @@ class TemporalVehicleDataset(Dataset):
         tree, obj_ids, positions = fd.get_kdtree(t)
         ego_pos = fd.frame_node[t][ego_id][:2]
 
-        candidate_indices = tree.query_ball_point(ego_pos, r=self.radius)
+        # ── Ablation E: 이웃 후보 선택 ────────────────────────────────────
+        if self.neighbor_mode == 'count':
+            # 반경 무관 최근접 K대 (자기 자신 제외 위해 K+1 질의)
+            k_query = min(self.K + 1, len(obj_ids))
+            _, knn_idx = tree.query(ego_pos, k=k_query)
+            knn_idx = np.atleast_1d(knn_idx)
+            candidate_indices = [int(i) for i in knn_idx]
+        else:
+            # 'hybrid' / 'radius' : 반경 r 내 후보
+            candidate_indices = tree.query_ball_point(ego_pos, r=self.radius)
 
         nbr_candidates = []
         for idx_val in candidate_indices:
@@ -240,6 +256,7 @@ class TemporalVehicleDataset(Dataset):
             d = float(np.sqrt(np.sum((positions[idx_val] - ego_pos) ** 2)))
             nbr_candidates.append((d, oid, idx_val))
         nbr_candidates.sort(key=lambda x: x[0])
+        # 'radius'는 반경 내 전부(K_max 상한), 'hybrid'/'count'는 최근접 K대
         nbr_candidates = nbr_candidates[:self.K]
 
         nbr_ids        = [oid      for _, oid, _   in nbr_candidates]
@@ -348,10 +365,12 @@ def build_dataloaders(
     train_ratio: float = 0.70,
     val_ratio: float   = 0.15,
     num_workers: int   = 4,
+    neighbor_mode: str = 'hybrid',
     verbose: bool      = True,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     kwargs = dict(T=T, radius=radius, K_max=K_max, K_max2=K_max2,
-                  train_ratio=train_ratio, val_ratio=val_ratio, verbose=verbose)
+                  train_ratio=train_ratio, val_ratio=val_ratio,
+                  neighbor_mode=neighbor_mode, verbose=verbose)
     train_ds = TemporalVehicleDataset(csv_files, split='train', **kwargs)
     val_ds   = TemporalVehicleDataset(csv_files, split='val',   **kwargs)
     test_ds  = TemporalVehicleDataset(csv_files, split='test',  **kwargs)
