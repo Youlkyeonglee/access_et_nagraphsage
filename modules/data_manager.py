@@ -28,6 +28,8 @@ CSV(frame, object_id, position_x/z, speed, dir_x/z, accel, category) 파일을
 """
 
 import os
+import hashlib
+import pickle
 from collections import defaultdict
 from typing import List, Tuple, Dict
 
@@ -42,6 +44,16 @@ LABEL_MAP = {'stop': 0, 'lane_change': 1, 'normal_driving': 2}
 NODE_COLS  = ['position_x', 'position_z', 'speed', 'direction_x', 'direction_z', 'acceleration']
 NODE_DIM   = 6
 EDGE_DIM   = 5
+
+# 조립된 샘플 텐서 캐시 루트 (프로젝트 루트/cache). git 동기화 제외(.gitignore).
+CACHE_ROOT = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cache')
+
+# 캐시로 저장/로드하는 텐서 키와 dtype
+_CACHE_KEYS = [
+    'node_seq', 'nbr_node_seqs', 'edge_seqs', 'nbr_mask',
+    'nbr2_node_seqs', 'nbr2_edge_seqs', 'nbr2_mask', 'y',
+]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -192,6 +204,7 @@ class TemporalVehicleDataset(Dataset):
         val_ratio: float   = 0.15,
         neighbor_mode: str = 'hybrid',   # 'hybrid' | 'count' | 'radius' (Ablation E)
         verbose: bool      = True,
+        use_cache: bool    = True,       # 조립 텐서 디스크 캐시 사용
     ):
         self.T             = T
         self.radius        = radius
@@ -209,7 +222,21 @@ class TemporalVehicleDataset(Dataset):
         self.neighbor_mode = neighbor_mode
 
         self.samples: List[Tuple[str, int, List[int]]] = []
+        self._cache: Dict[str, np.ndarray] = None  # {key: memmap} (캐시 로드 시)
 
+        cache_dir = os.path.join(CACHE_ROOT, self._cache_key(csv_files)) if use_cache else None
+
+        # ── 캐시가 이미 있으면: CSV/그래프 계산 없이 즉시 로드 ────────────────
+        if cache_dir is not None and os.path.exists(os.path.join(cache_dir, '.done')):
+            with open(os.path.join(cache_dir, 'samples.pkl'), 'rb') as f:
+                self.samples = pickle.load(f)
+            self._cache = {k: np.load(os.path.join(cache_dir, f'{k}.npy'), mmap_mode='r')
+                           for k in _CACHE_KEYS}
+            if verbose:
+                print(f'[{split}] 캐시 로드: {len(self.samples):,}개  ({cache_dir})')
+            return
+
+        # ── 캐시 없음: 기존 방식으로 샘플 인덱스 빌드 ─────────────────────────
         for csv_path in (tqdm(csv_files, desc=f'[{split}] 인덱스 빌드') if verbose else csv_files):
             fd = _get_file_data(csv_path)
             self.samples += _build_sample_index(fd, T, split, train_ratio, val_ratio)
@@ -219,10 +246,97 @@ class TemporalVehicleDataset(Dataset):
             print(f'[{split}] 총 샘플: {len(self.samples):,}개  '
                   f'(파일 {len(csv_files)}개, T={T}, radius={radius}m, K_max={K_max}{hop_str})')
 
+        # ── 캐시 생성 (조립 텐서를 1회 계산해 디스크에 저장) ─────────────────
+        if cache_dir is not None:
+            self._build_cache(cache_dir, split, verbose)
+
+    # ── 캐시 유틸 ────────────────────────────────────────────────────────────
+    def _cache_key(self, csv_files: List[str]) -> str:
+        """샘플 조립 결과를 결정하는 모든 요소로 캐시 키 생성.
+        CSV 목록/크기/수정시각 + 그래프·분할 파라미터 → 하나라도 바뀌면 새 캐시."""
+        h = hashlib.md5()
+        for p in sorted(csv_files):
+            st = os.stat(p)
+            h.update(f'{os.path.basename(p)}:{st.st_size}:{int(st.st_mtime)}'.encode())
+        sig = (f'T{self.T}_r{self.radius}_K{self.K}-{self.K2}'
+               f'_{self.neighbor_mode}_tr{self.train_ratio}_vr{self.val_ratio}')
+        h.update(sig.encode())
+        return f'{self.split}_{sig}_{h.hexdigest()[:10]}'
+
+    def _cache_shapes(self, N: int) -> Dict[str, Tuple]:
+        K, K2, T = self.K, self.K2, self.T
+        return {
+            'node_seq':       (N, T, NODE_DIM),
+            'nbr_node_seqs':  (N, K, T, NODE_DIM),
+            'edge_seqs':      (N, K, T, EDGE_DIM),
+            'nbr_mask':       (N, K),
+            'nbr2_node_seqs': (N, K, self.K2, T, NODE_DIM),
+            'nbr2_edge_seqs': (N, K, self.K2, T, EDGE_DIM),
+            'nbr2_mask':      (N, K, self.K2),
+            'y':              (N,),
+        }
+
+    def _build_cache(self, cache_dir: str, split: str, verbose: bool):
+        os.makedirs(cache_dir, exist_ok=True)
+        N = len(self.samples)
+        shapes = self._cache_shapes(N)
+        mm = {}
+        for k in _CACHE_KEYS:
+            dtype = np.int64 if k == 'y' else np.float32
+            mm[k] = np.lib.format.open_memmap(
+                os.path.join(cache_dir, f'{k}.npy'), mode='w+',
+                dtype=dtype, shape=shapes[k])
+
+        it = tqdm(range(N), desc=f'[{split}] 캐시 생성') if verbose else range(N)
+        for i in it:
+            s = self._assemble_np(i)
+            for k in _CACHE_KEYS:
+                mm[k][i] = s[k]
+        for k in _CACHE_KEYS:
+            mm[k].flush()
+
+        with open(os.path.join(cache_dir, 'samples.pkl'), 'wb') as f:
+            pickle.dump(self.samples, f)
+        open(os.path.join(cache_dir, '.done'), 'w').close()
+
+        # 이후 __getitem__은 memmap 슬라이스만 → CPU 부하 최소화
+        self._cache = {k: np.load(os.path.join(cache_dir, f'{k}.npy'), mmap_mode='r')
+                       for k in _CACHE_KEYS}
+        if verbose:
+            print(f'[{split}] 캐시 저장 완료: {cache_dir}')
+
     def __len__(self) -> int:
         return len(self.samples)
 
     def __getitem__(self, idx: int) -> dict:
+        csv_path, ego_id, window_frames = self.samples[idx]
+        t = window_frames[-1]
+
+        # ── 캐시가 있으면 조립 텐서를 memmap에서 슬라이스만 (CPU 부하 최소) ──
+        if self._cache is not None:
+            c = self._cache
+            out = {k: torch.from_numpy(np.array(c[k][idx]))
+                   for k in _CACHE_KEYS if k != 'y'}
+            out['y']    = torch.tensor(int(c['y'][idx]), dtype=torch.long)
+            out['meta'] = {
+                'object_id':     ego_id,
+                'frame':         t,
+                'csv_path':      os.path.basename(csv_path),
+                'n_neighbors':   int(c['nbr_mask'][idx].sum()),
+                'window_frames': window_frames,
+            }
+            return out
+
+        # 캐시 미사용/미생성 시: 즉석 조립 후 torch 변환
+        s = self._assemble_np(idx)
+        out = {k: torch.from_numpy(s[k]) for k in _CACHE_KEYS if k != 'y'}
+        out['y']    = torch.tensor(int(s['y']), dtype=torch.long)
+        out['meta'] = s['meta']
+        return out
+
+    def _assemble_np(self, idx: int) -> dict:
+        """샘플 하나의 조립 텐서를 numpy로 계산 (KD-tree 이웃 탐색 + 피처 구성).
+        캐시 생성 및 캐시 미사용 경로에서 호출된다."""
         csv_path, ego_id, window_frames = self.samples[idx]
         fd = _get_file_data(csv_path)
         t  = window_frames[-1]
@@ -321,14 +435,14 @@ class TemporalVehicleDataset(Dataset):
         y = fd.frame_label[t][ego_id]
 
         return {
-            'node_seq':       torch.from_numpy(node_seq),
-            'nbr_node_seqs':  torch.from_numpy(nbr_node_seqs),
-            'edge_seqs':      torch.from_numpy(edge_seqs),
-            'nbr_mask':       torch.from_numpy(nbr_mask),
-            'nbr2_node_seqs': torch.from_numpy(nbr2_node_seqs),
-            'nbr2_edge_seqs': torch.from_numpy(nbr2_edge_seqs),
-            'nbr2_mask':      torch.from_numpy(nbr2_mask),
-            'y':              torch.tensor(y, dtype=torch.long),
+            'node_seq':       node_seq,
+            'nbr_node_seqs':  nbr_node_seqs,
+            'edge_seqs':      edge_seqs,
+            'nbr_mask':       nbr_mask,
+            'nbr2_node_seqs': nbr2_node_seqs,
+            'nbr2_edge_seqs': nbr2_edge_seqs,
+            'nbr2_mask':      nbr2_mask,
+            'y':              np.int64(y),
             'meta': {
                 'object_id':     ego_id,
                 'frame':         t,
@@ -367,10 +481,12 @@ def build_dataloaders(
     num_workers: int   = 4,
     neighbor_mode: str = 'hybrid',
     verbose: bool      = True,
+    use_cache: bool    = True,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     kwargs = dict(T=T, radius=radius, K_max=K_max, K_max2=K_max2,
                   train_ratio=train_ratio, val_ratio=val_ratio,
-                  neighbor_mode=neighbor_mode, verbose=verbose)
+                  neighbor_mode=neighbor_mode, verbose=verbose,
+                  use_cache=use_cache)
     train_ds = TemporalVehicleDataset(csv_files, split='train', **kwargs)
     val_ds   = TemporalVehicleDataset(csv_files, split='val',   **kwargs)
     test_ds  = TemporalVehicleDataset(csv_files, split='test',  **kwargs)
@@ -380,6 +496,7 @@ def build_dataloaders(
         collate_fn=_collate_fn,
         num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=(num_workers > 0),  # 에포크마다 워커 재생성 방지
     )
     train_loader = DataLoader(train_ds, shuffle=True,  **loader_kwargs)
     val_loader   = DataLoader(val_ds,   shuffle=False, **loader_kwargs)
