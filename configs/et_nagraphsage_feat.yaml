@@ -42,6 +42,6 @@ loss:
   label_smoothing:    0.0
 
 seed:       42
-save_dir:   /home/oem/TNA_research/checkpoints/
-log_dir:    /home/oem/TNA_research/logs/
+save_dir:   ./checkpoints/
+log_dir:    ./logs/
 experiment: et_nagraphsage_feat_T10

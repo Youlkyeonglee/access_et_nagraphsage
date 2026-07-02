@@ -7,6 +7,8 @@ checkpoints/
 logs/
 cache/
 runs/
+# 실험 결과 자동 집계 (서버 로컬, 충돌 방지 — 공유는 results/local.md·school.md로 수기 정리)
+results/summary.csv
 
 # 데이터 (두 서버에 이미 동일하게 존재)
 data/

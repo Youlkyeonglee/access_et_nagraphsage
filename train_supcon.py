@@ -18,6 +18,7 @@ import argparse
 import glob
 import os
 import random
+import sys
 import time
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from torch.optim.lr_scheduler import OneCycleLR, CosineAnnealingLR
 from torch.cuda.amp import autocast, GradScaler
 
 from modules.data_manager import build_dataloaders
+from modules.run_io import Tee, save_results
 from models.et_nagraphsage_supcon import ETNAGraphSAGESupCon
 
 
@@ -230,6 +232,10 @@ def train(cfg: dict):
     with open(save_dir / 'config.yaml', 'w') as f:
         yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False)
 
+    # 콘솔 출력을 train.log에도 동시 기록
+    tee = Tee(save_dir / 'train.log')
+    sys.stdout = tee
+
     best_val_acc = 0.0
     best_ckpt    = save_dir / 'best.pt'
     patience     = cfg['train'].get('patience', 30)
@@ -309,6 +315,26 @@ def train(cfg: dict):
     for lbl, acc in zip(['Stop', 'LaneChange', 'Normal'], class_accs):
         print(f"  {lbl}: {acc:.4f}")
     print(f"{'─'*60}")
+
+    # 결과 기록 (results.json + results/summary.csv)
+    save_results(save_dir, {
+        'timestamp':       time.strftime('%Y-%m-%d %H:%M:%S'),
+        'experiment':      exp_name,
+        'script':          'train_supcon.py',
+        'test_acc':        round(test_acc, 4),
+        'acc_stop':        round(class_accs[0], 4),
+        'acc_lanechange':  round(class_accs[1], 4),
+        'acc_normal':      round(class_accs[2], 4),
+        'best_val_acc':    round(best_val_acc, 4),
+        'encoder':         m.get('encoder_type'),
+        'T':               cfg['graph']['T'],
+        'hidden_dim':      m.get('hidden_dim'),
+        'temporal_target': m.get('temporal_target'),
+        'neighbor_mode':   cfg['graph'].get('neighbor_mode'),
+        'num_epochs':      cfg['train']['num_epochs'],
+        'seed':            cfg.get('seed'),
+    })
+    tee.close()
 
     return test_acc
 

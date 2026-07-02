@@ -1,6 +1,9 @@
 # 가상환경
 conda activate tna_research
 
+
+# 데이터 경로: /home/oem/yklee/data
+
 # userEmail
 yklee00815@gmail.com
 
