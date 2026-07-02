@@ -182,6 +182,7 @@ def train(cfg: dict):
         val_ratio=cfg['data']['val_ratio'],
         num_workers=cfg['train']['num_workers'],
         neighbor_mode=cfg['graph'].get('neighbor_mode', 'hybrid'),
+        use_cache=cfg['train'].get('use_cache', True),
     )
 
     # ── 모델 ────────────────────────────────────────────────────────────────
@@ -370,6 +371,7 @@ def parse_args():
     parser.add_argument('--radius',            type=float, default=None)
     parser.add_argument('--K_max',             type=int,   default=None)
     parser.add_argument('--K_max2',            type=int,   default=None)
+    parser.add_argument('--no_cache',          action='store_true', default=False)
     return parser.parse_args()
 
 
@@ -400,6 +402,7 @@ if __name__ == '__main__':
     if args.loss_type        is not None: cfg['loss']['type']                   = args.loss_type
     if args.temporal_target  is not None: cfg['model']['temporal_target']       = args.temporal_target
     if args.neighbor_mode    is not None: cfg['graph']['neighbor_mode']         = args.neighbor_mode
+    if args.no_cache                    : cfg['train']['use_cache']             = False
     if args.radius           is not None: cfg['graph']['radius']                = args.radius
     if args.K_max            is not None: cfg['graph']['K_max']                 = args.K_max
     if args.K_max2           is not None: cfg['graph']['K_max2']                = args.K_max2

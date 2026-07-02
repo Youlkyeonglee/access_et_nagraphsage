@@ -49,11 +49,19 @@ EDGE_DIM   = 5
 CACHE_ROOT = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cache')
 
-# 캐시로 저장/로드하는 텐서 키와 dtype
+# 조립 샘플의 전체 텐서 키 (모델 입력 / 비캐시 경로)
 _CACHE_KEYS = [
     'node_seq', 'nbr_node_seqs', 'edge_seqs', 'nbr_mask',
     'nbr2_node_seqs', 'nbr2_edge_seqs', 'nbr2_mask', 'y',
 ]
+
+# 디스크 효율화: 엣지(edge_seqs, nbr2_edge_seqs)는 노드에서 파생되므로 저장하지 않고
+# 로드 시 재계산한다. 저장 텐서는 float16(y만 int64). fp16(2×)+엣지제거(~1.8×) = ~3.6× 절감.
+_CACHE_KEYS_STORED = [
+    'node_seq', 'nbr_node_seqs', 'nbr_mask',
+    'nbr2_node_seqs', 'nbr2_mask', 'y',
+]
+_CACHE_FMT = 'f16ne'   # float16 + no-edge. 캐시 키에 포함해 기존 fp32 캐시와 분리.
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -173,6 +181,38 @@ def _compute_edge_feat(src_node: np.ndarray, dst_node: np.ndarray) -> np.ndarray
     return np.array([rel_speed, rel_accel, rel_dx, rel_dz, dist], dtype=np.float32)
 
 
+def _recompute_edges(node_seq: np.ndarray, nbr_node_seqs: np.ndarray,
+                     nbr2_node_seqs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """저장된 노드 시퀀스에서 엣지 피처를 벡터화 재계산 (fp32).
+    정의는 _compute_edge_feat와 동일. 결측(all-zero) 이웃 슬롯은 0으로 유지한다."""
+    ns  = node_seq.astype(np.float32)          # [T,6]
+    nbr = nbr_node_seqs.astype(np.float32)      # [K,T,6]
+
+    def _edges(src, dst):                       # [...,6],[...,6] → [...,5]
+        rs = dst[..., 2] - src[..., 2]
+        ra = dst[..., 5] - src[..., 5]
+        rx = dst[..., 3] - src[..., 3]
+        rz = dst[..., 4] - src[..., 4]
+        di = np.sqrt((dst[..., 0]-src[..., 0])**2 + (dst[..., 1]-src[..., 1])**2)
+        return np.stack([rs, ra, rx, rz, di], axis=-1).astype(np.float32)
+
+    # 1-hop: ego(broadcast) → 이웃
+    src1 = np.broadcast_to(ns[None], nbr.shape)                 # [K,T,6]
+    edge_seqs = _edges(src1, nbr)                                # [K,T,5]
+    edge_seqs *= (np.abs(nbr).sum(-1, keepdims=True) > 0)        # 결측 0 유지
+
+    # 2-hop: 1-hop 이웃(broadcast) → 2-hop 이웃
+    if nbr2_node_seqs is not None and nbr2_node_seqs.size:
+        nbr2 = nbr2_node_seqs.astype(np.float32)                # [K,K2,T,6]
+        src2 = np.broadcast_to(nbr[:, None], nbr2.shape)        # [K,K2,T,6]
+        nbr2_edge_seqs = _edges(src2, nbr2)                      # [K,K2,T,5]
+        nbr2_edge_seqs *= (np.abs(nbr2).sum(-1, keepdims=True) > 0)
+    else:
+        nbr2_edge_seqs = np.zeros((nbr.shape[0], 0, nbr.shape[1], EDGE_DIM),
+                                  dtype=np.float32)
+    return edge_seqs, nbr2_edge_seqs
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Dataset
 # ─────────────────────────────────────────────────────────────────────────────
@@ -231,9 +271,9 @@ class TemporalVehicleDataset(Dataset):
             with open(os.path.join(cache_dir, 'samples.pkl'), 'rb') as f:
                 self.samples = pickle.load(f)
             self._cache = {k: np.load(os.path.join(cache_dir, f'{k}.npy'), mmap_mode='r')
-                           for k in _CACHE_KEYS}
+                           for k in _CACHE_KEYS_STORED}
             if verbose:
-                print(f'[{split}] 캐시 로드: {len(self.samples):,}개  ({cache_dir})')
+                print(f'[{split}] 캐시 로드(fp16, 엣지 파생): {len(self.samples):,}개  ({cache_dir})')
             return
 
         # ── 캐시 없음: 기존 방식으로 샘플 인덱스 빌드 ─────────────────────────
@@ -259,19 +299,19 @@ class TemporalVehicleDataset(Dataset):
             st = os.stat(p)
             h.update(f'{os.path.basename(p)}:{st.st_size}:{int(st.st_mtime)}'.encode())
         sig = (f'T{self.T}_r{self.radius}_K{self.K}-{self.K2}'
-               f'_{self.neighbor_mode}_tr{self.train_ratio}_vr{self.val_ratio}')
+               f'_{self.neighbor_mode}_{_CACHE_FMT}'
+               f'_tr{self.train_ratio}_vr{self.val_ratio}')
         h.update(sig.encode())
         return f'{self.split}_{sig}_{h.hexdigest()[:10]}'
 
     def _cache_shapes(self, N: int) -> Dict[str, Tuple]:
+        """저장 텐서(_CACHE_KEYS_STORED)의 shape. 엣지는 저장 안 함(파생계산)."""
         K, K2, T = self.K, self.K2, self.T
         return {
             'node_seq':       (N, T, NODE_DIM),
             'nbr_node_seqs':  (N, K, T, NODE_DIM),
-            'edge_seqs':      (N, K, T, EDGE_DIM),
             'nbr_mask':       (N, K),
             'nbr2_node_seqs': (N, K, self.K2, T, NODE_DIM),
-            'nbr2_edge_seqs': (N, K, self.K2, T, EDGE_DIM),
             'nbr2_mask':      (N, K, self.K2),
             'y':              (N,),
         }
@@ -281,8 +321,8 @@ class TemporalVehicleDataset(Dataset):
         N = len(self.samples)
         shapes = self._cache_shapes(N)
         mm = {}
-        for k in _CACHE_KEYS:
-            dtype = np.int64 if k == 'y' else np.float32
+        for k in _CACHE_KEYS_STORED:
+            dtype = np.int64 if k == 'y' else np.float16   # 부동소수 텐서는 fp16 저장
             mm[k] = np.lib.format.open_memmap(
                 os.path.join(cache_dir, f'{k}.npy'), mode='w+',
                 dtype=dtype, shape=shapes[k])
@@ -290,18 +330,18 @@ class TemporalVehicleDataset(Dataset):
         it = tqdm(range(N), desc=f'[{split}] 캐시 생성') if verbose else range(N)
         for i in it:
             s = self._assemble_np(i)
-            for k in _CACHE_KEYS:
-                mm[k][i] = s[k]
-        for k in _CACHE_KEYS:
+            for k in _CACHE_KEYS_STORED:
+                mm[k][i] = s[k]                              # float16으로 자동 캐스팅
+        for k in _CACHE_KEYS_STORED:
             mm[k].flush()
 
         with open(os.path.join(cache_dir, 'samples.pkl'), 'wb') as f:
             pickle.dump(self.samples, f)
         open(os.path.join(cache_dir, '.done'), 'w').close()
 
-        # 이후 __getitem__은 memmap 슬라이스만 → CPU 부하 최소화
+        # 이후 __getitem__은 memmap 슬라이스 + 엣지 재계산만 → CPU 부하 최소화
         self._cache = {k: np.load(os.path.join(cache_dir, f'{k}.npy'), mmap_mode='r')
-                       for k in _CACHE_KEYS}
+                       for k in _CACHE_KEYS_STORED}
         if verbose:
             print(f'[{split}] 캐시 저장 완료: {cache_dir}')
 
@@ -312,18 +352,32 @@ class TemporalVehicleDataset(Dataset):
         csv_path, ego_id, window_frames = self.samples[idx]
         t = window_frames[-1]
 
-        # ── 캐시가 있으면 조립 텐서를 memmap에서 슬라이스만 (CPU 부하 최소) ──
+        # ── 캐시가 있으면 memmap 슬라이스(fp16→fp32) + 엣지 재계산 ──
         if self._cache is not None:
             c = self._cache
-            out = {k: torch.from_numpy(np.array(c[k][idx]))
-                   for k in _CACHE_KEYS if k != 'y'}
-            out['y']    = torch.tensor(int(c['y'][idx]), dtype=torch.long)
-            out['meta'] = {
-                'object_id':     ego_id,
-                'frame':         t,
-                'csv_path':      os.path.basename(csv_path),
-                'n_neighbors':   int(c['nbr_mask'][idx].sum()),
-                'window_frames': window_frames,
+            node_seq       = np.asarray(c['node_seq'][idx],       dtype=np.float32)
+            nbr_node_seqs  = np.asarray(c['nbr_node_seqs'][idx],  dtype=np.float32)
+            nbr_mask       = np.asarray(c['nbr_mask'][idx],       dtype=np.float32)
+            nbr2_node_seqs = np.asarray(c['nbr2_node_seqs'][idx], dtype=np.float32)
+            nbr2_mask      = np.asarray(c['nbr2_mask'][idx],      dtype=np.float32)
+            edge_seqs, nbr2_edge_seqs = _recompute_edges(
+                node_seq, nbr_node_seqs, nbr2_node_seqs)
+            out = {
+                'node_seq':       torch.from_numpy(node_seq),
+                'nbr_node_seqs':  torch.from_numpy(nbr_node_seqs),
+                'edge_seqs':      torch.from_numpy(edge_seqs),
+                'nbr_mask':       torch.from_numpy(nbr_mask),
+                'nbr2_node_seqs': torch.from_numpy(nbr2_node_seqs),
+                'nbr2_edge_seqs': torch.from_numpy(nbr2_edge_seqs),
+                'nbr2_mask':      torch.from_numpy(nbr2_mask),
+                'y':              torch.tensor(int(c['y'][idx]), dtype=torch.long),
+                'meta': {
+                    'object_id':     ego_id,
+                    'frame':         t,
+                    'csv_path':      os.path.basename(csv_path),
+                    'n_neighbors':   int(nbr_mask.sum()),
+                    'window_frames': window_frames,
+                },
             }
             return out
 

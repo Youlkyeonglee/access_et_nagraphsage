@@ -1139,7 +1139,7 @@ edge_feat = [
         <tr><td><a href="#" data-goto="ablation-a"><b>A</b></a></td><td>Temporal Encoder</td><td>GRU / LSTM / Mamba / Transformer</td><td><span class="badge b-green">거의 완료</span></td><td>GRU 최고 (93.85%)</td></tr>
         <tr><td><a href="#" data-goto="ablation-b"><b>B</b></a></td><td>시퀀스 길이 T</td><td>1 / 5 / 10 / 15</td><td><span class="badge b-green">거의 완료</span></td><td>T=10 최적</td></tr>
         <tr style="background:#fff7ed"><td><a href="#" data-goto="ablation-c"><b>C ★</b></a></td><td>시계열 대상</td><td>node / edge / node+edge</td><td><span class="badge b-red">필수·진행예정</span></td><td>node+edge만 완료</td></tr>
-        <tr><td><a href="#" data-goto="ablation-d"><b>D</b></a></td><td>공간 구조</td><td>1-hop / 2-hop / K1,K2 / d_e</td><td><span class="badge b-green">주요 완료</span></td><td>K1=10 최고 (94.33%)</td></tr>
+        <tr style="background:#bbf7d0"><td><a href="#" data-goto="ablation-d"><b>D</b></a></td><td>공간 구조</td><td>1-hop / 2-hop / K1,K2 / d_e / 채널폭</td><td><span class="badge b-green">🏆 유의미</span></td><td>K1=10 500ep <b>94.73±0.31%</b> (4-seed, p=0.020)</td></tr>
         <tr style="background:#fff7ed"><td><a href="#" data-goto="ablation-e"><b>E ★</b></a></td><td>이웃 선택 정책</td><td>count / radius / hybrid</td><td><span class="badge b-red">필수·진행예정</span></td><td>hybrid만 완료</td></tr>
       </tbody>
     </table>
@@ -1207,12 +1207,12 @@ edge_feat = [
     <table>
       <thead><tr><th>옵션</th><th>node 시계열</th><th>edge 시계열</th><th>의미</th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td><b>node-only</b></td><td>✓ (T프레임)</td><td>✗ (마지막 프레임만)</td><td>엣지 시계열 제거 — 엣지 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (C-node)</span></td></tr>
-        <tr><td><b>edge-only</b></td><td>✗ (마지막 프레임만)</td><td>✓ (T프레임)</td><td>노드 시계열 제거 — 노드 시계열 기여 격리</td><td><span class="badge b-red">진행예정 (C-edge)</span></td></tr>
-        <tr style="background:#f0fdf4"><td><b>node+edge (제안)</b></td><td>✓</td><td>✓</td><td>둘 다 시계열 — 제안 방법</td><td><span class="badge b-green">완료 (기준 94.15%)</span></td></tr>
+        <tr><td><b>node-only</b></td><td>✓ (T프레임)</td><td>✗ (마지막 프레임만)</td><td>엣지 시계열 제거 — 엣지 시계열 기여 격리</td><td><span class="badge b-amber">학교 학습중 (C-node, 500ep)</span></td></tr>
+        <tr><td><b>edge-only</b></td><td>✗ (마지막 프레임만)</td><td>✓ (T프레임)</td><td>노드 시계열 제거 — 노드 시계열 기여 격리</td><td><span class="badge b-amber">학교 학습중 (C-edge, 500ep)</span></td></tr>
+        <tr style="background:#dcfce7"><td><b>node+edge (제안)</b></td><td>✓</td><td>✓</td><td>둘 다 시계열 — 제안 방법</td><td><span class="badge b-green">완료 (C-both, 500ep) → <b>94.36%</b></span><br><span style="font-size:11px;color:var(--mute)">150ep 94.15% → 500ep 94.36%</span></td></tr>
       </tbody>
     </table>
-    <div class="callout warn" style="margin-top:12px;"><span class="ci">🔬</span><div><b>기대 결과:</b> node-only·edge-only <b>둘 다 node+edge(94.15%)보다 낮아야</b> "노드·엣지 시계열이 모두 필요하다"가 증명된다. 특히 <b>node-only가 크게 낮으면</b> = 엣지 시계열이 핵심이라는 본 연구의 주장이 강해진다.</div></div>
+    <div class="callout warn" style="margin-top:12px;"><span class="ci">🔬</span><div><b>기대 결과:</b> node-only·edge-only <b>둘 다 node+edge(C-both=94.36%)보다 낮아야</b> "노드·엣지 시계열이 모두 필요하다"가 증명된다. 특히 <b>node-only가 크게 낮으면</b> = 엣지 시계열이 핵심이라는 본 연구의 주장이 강해진다. <b>세 변형 모두 base(K6/4) 500ep 동일 조건.</b> <b>C-both(제안) 완료: 94.36%</b>(Stop 99.84 / LC 81.92 / Normal 94.79, Best Val 0.9484). C-node/C-edge는 학교 진행 예정 — 2026-07-02.</div></div>
 
     <h3 style="margin-top:20px;">구현 방식</h3>
     <p style="font-size:13px;color:var(--mute);line-height:1.8;">
@@ -1242,13 +1242,15 @@ edge_feat = [
 
     <h3 style="margin-top:20px;">D-1. hop / 이웃 수 (receptive field)</h3>
     <table>
-      <thead><tr><th>옵션</th><th>Test Acc</th><th>상태</th></tr></thead>
+      <thead><tr><th>옵션</th><th>150ep</th><th><b>500ep</b></th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td>1-hop</td><td>93.85%</td><td><span class="badge b-green">완료</span></td></tr>
-        <tr><td>2-hop (K1=6, K2=4)</td><td>94.15%</td><td><span class="badge b-green">완료</span></td></tr>
-        <tr style="background:#f0fdf4"><td><b>2-hop (K1=10, K2=6)</b></td><td><b>94.33%</b></td><td><span class="badge b-green">최고</span></td></tr>
+        <tr><td>1-hop</td><td>93.85%</td><td>—</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td>2-hop (K1=6, K2=4)</td><td>94.15%</td><td>—</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr style="background:#bbf7d0"><td><b>2-hop (K1=10, K2=6)</b> 🏆</td><td>94.33%</td><td><b>95.10%</b></td><td><span class="badge b-green">최고·NAGraphSAGE 돌파</span></td></tr>
       </tbody>
     </table>
+    <div class="callout tip" style="margin-top:10px;"><span class="ci">🎉</span><div><b>K1=10 500ep 4-seed = 94.73±0.31%</b> (NAGraphSAGE avg 94.07±0.28 대비 +0.66%p, <b>p=0.020 유의미</b>; best 94.54 대비 +0.19%p). best-seed 95.10%. LaneChange avg <b>83.11±1.67</b>(seed 편차 큼). <b>학습 예산이 결정적</b>: 동일 K1=10이 150ep 94.33% → 500ep avg 94.73%. receptive field 확대 + 충분한 학습이 핵심.</div></div>
+    <div class="callout warn" style="margin-top:8px;"><span class="ci">🔬</span><div><b>SupCon 상호작용:</b> 500ep 충분학습에서는 K1=10 <b>단독(95.10%)</b>이 K1=10+SupCon(94.63%)보다 높음 — SupCon은 짧은 학습(150ep)에서만 도움되고 긴 학습에선 역효과. 최종 모델은 <b>K1=10 단독 500ep</b>.</div></div>
 
     <h3 style="margin-top:18px;">D-2. 엣지 인코더 차원 d_e</h3>
     <table>
@@ -1266,15 +1268,15 @@ edge_feat = [
     <table>
       <thead><tr><th>실험 ID</th><th>hidden_dim</th><th>파라미터 수</th><th>NAGraphSAGE 대비</th><th>우선</th><th>상태</th></tr></thead>
       <tbody>
-        <tr style="background:#f0fdf4"><td><code>D-h128</code> (기준)</td><td>128</td><td>172,549</td><td>0.14× (7배 작음)</td><td>기준</td><td><span class="badge b-green">완료 94.33%</span></td></tr>
-        <tr><td><code>D-h192</code></td><td>192</td><td>367,493</td><td>0.29×</td><td>★★</td><td><span class="badge b-red">대기</span></td></tr>
-        <tr><td><code>D-h256</code></td><td>256</td><td>636,165</td><td>0.51×</td><td>★★</td><td><span class="badge b-red">대기</span></td></tr>
-        <tr><td><code>D-h384</code></td><td>384</td><td>1,394,693</td><td>1.12× (동급)</td><td>★★</td><td><span class="badge b-red">대기</span></td></tr>
+        <tr style="background:#f0fdf4"><td><code>D-h128</code> (기준, base K6/4)</td><td>128</td><td>172,549</td><td>0.14× (7배 작음)</td><td>기준</td><td><span class="badge b-gray">base 150ep 94.15%</span></td></tr>
+        <tr><td><code>D-h192</code></td><td>192</td><td>367,493</td><td>0.29×</td><td>★★</td><td><span class="badge b-red">학교 대기</span></td></tr>
+        <tr><td><code>D-h256</code></td><td>256</td><td>636,165</td><td>0.51×</td><td>★★</td><td><span class="badge b-red">학교 대기</span></td></tr>
+        <tr><td><code>D-h384</code></td><td>384</td><td>1,394,693</td><td>1.12× (동급)</td><td>★★</td><td><span class="badge b-red">학교 대기</span></td></tr>
       </tbody>
     </table>
-    <div class="callout warn" style="margin-top:10px;"><span class="ci">🔬</span><div><b>가설:</b> 우리 모델은 용량 부족으로 표현력 한계일 수 있다. hidden_dim을 키워 NAGraphSAGE 용량(1.25M)에 근접시키면 성능이 오를 가능성. 단, 과적합 주의(dropout 0.5·wd·label smoothing로 완화). <b>최고 구조(K1=10+SupCon)에 hidden_dim 확대를 결합</b>하는 것이 목표.</div></div>
+    <div class="callout warn" style="margin-top:10px;"><span class="ci">🔬</span><div><b>가설:</b> 용량 부족이 표현력 한계일 수 있다. hidden_dim을 키워 NAGraphSAGE 용량(1.25M)에 근접시키면 추가 향상 가능. <b>참고:</b> K1=10 500ep이 이미 95.10%로 돌파했으므로, 채널폭은 <b>그 위에서 추가 여력이 있는지</b> 확인하는 실험. 최종 조합 후보는 <b>K1=10 + hidden_dim 확대 (500ep)</b>. 학교 서버 진행 예정.</div></div>
 
-    <div class="callout info" style="margin-top:12px;"><span class="ci">💡</span><div><b>현재까지 결론:</b> receptive field 확대(1-hop→2-hop→K1=10)가 핵심 효과. d_e는 효과 없음. <b>hidden_dim(채널 폭)은 미탐색 — 용량 7배 격차라 유력한 향상 축.</b></div></div>
+    <div class="callout info" style="margin-top:12px;"><span class="ci">💡</span><div><b>현재까지 결론:</b> receptive field 확대(1-hop→2-hop→K1=10) + 충분한 학습(500ep)으로 <b>K1=10 500ep 4-seed = 94.73±0.31%, NAGraphSAGE 대비 통계적으로 유의미(p=0.020)</b>. d_e 확대는 효과 없음. 채널폭(hidden_dim)은 학교 서버에서 추가 여력 검증 중. <b>최종 후보 모델: K1=10 단독 500ep.</b> LaneChange(avg 83.11%)는 IWIS2026 lane-relative로 개선 시도.</div></div>
 
     <h3 style="margin-top:20px;">실행 방법 (학교 서버)</h3>
     <div style="background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 18px;font-size:12px;font-family:monospace;line-height:1.75;">
@@ -1651,15 +1653,65 @@ K를 미리 계산할 수 있는 이유:
   HiPPO 덕분에 A, B 고정 → K 미리 계산 → 합성곱으로 한 번에 처리
   순환: T번 순차 계산 / S4: FFT로 O(T log T) 병렬 계산</pre>
 
-    <!-- S4 → Mamba -->
-    <h3 style="margin-top:32px;"><span class="ic">⚡</span> 5. S4 → Mamba 혁신</h3>
+    <!-- Latent Space -->
+    <h3 style="margin-top:32px;"><span class="ic">🌌</span> Latent Space (잠재 공간)</h3>
+    <div class="callout info">
+      <span class="ci">💡</span>
+      <div><b>한 문장 정의:</b> 원본 데이터를 압축해서 표현하는, 숫자 벡터들의 추상적인 공간. $x(t)\in\mathbb{R}^N$은 N차원 latent space 상의 한 점.</div>
+    </div>
     <pre>
-S4   : A, B, C → 상수 (입력 무관) — HiPPO A를 빠르게 연산하는 방법
+u(t) = 원본 데이터 (눈에 보임)
+     ↓ Mamba/HiPPO
+x(T) = latent space 상의 한 점 (압축된 표현, 눈에 안 보임)
+     ↓ C (분류 헤드)
+y = 해석 가능한 출력
 
-Mamba (Selective SSM):
-  B_t = Linear_B(x_t)           ← 입력 의존 "쓰기"
-  C_t = Linear_C(x_t)           ← 입력 의존 "읽기"
-  Δ_t = softplus(Linear_Δ(x_t)) ← 입력 의존 시간 스케일
+핵심 성질: "가까운 점 = 비슷한 의미"
+  모델이 잘 학습되면 비슷한 상태의 데이터가 latent space 안에서 가까운 위치에 모임
+  → 연구 검증: 학습 후 x(T)를 t-SNE/UMAP으로 2D 투영해 Stop/Lane Change/Normal 군집 확인</pre>
+
+    <!-- A 행렬의 의미 -->
+    <h3 style="margin-top:32px;"><span class="ic">🔑</span> A 행렬이 왜 "중요한 존재"인가</h3>
+    <div class="callout tip">
+      <span class="ci">✓</span>
+      <div><b>A는 "과거를 얼마나, 어떻게 기억할지"를 결정하는 규칙 그 자체.</b> x(t)가 기억의 내용이라면, A는 그 기억이 시간이 지나며 어떻게 변해가는지를 지배하는 물리 법칙이다.</div>
+    </div>
+    <pre>
+x_k = Ā·x_{k-1} + B̄·u_k
+
+u가 아무리 좋아도 A가 나쁘면 기억이 망가진다.
+  A가 나쁘면 (랜덤): 좋은 입력이 들어와도 금방 잊거나 뒤섞임
+  A가 좋으면 (HiPPO): 같은 입력이라도 의미 있게 오래 보존됨
+
+→ A는 "무엇을 기억할지"가 아니라 "기억이라는 행위 자체가 가능한지"를 결정한다.
+  HiPPO는 A를 랜덤에 맡기지 않고 수학으로 설계해서, 기억이라는 행위 자체를 구조적으로 보장했다.
+
+비유: u=매일 쓰는 일기, x=지금까지의 기억, A=뇌가 기억을 압축·유지하는 방식 그 자체.
+      뇌 구조(A)가 망가지면 아무리 좋은 일기(u)를 써도 기억(x)이 남지 않는다.</pre>
+
+    <!-- Mamba: S4의 문제부터 -->
+    <h3 style="margin-top:32px;"><span class="ic">⚡</span> 5. Mamba — S4의 문제부터 시작</h3>
+    <div class="callout err">
+      <span class="ci">⚠️</span>
+      <div><b>S4의 근본 문제:</b> A, B, C가 모든 시점에서 항상 같은 값이라 커널 K를 미리 계산할 수 있었다 (= 빠른 이유). 하지만 이는 곧 <b>어떤 입력이 들어와도 처리 방식이 동일</b>하다는 뜻 → 선택적 기억이 불가능하다.</div>
+    </div>
+    <pre>
+1000프레임 중 999프레임 정상주행, 1프레임만 급차선변경
+  → S4는 모든 프레임을 동일한 비율로 처리
+  → 결정적인 1프레임의 신호가 999프레임의 잡음에 묻힘
+
+언어 모델 관점: "그 사과"가 뭘 가리키는지 알려면 앞 내용을 선택적으로 다시 참조해야 하는데,
+              S4는 이런 내용 기반 참조가 불가능 (고정된 A로만 흘려보냄)
+
+→ HiPPO가 보장한 건 "장기 기억"이지 "무엇이 중요한지 선택하는 것"은 아니었다.</pre>
+
+    <h4 style="margin-top:20px;font-size:14px;">Mamba의 해결 — Selective SSM</h4>
+    <pre>
+S4   : A, B, C → 상수 (입력 무관)
+
+Mamba: B_t = Linear_B(u_t)           ← 입력 의존 "쓰기"
+       C_t = Linear_C(u_t)           ← 입력 의존 "읽기"
+       Δ_t = softplus(Linear_Δ(u_t)) ← 입력 의존 시간 스케일
 
   핵심: Δ, B, C = f(u_t) → 중요한 순간에 강하게 기억, 덜 중요하면 흘려보냄
 
@@ -1668,6 +1720,34 @@ Mamba Block:
   h_t = exp(Δ_t·A)·h_{t-1} + B̄_t·u_t   ← 선택적 상태 업데이트
   y_t = C_t · h_t
   out = y_t ⊙ SiLU(u W_gate)             ← 게이팅</pre>
+
+    <!-- 전체 로드맵 -->
+    <h3 style="margin-top:28px;"><span class="ic">🗺️</span> SSM → HiPPO → S4 → Mamba 전체 정리</h3>
+    <table>
+      <thead><tr><th>단계</th><th>무엇을 개선했나</th></tr></thead>
+      <tbody>
+        <tr><td>SSM</td><td>과거를 압축해서 현재를 판단하는 구조를 만듦</td></tr>
+        <tr><td>HiPPO</td><td>A를 수학적으로 설계해서 장기 기억을 보장</td></tr>
+        <tr><td>S4</td><td>커널 K로 계산을 빠르게 (병렬화)</td></tr>
+        <tr><td><b>Mamba</b></td><td><b>B, C, Δ를 입력에 따라 바꿔서 무엇을 기억할지 선택</b></td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip" style="margin-top:12px;">
+      <span class="ci">✓</span>
+      <div>SSM → HiPPO → S4는 "얼마나 오래, 얼마나 빠르게 기억할 것인가"를 다뤘고, Mamba는 여기에 "<b>무엇을</b> 기억할 것인가"라는 선택의 축을 하나 더 추가했다.<br><br>
+      장기 기억 여부 → HiPPO / 계산 속도 → S4 / 무엇을 기억할지 선택 → Mamba<br>
+      세 가지는 서로 다른 축의 문제였고, Mamba는 앞의 두 가지(장기 기억+속도)를 유지하면서 세 번째 축(선택성)만 추가했다.</div>
+    </div>
+
+    <!-- 숫자 예시 -->
+    <h4 style="margin-top:24px;font-size:14px;">Mamba 계산 예시 (N=1, A=-1)</h4>
+    <table>
+      <thead><tr><th>상황</th><th>Δ_t</th><th>Ā_t = e^(Δ·A)</th><th>의미</th></tr></thead>
+      <tbody>
+        <tr><td>정상주행 (u=0.1)</td><td>≈0.1 (작음)</td><td>0.905 (큼)</td><td>과거 상태 유지</td></tr>
+        <tr><td>차선변경 시작 (u=2.0)</td><td>≈1.5 (큼)</td><td>0.223 (작음)</td><td>과거를 밀어내고 현재 강하게 반영</td></tr>
+      </tbody>
+    </table>
 
     <!-- 비교표 -->
     <h3 style="margin-top:24px;"><span class="ic">⚖️</span> Mamba vs GRU vs Transformer (교통 시계열 관점)</h3>
@@ -1684,18 +1764,31 @@ Mamba Block:
 
     <!-- 연구 연결 -->
     <h3 style="margin-top:24px;"><span class="ic">🚗</span> 연구와의 연결 (ET-NAGraphSAGE)</h3>
+    <div class="callout info" style="margin-bottom:10px;">
+      <span class="ci">📋</span>
+      <div><b>실제 피처 (코드 확인 완료):</b> 노드 u(t) 6D = [pos_x, pos_z, speed, dir_x, dir_z, accel] / 엣지 u(t) 3D (EdgeDim3 기본) = [rel_speed, rel_accel, distance]</div>
+    </div>
     <table>
-      <thead><tr><th>SSM</th><th>ET-NAGraphSAGE</th></tr></thead>
+      <thead><tr><th>요소</th><th>노드 Temporal Encoder</th><th>엣지 Temporal Encoder (핵심 Novelty)</th></tr></thead>
       <tbody>
-        <tr><td>u(t)</td><td>T프레임 노드/엣지 피처 (속도, 가속도, 상대거리 등)</td></tr>
-        <tr><td>x(t)</td><td>과거 T프레임이 압축된 차량 맥락 벡터</td></tr>
-        <tr><td>y(t)</td><td>현재 차량 상태 (Stop / Lane Change / Normal Driving)</td></tr>
-        <tr><td>A, B</td><td>Mamba / GRU / LSTM 가중치 (Ablation A로 결정)</td></tr>
+        <tr><td>u(t)</td><td>t번째 프레임 차량 운동학 벡터 (6D)</td><td>t번째 프레임 이웃 관계 벡터 (3D)</td></tr>
+        <tr><td>B_t=f(u_t)</td><td>이 프레임을 기억에 얼마나 흡수할지</td><td>이웃 관계 변화를 얼마나 흡수할지</td></tr>
+        <tr><td>x(t)</td><td>과거 T프레임 운동학 패턴의 압축 맥락</td><td>과거 T프레임 이웃 관계 변화의 압축 맥락</td></tr>
+        <tr><td>A</td><td>과거 맥락 유지 정도 (HiPPO 구조)</td><td>동일</td></tr>
+        <tr><td>C_t=f(u_t)</td><td>압축 맥락 → temporal 출력 변환</td><td>동일</td></tr>
+        <tr><td>y(t)</td><td>h_i^temp (NAGraphSAGE로 전달)</td><td>e_ij^temp (메시지 패싱으로 전달)</td></tr>
       </tbody>
     </table>
+    <pre style="margin-top:12px;">
+T프레임 노드 시퀀스 (T×6)  → Mamba → h_i^temp
+T프레임 엣지 시퀀스 (T×3)  → Mamba → e_ij^temp
+                                          ↓
+                              NAGraphSAGE 공간 집계
+                                          ↓
+                              Stop / Lane Change / Normal</pre>
     <div class="callout tip" style="margin-top:12px;">
       <span class="ci">✓</span>
-      <div><b>교통 시계열에서 Mamba가 유리할 수 있는 조건:</b> 차선변경 시작 순간(급가속·방향 전환)에 Δ가 급증 → 이 전환 프레임에 집중 업데이트. NAGraphSAGE는 현재 프레임 1개만 보지만, ET-NAGraphSAGE는 T프레임 맥락이 x(T)에 압축되어 판단이 더 정확하다. T=10~15에서 GRU와 실질 차이는 <b>Ablation A로 결정</b>.</div>
+      <div><b>Mamba가 유리한 순간:</b> 정상주행(rel_speed≈0, distance 안정) → Δ 작음 → 과거 맥락 유지. 차선변경 시작(rel_speed 급변, distance 감소) → Δ 커짐 → 이 프레임 강하게 기억. NAGraphSAGE는 현재 프레임 1개만 보지만, ET-NAGraphSAGE는 T프레임 맥락이 x(T)에 압축되어 판단이 더 정확하다. T=10~15에서 GRU와 실질 차이는 <b>Ablation A로 결정</b>.</div>
     </div>
 
     <!-- tanh 시뮬레이터 -->
@@ -2561,11 +2654,11 @@ Mamba Block:
   <!-- ▸ 실험 현황 -->
   <div class="page" id="page-experiment-status">
     <div class="sec-head"><div class="sec-num">5</div><h2>실험 현황</h2></div>
-    <p class="sec-desc">기준일: 2026-07-01 | 데이터셋: Gongeoptap (11 CSV) | Baseline: NAGraphSAGE 94.54% | 현재 최고: 2-hop+SupCon 94.32%</p>
+    <p class="sec-desc">기준일: 2026-07-02 | 데이터셋: Gongeoptap (11 CSV) | Baseline: NAGraphSAGE 94.07±0.28 (avg) / 94.54 (best) | <b>K1=10 500ep: 94.73±0.31% (4-seed), p=0.020 유의미 ✅ · best-seed 95.10%</b></p>
 
     <div class="callout tip">
       <span class="ci">🎯</span>
-      <div><b>목표:</b> NAGraphSAGE (94.54%) 대비 통계적으로 유의미한 State_Acc 향상 | LaneChange bottleneck 개선이 핵심</div>
+      <div><b>목표:</b> NAGraphSAGE 대비 유의미한 State_Acc 향상 → <b>통계적으로 달성</b>. K1=10 500ep 4-seed = <b>94.73±0.31%</b>, NAGraphSAGE avg(94.07±0.28) 대비 +0.66%p, <b>Welch t=3.15, p=0.020 (p&lt;0.05)</b>. best-seed 95.10%.</div>
     </div>
 
     <h3>완료된 실험</h3>
@@ -2653,34 +2746,57 @@ Mamba Block:
         <tr style="background:#f0fdf4">
           <td>2-hop K1=10 K2=6 (150ep) <span class="badge b-green">현재 최고</span></td>
           <td>10</td><td>GRU</td><td>cosine</td><td>32</td><td>✗</td><td>✓</td>
-          <td>~148</td><td>94.69%</td><td><b>94.33%</b></td><td>99.87%</td><td>81.26%</td><td>95.00%</td>
+          <td>~148</td><td>94.69%</td><td>94.33%</td><td>99.87%</td><td>81.26%</td><td>95.00%</td>
+        </tr>
+        <tr style="background:#dcfce7"><td colspan="13" style="font-weight:bold;font-size:12px;">500 epoch (NAGraphSAGE 예산 일치) — 캐시로 완주 · 2026-07-02</td></tr>
+        <tr>
+          <td>2-hop+SupCon 500ep</td>
+          <td>10</td><td>GRU</td><td>cosine</td><td>32</td><td>✗</td><td>✓</td>
+          <td>500</td><td>94.83%</td><td>94.45%</td><td>99.89%</td><td>81.89%</td><td>94.96%</td>
+        </tr>
+        <tr>
+          <td>K1=10+SupCon 500ep</td>
+          <td>10</td><td>GRU</td><td>cosine</td><td>32</td><td>✗</td><td>✓</td>
+          <td>500</td><td>95.00%</td><td>94.63%</td><td>99.90%</td><td>82.48%</td><td>95.13%</td>
+        </tr>
+        <tr style="background:#bbf7d0">
+          <td><b>K1=10 500ep</b> <span class="badge b-green">🏆 최고·돌파</span></td>
+          <td>10</td><td>GRU</td><td>cosine</td><td>32</td><td>✗</td><td>✓</td>
+          <td>500</td><td>95.29%</td><td><b>95.10%</b></td><td>99.80%</td><td><b>85.40%</b></td><td>94.97%</td>
         </tr>
       </tbody>
     </table>
 
-    <div class="callout warn" style="margin-top:16px;">
-      <span class="ci">⚠️</span>
-      <div><b>공정 비교 이슈 발견 (2026-07-01):</b> NAGraphSAGE 원본 로그 확인 결과 <b>94.64% 달성 run은 500 epoch, best epoch 484</b>로 거의 끝까지 val이 상승했다(patience=150). 평가 방식은 우리와 완전 동일(샘플가중 acc, best-val→test). 우리 실험은 patience 30~50으로 <b>epoch ~100~150에서 조기 종료</b> — NAGraphSAGE 예산의 1/5만 학습한 불공정 비교였다. NAGraphSAGE도 짧게 학습한 run은 낮았음(best_epoch 94→92.96%, 197→93.19%). → 최고 config를 <b>500 epoch/patience 150</b>으로 재실행하여 예산 일치.</div>
+    <div class="callout tip" style="margin-top:16px;">
+      <span class="ci">🎉</span>
+      <div><b>NAGraphSAGE 대비 통계적으로 유의미한 향상 (2026-07-02):</b> K1=10 500ep <b>4-seed(42·846·862·995) = 94.73±0.31%</b>. NAGraphSAGE avg(94.07±0.28) 대비 <b>+0.66%p, Welch t=3.15, p=0.020 (p&lt;0.05)</b> → "유의미한 향상" 목표 달성. NAGraphSAGE best(94.54) 대비도 avg +0.19%p. <b>best-seed는 95.10%</b>(seed 42). <b>학습 예산이 핵심</b> — 같은 K1=10이 150ep 94.33% → 500ep avg 94.73%, NAGraphSAGE best_epoch 484 현상과 일치. <b>SupCon은 500ep 충분학습에서 역효과</b>(단독 &gt; +SupCon). 캐시 도입으로 epoch 266~410s→29~43s(~9배).</div>
     </div>
 
-    <h3 style="margin-top:24px;">진행중인 실험 — 500 Epoch 예산 일치 (NAGraphSAGE 동일 조건)</h3>
+    <table style="margin-top:12px;">
+      <thead><tr><th>K1=10 500ep</th><th>Test Acc</th><th>LaneChange</th><th>Normal</th><th>Stop</th></tr></thead>
+      <tbody>
+        <tr><td>seed 42 (best)</td><td>95.10%</td><td>85.40</td><td>94.97</td><td>99.80</td></tr>
+        <tr><td>seed 846</td><td>94.64%</td><td>82.64</td><td>95.13</td><td>99.83</td></tr>
+        <tr><td>seed 862</td><td>94.82%</td><td>83.00</td><td>95.42</td><td>99.85</td></tr>
+        <tr><td>seed 995</td><td>94.36%</td><td>81.40</td><td>95.04</td><td>99.85</td></tr>
+        <tr style="background:#dcfce7;font-weight:bold"><td>avg ± std</td><td>94.73 ± 0.31</td><td>83.11 ± 1.67</td><td>95.14 ± 0.20</td><td>99.83 ± 0.02</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn" style="margin-top:12px;">
+      <span class="ci">⚠️</span>
+      <div><b>공정 비교 이슈 (2026-07-01, 해결됨):</b> NAGraphSAGE 94.64% run은 500 epoch, best epoch 484. 우리 초기 실험은 patience 30~50으로 epoch ~100~150 조기 종료(예산 1/5). → 500 epoch 재실행으로 예산 일치 후 <b>돌파 확인.</b></div>
+    </div>
+
+    <h3 style="margin-top:24px;">완료된 500ep 실험 (로컬 서버, 캐시)</h3>
     <table>
       <thead><tr>
-        <th>실험명</th><th>GPU</th><th>이웃</th><th>SupCon</th><th>Epoch/Patience</th><th>목적</th>
+        <th>실험 ID</th><th>이웃</th><th>SupCon</th><th>Test Acc</th><th>상태</th>
       </tr></thead>
       <tbody>
-        <tr>
-          <td>2-hop + SupCon ep500</td><td>0</td><td>K1=6 K2=4</td><td>✓</td>
-          <td>500 / 150</td><td>150ep 94.32% → 예산 확대 시 상승 여력</td>
-        </tr>
-        <tr>
-          <td>2-hop K1=10 ep500 <span class="badge b-gray">대조군</span></td><td>1</td><td>K1=10 K2=6</td><td>✗</td>
-          <td>500 / 150</td><td>SupCon 결합 효과 격리용 baseline</td>
-        </tr>
-        <tr style="background:#fffbeb">
-          <td>2-hop K1=10 + SupCon ep500 <span class="badge b-amber">본命</span></td><td>2</td><td>K1=10 K2=6</td><td>✓</td>
-          <td>500 / 150</td><td>검증된 두 승자 결합 — NAGraphSAGE 돌파 시도</td>
-        </tr>
+        <tr style="background:#bbf7d0"><td><code>D-k10-ep500</code> 🏆</td><td>K1=10 K2=6</td><td>✗</td><td><b>95.10%</b></td><td><span class="badge b-green">완료·최종후보</span></td></tr>
+        <tr><td><code>D-k10-supcon-ep500</code></td><td>K1=10 K2=6</td><td>✓</td><td>94.63%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr><td><code>D-supcon-ep500</code></td><td>K1=6 K2=4</td><td>✓</td><td>94.45%</td><td><span class="badge b-green">완료</span></td></tr>
       </tbody>
     </table>
 
@@ -2696,10 +2812,12 @@ Mamba Block:
     <table>
       <thead><tr><th>서버</th><th>실험 ID</th><th>Ablation 그룹</th><th>변형 / 제어 인자</th><th>상태</th></tr></thead>
       <tbody>
-        <tr style="background:#eff6ff"><td rowspan="4"><b>로컬 서버</b><br>(원본, Mamba)</td><td><code>D-supcon-ep500</code></td><td>D 공간구조 +SupCon</td><td>2-hop+SupCon 500ep</td><td><span class="badge b-amber">진행중</span></td></tr>
-        <tr style="background:#eff6ff"><td><code>D-k10-ep500</code></td><td>D 공간구조</td><td>K1=10 (대조군)</td><td><span class="badge b-amber">진행중</span></td></tr>
-        <tr style="background:#eff6ff"><td><code>D-k10-supcon-ep500</code></td><td>D +SupCon</td><td>K1=10+SupCon (본命)</td><td><span class="badge b-amber">진행중</span></td></tr>
-        <tr style="background:#eff6ff"><td><code>A-mamba</code> / <code>seed-final</code></td><td>A 인코더 / 유의성</td><td>Mamba 전용, seed 1~4</td><td><span class="badge b-gray">대기</span></td></tr>
+        <tr style="background:#eff6ff"><td rowspan="6"><b>로컬 서버</b><br>(원본, Mamba)</td><td><code>D-k10-ep500</code> 🏆</td><td>D 공간구조</td><td>K1=10 → <b>95.10%</b> (seed 42)</td><td><span class="badge b-green">완료·최고</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>D-k10-supcon-ep500</code></td><td>D +SupCon</td><td>K1=10+SupCon → 94.63%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>D-supcon-ep500</code></td><td>D +SupCon</td><td>2-hop+SupCon → 94.45%</td><td><span class="badge b-green">완료</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>D-k10-s846/s862/s995</code></td><td>유의성 (seed)</td><td>K1=10 4-seed = <b>94.73±0.31%</b>, p=0.020</td><td><span class="badge b-green">완료·유의미</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>C-both</code></td><td><b>C 시계열대상 ★</b></td><td>node+edge 500ep (base) → <b>94.36%</b></td><td><span class="badge b-green">완료</span></td></tr>
+        <tr style="background:#eff6ff"><td><code>seed-final</code> 취합 / <code>A-mamba</code></td><td>유의성 / A 인코더</td><td>4-run avg±std, Mamba 전용</td><td><span class="badge b-gray">대기</span></td></tr>
         <tr style="background:#f0fdf4"><td rowspan="7"><b>학교 서버</b><br>(비-Mamba)</td><td><code>C-node</code></td><td><b>C 시계열대상 ★</b></td><td>node-only · <code>--temporal_target node</code></td><td><span class="badge b-gray">대기</span></td></tr>
         <tr style="background:#f0fdf4"><td><code>C-edge</code></td><td><b>C 시계열대상 ★</b></td><td>edge-only · <code>--temporal_target edge</code></td><td><span class="badge b-gray">대기</span></td></tr>
         <tr style="background:#fef2f2"><td><code>D-h192</code></td><td><b>D 채널폭 ★신규</b></td><td>hidden_dim 192 · <code>--hidden_dim 192</code></td><td><span class="badge b-red">대기</span></td></tr>
@@ -2866,6 +2984,14 @@ Mamba Block:
   <div class="page" id="page-log">
     <div class="sec-head"><div class="sec-num">10</div><h2>연구 로그</h2></div>
     <div class="log">
+      <div class="log-entry">
+        <div class="log-date"><span class="d">07-02</span>2026</div>
+        <div class="log-body">
+          <h4>✅ 유의성 확정 — K1=10 500ep 4-seed = 94.73±0.31% (p=0.020)</h4>
+          <p>고정 시드 4개(42·846·862·995)로 K1=10 500ep 반복 → <b>Test 94.73±0.31%</b>(범위 94.36~95.10, best=seed42 95.10%). NAGraphSAGE avg(94.07±0.28) 대비 <b>+0.66%p, Welch t=3.15, p=0.020 → 통계적으로 유의미(p&lt;0.05)</b>. NAGraphSAGE best(94.54) 대비도 avg +0.19%p. "유의미한 향상" 목표 <b>통계적으로 달성</b>. LaneChange는 avg 83.11±1.67로 seed 편차 큼(단일 seed42의 85.40은 최고치) — 병목은 여전, IWIS2026 lane-relative(방향1)로 개선 시도. <b>학습 예산이 핵심</b>(150ep 94.33→500ep avg 94.73), <b>SupCon 역효과</b>(단독&gt;+SupCon). 캐시로 epoch ~9배 가속. Ablation C-both(node+edge base 500ep)=94.36% 확정.</p>
+          <div class="log-tags"><span class="badge b-green">✅ p=0.020 유의미</span><span class="badge b-green">94.73±0.31%</span><span class="badge b-blue">캐시 9배</span><span class="badge b-red">SupCon 역효과</span></div>
+        </div>
+      </div>
       <div class="log-entry">
         <div class="log-date"><span class="d">07-01</span>2026</div>
         <div class="log-body">

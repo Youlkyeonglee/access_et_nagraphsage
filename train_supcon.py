@@ -178,6 +178,8 @@ def train(cfg: dict):
         train_ratio=cfg['data']['train_ratio'],
         val_ratio=cfg['data']['val_ratio'],
         num_workers=cfg['train']['num_workers'],
+        neighbor_mode=cfg['graph'].get('neighbor_mode', 'hybrid'),
+        use_cache=cfg['train'].get('use_cache', True),
     )
 
     m = cfg['model']
@@ -326,6 +328,7 @@ def parse_args():
     parser.add_argument('--supcon_temp',  type=float, default=None)
     parser.add_argument('--experiment',   type=str,   default=None)
     parser.add_argument('--gpu',          type=int,   default=None)
+    parser.add_argument('--no_cache',     action='store_true', default=False)
     return parser.parse_args()
 
 
@@ -349,5 +352,6 @@ if __name__ == '__main__':
     if args.supcon_weight is not None: cfg['loss']['supcon_weight']   = args.supcon_weight
     if args.supcon_temp   is not None: cfg['loss']['supcon_temp']     = args.supcon_temp
     if args.experiment    is not None: cfg['experiment']              = args.experiment
+    if args.no_cache                 : cfg['train']['use_cache']      = False
 
     train(cfg)
