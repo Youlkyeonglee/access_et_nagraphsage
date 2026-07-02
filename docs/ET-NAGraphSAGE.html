@@ -234,6 +234,13 @@
     <div><b>ET-NAGraphSAGE</b><span>연구 계획서 v0.3.0</span></div>
   </div>
 
+  <div class="toc-section" style="color:#16a34a;">🎯 IWIS2026 컨퍼런스</div>
+  <ul class="toc">
+    <li class="toc-item">
+      <a class="toc-link" data-page="iwis2026" style="font-weight:700;">마무리 계획 &amp; 실험 범위</a>
+    </li>
+  </ul>
+
   <div class="toc-section">목차</div>
   <ul class="toc">
 
@@ -318,6 +325,67 @@
 
 <!-- ═══ 메인 콘텐츠 ═══ -->
 <main id="main-content">
+
+  <!-- ▸ IWIS2026 컨퍼런스 마무리 계획 -->
+  <div class="page" id="page-iwis2026">
+    <div class="hero">
+      <div class="eyebrow">IWIS 2026 (지능 시스템 학술대회) · 컨퍼런스 트랙 · 2026-07-02</div>
+      <h1>IWIS2026 컨퍼런스 — 마무리 계획 &amp; 실험 범위</h1>
+      <p>확실하고 완결된 결과로 <b>컨퍼런스 논문을 매듭짓기 위한</b> 전용 정리. 깊은 novelty 탐색(edge-temporal 등)은 <b>Access 저널 트랙</b>으로 분리한다.</p>
+    </div>
+
+    <div class="callout tip" style="margin-top:8px;">
+      <span class="ci">🎯</span>
+      <div><b>포지셔닝:</b> "차량 상태(정지/차선변경/정상) 분류에서 <b>무엇이 실제로 성능을 좌우하는가</b> — 모델 용량(채널폭)·receptive field(2-hop, K)·학습예산의 체계적 규명 + NAGraphSAGE를 통계적으로 유의미하게 상회하는 최적 모델" 을 컨퍼런스 기여로 삼는다. (정직·방어가능·완결)</div>
+    </div>
+
+    <h2 style="margin-top:24px;">1. 현재까지 확정 결과 (컨퍼런스 근거)</h2>
+    <table>
+      <thead><tr><th>모델 (500ep)</th><th>Test</th><th>LaneChange</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr style="background:#dcfce7"><td><b>D-h192</b> (base K6/4, hidden 192) 🥇</td><td><b>95.33%</b></td><td><b>0.860</b></td><td>현재 전체 최고 · LaneChange 최고 (학교)</td></tr>
+        <tr><td>K1=10 (K10/6, hidden 128) 4-seed</td><td>94.73±0.31</td><td>0.831±0.017</td><td>유의미 p=0.020 (best seed 95.10)</td></tr>
+        <tr><td>D-h256 (base, hidden 256)</td><td>94.67%</td><td>0.824</td><td>과용량 하락 → h192가 sweet spot</td></tr>
+        <tr><td>NAGraphSAGE (baseline)</td><td>94.07±0.28 / 94.54(best)</td><td>—</td><td>비교 기준</td></tr>
+      </tbody>
+    </table>
+    <div class="callout info" style="margin-top:8px;"><span class="ci">💡</span><div><b>강한 순서 (실증):</b> 채널폭(h192) &gt; receptive field(K1=10) &gt; 학습예산 &gt; 노드 시계열. 채널폭이 <b>성능·LaneChange 모두 최대 지렛대</b>(용량 7배 격차 해소). h256은 과적합.</div></div>
+
+    <h2 style="margin-top:24px;">2. 마무리 실험 범위 (bounded — 이것만 하면 종료)</h2>
+    <table>
+      <thead><tr><th>#</th><th>실험</th><th>목적</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr style="background:#fffbeb"><td>1 ★</td><td><b>K1=10 + hidden 192</b> 500ep, 다seed(4)</td><td>두 승리 축 결합 → <b>flagship 모델</b> (95.5%+ 기대)</td><td><span class="badge b-amber">최우선·예정</span></td></tr>
+        <tr><td>2</td><td>flagship 다seed avg±std + t-test</td><td>NAGraphSAGE 대비 유의미성 확정</td><td><span class="badge b-gray">1 이후</span></td></tr>
+        <tr><td>3</td><td>채널폭 표 정리 (h128/192/256 @ 동일조건)</td><td>용량 sweet spot 근거표</td><td><span class="badge b-amber">거의 완료</span></td></tr>
+        <tr><td>4</td><td>비교모델(NAGraphSAGE 등) 500ep 동일예산</td><td>공정 비교표</td><td><span class="badge b-gray">필요</span></td></tr>
+        <tr><td>5</td><td>본문/표/그림 작성</td><td>논문화</td><td><span class="badge b-gray">대기</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:24px;">3. 컨퍼런스 범위 밖 (→ Access 저널로 이관)</h2>
+    <div class="callout warn" style="margin-top:8px;"><span class="ci">🚧</span><div>
+      아래는 <b>깊은 탐색이 필요</b>하거나 <b>예비 결과가 부정적</b>이라 컨퍼런스에 넣지 않는다:
+      <ul style="margin:6px 0 0 18px;">
+        <li><b>edge-temporal novelty 재검</b> — C ablation상 node+edge(94.36) ≈ node-only(94.40), edge 기여 ~0. <b>저널에서 별도 논의.</b></li>
+        <li><b>lane-relative 좌표</b> — 실패(val 0.91). 제외 확정.</li>
+        <li><b>rotate_only 좌표</b> — 예비 저조(val 0.93). 저널에서 완주 판정.</li>
+        <li><b>다중 스케일 시간 / Mamba+긴 T / focal·class-weight</b> — LaneChange 심화용, 저널.</li>
+      </ul>
+    </div></div>
+
+    <h2 style="margin-top:24px;">4. 마무리 체크리스트</h2>
+    <div class="callout info" style="margin-top:8px;"><span class="ci">✅</span><div>
+      <b>[1]</b> K1=10+h192 500ep ×4 seed 실행 (f16ne 캐시·GPU 준비됨) →
+      <b>[2]</b> flagship avg±std + p값 →
+      <b>[3]</b> 채널폭·비교모델 표 확정 →
+      <b>[4]</b> 결과 고정 후 <b>edge-temporal은 저널 트랙에서 논의</b> →
+      <b>[5]</b> 작성. <br>
+      <b>원칙:</b> 컨퍼런스는 "확실한 것만". 새 novelty 탐색은 넣지 않는다.
+    </div></div>
+
+    <div class="callout tip" style="margin-top:12px;"><span class="ci">🔀</span><div><b>2-트랙 구조:</b> 이 페이지(IWIS2026 컨퍼런스) = 완결된 성능/규명 결과. 나머지 목차(Ablation·방법론 등)는 공유 자산이며, <b>edge-temporal·심화 novelty는 저널 트랙에서 별도 진행</b>한다.</div></div>
+  </div>
 
   <!-- ▸ 연구 개요 -->
   <div class="page active" id="page-overview">
