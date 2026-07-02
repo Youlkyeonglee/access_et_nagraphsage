@@ -76,12 +76,52 @@ models/
 modules/
   data_manager.py           # 시계열 그래프 데이터로더 (2-hop)
   data_manager_feat.py      # feature 보강판
+  run_io.py                 # 학습 산출물 저장 (train.log tee + results.json/summary.csv)
 configs/              # 실험별 yaml
 scripts/plot_results.py     # 결과 시각화
 docs/ET-NAGraphSAGE.html    # 연구 계획서/실험 기록 (rich)
 RUN_QUEUE.md          # 다중 서버 실험 협업 보드
 results/              # 서버별 결과 로그
 ```
+
+## 학습 산출물 (저장 위치)
+
+학습이 끝나면 `{save_dir}/{experiment}/` 아래에 다음이 저장된다 (`save_dir` 기본값 `./checkpoints/`).
+
+| 파일 | 내용 |
+|---|---|
+| `best.pt` | Best Val Acc 기준 체크포인트 (`epoch`, `model_state`, `val_acc`, `cfg`) |
+| `config.yaml` | 실행에 사용된 최종 설정 (CLI 오버라이드 반영본) |
+| `train.log` | 콘솔 출력 전체 (에폭별 Acc/Loss) — 자동 tee 기록 |
+| `results.json` | test 결과 (State_Acc, 클래스별 Acc, best_val_acc, 하이퍼파라미터) |
+
+추가로 전체 실험 비교용 한 줄이 `results/summary.csv`에 append 된다 (실험마다 누적).
+`summary.csv`는 **서버 로컬 파일**(`.gitignore`)이라 커밋되지 않는다 — 공유용 결과는 종전대로
+`results/local.md` / `results/school.md`에 수기로 정리한다.
+
+> 위 3종 산출물은 `checkpoints/`·`logs/`가 `.gitignore`이므로 저장소에 올라가지 않는다.
+> 서버 로컬에만 남으므로, 결과 공유는 `summary.csv`를 참고해 `local.md`/`school.md`에 옮긴다.
+
+## 타 서버에서 학습 시 — 확인/수정해야 하는 경로
+
+다른 서버(예: 학교 서버)에서 돌릴 때 **반드시 점검**할 항목:
+
+1. **데이터 경로 (필수 수정)** — `configs/*.yaml`의 `data.data_dir`
+   - 로컬 서버: `/home/oem/yklee/data/` (base 계열) 또는 `/home/oem/data/TII_data/` (그 외)
+   - 서버마다 데이터 위치가 다르면 로컬에서 이 값만 고쳐 쓴다. **커밋 금지** (충돌 방지).
+   - 데이터는 저장소에 포함되지 않음(`.gitignore`). 각 서버에 동일 구조로 존재한다고 가정.
+
+2. **저장 경로 (수정 불필요, 상대경로)** — `save_dir`/`log_dir`
+   - 전 config가 `./checkpoints/`, `./logs/`로 통일됨. **저장소 루트에서 실행**하면 프로젝트
+     안에 산출물이 생긴다. (cwd 기준 상대경로이므로 다른 위치에서 실행하지 말 것.)
+   - 절대경로로 바꾸고 싶으면 해당 서버에서만 로컬 수정.
+
+3. **conda 환경** — `conda activate tna_research` (없으면 아래 [환경] 절차대로 생성)
+
+4. **Mamba 실험 여부** — 학교 서버는 `mamba-ssm` 미설치. `--encoder_type mamba`는 로컬 서버 전용.
+
+> 요약: 새 서버에서는 **① `data_dir`만 로컬 수정** 하면 되고, 저장 경로·로그·결과 기록은
+> 상대경로라 그대로 동작한다.
 
 ## 환경
 

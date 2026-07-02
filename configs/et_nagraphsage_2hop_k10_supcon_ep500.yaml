@@ -45,6 +45,6 @@ loss:
   supcon_temp:       0.07
 
 seed:       42
-save_dir:   /home/oem/TNA_research/checkpoints/
-log_dir:    /home/oem/TNA_research/logs/
+save_dir:   ./checkpoints/
+log_dir:    ./logs/
 experiment: et_nagraphsage_2hop_k10_supcon_ep500

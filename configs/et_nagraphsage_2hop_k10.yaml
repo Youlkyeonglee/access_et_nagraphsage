@@ -43,6 +43,6 @@ loss:
   use_class_weights: false
 
 seed:       42
-save_dir:   /home/oem/TNA_research/checkpoints/
-log_dir:    /home/oem/TNA_research/logs/
+save_dir:   ./checkpoints/
+log_dir:    ./logs/
 experiment: et_nagraphsage_2hop_k10

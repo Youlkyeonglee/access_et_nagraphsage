@@ -46,6 +46,6 @@ loss:
 
 # ── 재현성 / 저장 ─────────────────────────────────────────────────────────────
 seed:         42
-save_dir:     /home/oem/TNA_research/checkpoints/
-log_dir:      /home/oem/TNA_research/logs/
+save_dir:     ./checkpoints/
+log_dir:      ./logs/
 experiment:   baseline_gru_t10
