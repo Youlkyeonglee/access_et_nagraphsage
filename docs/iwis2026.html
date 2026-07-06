@@ -181,9 +181,11 @@ metric (94.07 ± 0.28% avg; 94.54% best run). All models use float32 inputs.</p>
 +1.30 %p improvement over the baseline average (Welch <em>t</em>=4.94, <em>p</em>=0.0042) and +0.83 %p over the best
 baseline run. A four-seed softmax ensemble reaches 95.74% at no additional training cost, improving both Lane-Change
 (86.2%) and Normal (96.2%).</p>
-<p><strong>B. Temporal length (Table II).</strong> Removing temporal context (T=1) drops accuracy to 92.51% and
-Lane-Change to 74.15%, confirming that inter-vehicle kinematic history is what makes lane changes separable; T=10
-recovers most of this gap.</p>
+<p><strong>B. Temporal length (Table II).</strong> Under an identical h192 configuration, removing temporal context
+(T=1) drops accuracy to 92.45% and Lane-Change to 74.0%. Accuracy rises monotonically with history — 94.79% at T=5
+and 95.37% at T=10 — and saturates near T=10, with most of the benefit already captured by T=5. This confirms that
+inter-vehicle kinematic history is what makes lane changes separable. Among encoders (Table II-b), GRU outperforms
+LSTM by 1.07 %p at this capacity and is adopted.</p>
 <p><strong>C. Model capacity has a sweet spot (Table III).</strong> Sweeping channel width gives 94.15 (128) →
 95.37 (192) → 94.67 (256) → 94.44 (384). Capacity is the single strongest lever — the baseline's best model has ≈7×
 more parameters than our initial h128 model — but past h=192 accuracy declines, i.e. over-parameterization hurts.</p>
@@ -209,12 +211,23 @@ lane-change maneuver, which we leave to future work.</p>
 </table>
 <p class="meta">† forecasting/ detection baselines adapted with a 3-way classification head; identical data/budget/metric.</p>
 
-<h4>Table II — Temporal length T</h4>
+<h4>Table II — Temporal length T (all at h192, GRU, fp32)</h4>
 <table>
-<tr><th>T</th><th>State-Acc</th><th>LaneChange</th></tr>
-<tr><td>1 (no temporal)</td><td>92.51</td><td>74.15</td></tr>
-<tr><td>10 (ours)</td><td class="win">95.37 ± 0.45</td><td>85.75</td></tr>
+<tr><th>T</th><th>State-Acc</th><th>LaneChange</th><th>Δ prev</th></tr>
+<tr><td>1 (no temporal)</td><td>92.45</td><td>74.0</td><td>—</td></tr>
+<tr><td>5</td><td>94.79</td><td>83.6</td><td>+2.34</td></tr>
+<tr><td>10 (ours)</td><td class="win">95.37 ± 0.45</td><td>85.75</td><td>+0.58</td></tr>
 </table>
+<p class="meta">Monotonic gain that saturates near T=10; most of the benefit is captured by T=5. Consistent h192/fp32 condition.</p>
+
+<h4>Table II-b — Temporal encoder (h192, T=10)</h4>
+<table>
+<tr><th>Encoder</th><th>State-Acc</th><th>LaneChange</th></tr>
+<tr><td>GRU (adopted)</td><td class="win">95.37 ± 0.45</td><td>85.75</td></tr>
+<tr><td>LSTM</td><td>94.30</td><td>82.4</td></tr>
+<tr><td>Mamba</td><td>separate track†</td><td>—</td></tr>
+</table>
+<p class="meta">† Mamba deferred to a dedicated environment; GRU &gt; LSTM by +1.07 %p confirms the encoder choice at flagship capacity.</p>
 
 <h4>Table III — Channel width (sweet spot)</h4>
 <table>
@@ -232,6 +245,18 @@ lane-change maneuver, which we leave to future work.</p>
 <tr><td class="l">K₁=6, h192 (flagship)</td><td class="win">95.37 ± 0.45</td><td>85.75</td></tr>
 <tr><td class="l">K₁=10 × h192 (combined)</td><td class="neg">94.49 ± 0.04</td><td>82.00</td></tr>
 </table>
+
+<h4>Table V — Temporal target: node / edge / both (h192, seed 42)</h4>
+<table>
+<tr><th class="l">Temporal stream</th><th>State-Acc</th><th>LaneChange</th><th>vs no-temporal</th></tr>
+<tr><td class="l">none (T=1)</td><td>92.45</td><td>74.0</td><td>—</td></tr>
+<tr><td class="l">edge-only</td><td>92.50</td><td>74.0</td><td>+0.05</td></tr>
+<tr><td class="l">node-only</td><td>94.90</td><td>84.2</td><td>+2.45</td></tr>
+<tr><td class="l"><strong>node + edge (ours)</strong></td><td class="win">95.33</td><td>86.0</td><td>+2.88</td></tr>
+</table>
+<p class="meta">Node temporal is the primary signal; edge temporal alone is inert (≈ no-temporal), but is
+<strong>complementary</strong>: adding it to node temporal yields +0.43 %p (LaneChange +1.8 %p) at h192 capacity —
+a contribution that does not appear at the smaller h128 width. Single-seed; multi-seed confirmation planned (journal).</p>
 
 <h3>VI. Conclusion</h3>
 <div class="draft">
@@ -331,7 +356,30 @@ ET-NAGraphSAGE (ensemble)     & $\mathbf{95.74}$        & [fill] & $86.2$\\
 </code></pre>
 
 <!-- ============================================================ -->
-<h2>4 · TODO before submission</h2>
+<h2>4 · Comparison Baselines — Table I candidates <span class="tag">② survey</span></h2>
+<p>Verified via web search (2026-07-06). Our contrast: existing ST-GNNs treat edges as <em>static / feature-free</em>
+(distance or learned adjacency); ET-NAGraphSAGE encodes the <strong>edge kinematic time-series</strong>. The two
+<span class="win">edge-temporal</span> models (TGN, ESGCN) are the closest and most important comparisons.</p>
+<table>
+<tr><th>#</th><th class="l">Model (citation)</th><th class="l">Category</th><th class="l">Edge handling</th><th>Cost</th><th class="l">Code</th></tr>
+<tr><td>1</td><td class="l">STGCN — Yu et al., IJCAI 2018</td><td class="l">classic conv-ST</td><td class="l">static (distance adjacency)</td><td>Med</td><td class="l">official + PyTorch ports</td></tr>
+<tr><td>2</td><td class="l">DCRNN — Li et al., ICLR 2018</td><td class="l">classic RNN-ST</td><td class="l">static (diffusion/transition)</td><td>Med</td><td class="l">official + DCRNN_PyTorch</td></tr>
+<tr><td>3</td><td class="l">Graph WaveNet — Wu et al., IJCAI 2019</td><td class="l">dynamic GNN</td><td class="l">learned adjacency (static, no edge feats)</td><td>Med–High</td><td class="l">nnzhan/Graph-WaveNet</td></tr>
+<tr><td>4</td><td class="l"><span class="win">TGN — Rossi et al., ICML 2020 WS</span></td><td class="l"><span class="win">edge-temporal (dynamic)</span></td><td class="l"><strong>timestamped edge features → node memory (GRU)</strong></td><td>Med</td><td class="l">twitter-research/tgn + PyG</td></tr>
+<tr><td>5</td><td class="l"><span class="win">ESGCN — Lee &amp; Kim, arXiv 2023</span></td><td class="l"><span class="win">edge-temporal</span></td><td class="l"><strong>adjacency built from edge features</strong></td><td>High</td><td class="l">unconfirmed (stretch)</td></tr>
+</table>
+<p class="meta"><strong>Alternatives:</strong> ASTGCN (Guo et al., AAAI 2019, reliable PyTorch) — preferred swap for slot #5 if ESGCN
+reproduction stalls · Social-STGCNN (Mohamed et al., CVPR 2020) — agent-trajectory category, native variable-agent handling.</p>
+<p><strong>Implementation plan (tight timeline):</strong> core four = <strong>STGCN, DCRNN, Graph WaveNet, TGN</strong>
+(clean official/PyG code, four distinct categories, need only a 3-way head + our per-scene graph adapter);
+fifth slot = <strong>ASTGCN</strong> (zero reproduction risk) with <strong>ESGCN</strong> as stretch. <strong>TGN is the single
+most important baseline</strong> for defending the edge-temporal contribution. Journal version: extend to the full set.</p>
+<p class="meta"><strong>Shared fairness protocol for all baselines:</strong> identical Gongeoptap split, 500-epoch budget /
+patience 150, float32 inputs, best-val→test, State-Accuracy metric; regression/forecasting outputs replaced by a
+per-node 3-way softmax + cross-entropy; variable neighbor counts handled by padded/masked per-scene subgraphs.</p>
+
+<!-- ============================================================ -->
+<h2>5 · TODO before submission</h2>
 <div class="todo">
 <ol>
 <li><span class="tag">② next</span> <strong>Table I comparison models</strong>: retrain STGCN / DCRNN / AGCRN (and any

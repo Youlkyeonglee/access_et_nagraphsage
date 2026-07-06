@@ -3,21 +3,49 @@
 > 학교 서버(비-Mamba) 결과를 아래에 append. Mamba 실험은 하지 말 것.
 > 실험 ID는 RUN_QUEUE.md 기준 (C-node, C-edge, E-count, E-radius, B-T5).
 
-## 진행중 — 시계열 ablation (flagship h192 fp32, seed 42, 2026-07-05 실행)
+## 시계열 ablation 완료 (flagship h192 fp32, seed 42, 2026-07-06)
 
-> 목적: Table II(시퀀스 길이) + Ablation A(인코더)를 **flagship 조건(h192, K6/4, fp32, 500ep)으로 일관 완성**.
-> 기존 T=1/T=10, encoder 비교는 옛 h128이라 조건 불일치 → h192로 재실행. IWIS2026 + 저널 공용.
-> 비교 기준: flagship GRU/T=10/h192 = **95.37±0.45**(seed42=95.33). 단일 시드 확인 후 4-seed 확장 예정.
+> Table II(시퀀스 길이) + Ablation A(인코더)를 **flagship 조건(h192, K6/4, fp32, 500ep)으로 일관 완성**.
+> 옛 h128 수치 대체. IWIS2026 + 저널 공용. 단일 시드(42) — 필요 시 4-seed 확장.
+> 비교 기준: flagship GRU/T=10/h192 = **95.37±0.45**(seed42=95.33).
 
-| 실험 | 축 / 변형 | 캐시 | 명령(핵심 인자) | 상태 |
-|---|---|---|---|---|
-| A-lstm-h192 | 인코더=LSTM (T=10) | fp32 T10 재사용 | `--encoder_type lstm --hidden_dim 192 --batch_size 2048 --seed 42` | 🟡 학습중 |
-| B-T1-h192 | 시퀀스 T=1 (no-temporal) | fp32 T1 신규빌드 | `--T 1 --hidden_dim 192 --batch_size 2048 --seed 42` | 🟡 학습중 |
-| B-T5-h192 | 시퀀스 T=5 | fp32 T5 신규빌드 | `--T 5 --hidden_dim 192 --batch_size 2048 --seed 42` | 🟡 학습중 |
+### Table II — 시퀀스 길이 T (h192, GRU)
+| T | Test State_Acc | LaneChange | Δ(직전) |
+|---|---|---|---|
+| 1 (no-temporal) | 92.45 | 74.0 | — |
+| 5 | 94.79 | 83.6 | +2.34 |
+| **10 (flagship)** | **95.37±0.45** | 85.75 | +0.58 |
+→ 단조증가 + **T=10 부근 포화**(T1→5에서 대부분 이득). 시계열이 LC 병목(74→85.75) 개선의 핵심.
 
-- 공통 config `et_nagraphsage_2hop_base_ep500.yaml`, fp32 data_manager(f19d50e)로 실행 후 HEAD 복원.
-- **Mamba(Ablation A)**: 이 서버 `mamba_ssm` 미설치 + "학교 서버 Mamba 금지" 규칙 → **미실행(별도 트랙 처리 대기)**.
-- 결과 대기중 → 완주 시 Test State_Acc로 갱신.
+### Ablation A — 인코더 타입 (h192, T=10)
+| encoder | Test State_Acc | LaneChange |
+|---|---|---|
+| **GRU (flagship)** | **95.37±0.45** | 85.75 |
+| LSTM | 94.30 | 82.4 |
+| Mamba | 미실행 (서버 `mamba_ssm` 미설치 + 학교서버 규칙) |
+→ **GRU > LSTM +1.07%p** (h128 결과 GRU>LSTM 재확인). "GRU 채택" 주장 성립. Mamba는 별도 트랙.
+
+체크포인트: `checkpoints/{A-lstm-h192, B-T1-h192, B-T5-h192}/`. config `et_nagraphsage_2hop_base_ep500.yaml`, fp32.
+
+---
+
+## C ablation @ h192 — 채널 통일 (fp32, seed 42, 2026-07-06 완료)
+
+> 기존 C ablation은 h128이라 flagship(h192)과 채널 불일치 → h192로 재실행. both=flagship seed42(95.33) 재사용.
+> 체크포인트: `checkpoints/{C-node-h192, C-edge-h192}/` (both=`checkpoints/D-h192`).
+
+| 시계열 대상 | Test State_Acc | LaneChange | vs no-temporal(T=1=92.45) |
+|---|---|---|---|
+| **both (노드+엣지)** | **95.33** | 86.0 | +2.88 |
+| node-only | 94.90 | 84.2 | +2.45 |
+| edge-only | 92.50 | 74.0 | +0.05 |
+
+### 🔑 핵심 발견 — 엣지 시계열은 "보완적"으로 기여 (h128 결과 반전)
+- **엣지 단독 무의미**: edge-only(92.50) ≈ no-temporal(92.45), LC 74%(T=1과 동일). 채널 키워도 정체(h128 92.52 → h192 92.50).
+- **노드 시계열이 주 신호**: node-only +2.45%p (LC 74→84.2).
+- **both > node-only (+0.43%p, LC +1.8%p)** → 엣지 시계열이 **노드와 결합 시 추가 기여**.
+- ⚠️ **h128 반전**: 128ch에선 node-only(94.40) ≈ both(94.15)로 엣지 기여 ~0. **192ch에선 both > node-only** → "충분한 용량에서 엣지 시계열이 기여".
+- 단 **단일 시드**(+0.43%p ≈ flagship std 0.45) → 강한 주장엔 4-seed 필요. 저널 edge-temporal novelty에 긍정적.
 
 ---
 
