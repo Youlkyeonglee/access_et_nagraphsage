@@ -53,8 +53,8 @@ loss:
   use_uncertainty_weight: true
 
 augment:
-  noise_std: 1.0
-  neighbor_dropout_p: 0.1
+  noise_std: 0.0
+  neighbor_dropout_p: 0.0
   frame_dropout_p: 0.1
   rotate_deg: 0.0
 

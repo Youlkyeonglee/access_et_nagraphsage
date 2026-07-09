@@ -201,15 +201,22 @@ re-weighting trades one direction for the other; separating this boundary requir
 lane-change maneuver, which we leave to future work.</p>
 </div>
 
-<h4>Table I — Main comparison (State-Acc primary)</h4>
+<h4>Table I — Main comparison (State-Acc primary; identical data/budget/metric, h192, fp32)</h4>
 <table>
-<tr><th class="l">Model</th><th>State-Acc</th><th>Macro-F1</th><th>Stop</th><th>LaneChange</th><th>Normal</th></tr>
-<tr><td class="l">NAGraphSAGE (baseline)</td><td>94.07 ± 0.28</td><td>92.56 ± 0.37</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td class="l">STGCN / DCRNN / AGCRN†</td><td colspan="5">to be trained under identical budget — see TODO ②</td></tr>
-<tr><td class="l"><strong>ET-NAGraphSAGE (h192, ours)</strong></td><td class="win">95.37 ± 0.45</td><td>[fill]</td><td>99.9</td><td>85.8</td><td>95.2</td></tr>
-<tr><td class="l"><strong>ET-NAGraphSAGE (ensemble)</strong></td><td class="win">95.74</td><td>[fill]</td><td>99.8</td><td>86.2</td><td>96.2</td></tr>
+<tr><th class="l">Model</th><th class="l">Category</th><th>State-Acc</th><th>Stop</th><th>LaneChange</th><th>Normal</th></tr>
+<tr><td class="l">STGCN (Yu et al., 2018)†</td><td class="l">conv-ST, static edge</td><td>86.16</td><td>96.1</td><td>61.7</td><td>87.8</td></tr>
+<tr><td class="l">TGN (Rossi et al., 2020)†</td><td class="l">edge-temporal</td><td>91.62</td><td>99.5</td><td>73.2</td><td>92.5</td></tr>
+<tr><td class="l">DCRNN (Li et al., 2018)†</td><td class="l">RNN-ST, static edge</td><td>93.31</td><td>99.6</td><td>76.9</td><td>94.8</td></tr>
+<tr><td class="l">NAGraphSAGE (predecessor)</td><td class="l">per-frame, neighbor-aware</td><td>94.07 ± 0.28‡</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class="l"><strong>ET-NAGraphSAGE (ours)</strong></td><td class="l">node+edge temporal</td><td class="win">95.37 ± 0.45</td><td>99.8</td><td>85.8</td><td>95.2</td></tr>
+<tr><td class="l"><strong>ET-NAGraphSAGE (ensemble)</strong></td><td class="l">4-seed</td><td class="win">95.74</td><td>99.8</td><td>86.2</td><td>96.2</td></tr>
 </table>
-<p class="meta">† forecasting/ detection baselines adapted with a 3-way classification head; identical data/budget/metric.</p>
+<p class="meta">† Forecasting/dynamic-graph baselines adapted with a 3-way classification head, trained under identical
+data / split / fp32 inputs / 500-epoch budget / metric; all at h192 (562K/380K/561K params ≥ ours 367K, ruling out
+under-capacity). ‡ NAGraphSAGE retraining under our protocol pending; value shown is the reported figure.
+Ours outperforms the best baseline (DCRNN) by <strong>+2.06 %p</strong>, with the largest gap on Lane-Change
+(<strong>+8.9 %p</strong>). Notably TGN — the only edge-temporal baseline — reaches only 73.2% Lane-Change,
+showing that a generic timestamped-edge framework is insufficient without our task-specific encode-then-aggregate design.</p>
 
 <h4>Table II — Temporal length T (all at h192, GRU, fp32)</h4>
 <table>

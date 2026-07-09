@@ -29,6 +29,26 @@
 
 ---
 
+## ★ Table I — Main Comparison: 외부 baseline 3종 (2026-07-07 완료)
+
+> 공정 비교: **동일 데이터·split·fp32 캐시·500ep·CE+LS·Adam/cosine·best-val→test**, 모델만 교체.
+> 전부 h192 (params: STGCN 562K, DCRNN 380K, TGN 561K ≥ flagship 367K → under-capacity 반박 차단).
+> 구현: `models/baselines.py` (우리 ego-graph 입력을 각 방식으로 처리) + `train_baseline.py`. seed 42.
+
+| 모델 | 카테고리 | 엣지 | Test State_Acc | Stop | LaneChange | Normal |
+|---|---|---|---|---|---|---|
+| STGCN (Yu, IJCAI'18) | conv-ST | 정적 | 86.16 | 96.1 | 61.7 | 87.8 |
+| TGN (Rossi, ICML'20) | **edge-temporal** | 동적 엣지피처 | 91.62 | 99.5 | 73.2 | 92.5 |
+| DCRNN (Li, ICLR'18) | RNN-ST | 정적 | 93.31 | 99.6 | 76.9 | 94.8 |
+| **ET-NAGraphSAGE (ours)** | — | node+edge 시계열 | **95.37±0.45** | 99.8 | **85.8** | 95.2 |
+
+- **ours > DCRNN(+2.06%p) > TGN > STGCN.** 전부 우리보다 낮음.
+- **LaneChange 격차 극대**: ours 85.8 vs 최고 baseline DCRNN 76.9 = **+8.9%p**. 시계열+neighbor-aware 설계가 lane-change를 훨씬 잘 포착.
+- 🔑 **TGN(edge-temporal)도 LC 73.2로 약함** → "엣지-시계열을 memory 방식으로 처리하는 일반 프레임워크만으론 부족, 우리의 task-specific 인코딩(GRU→neighbor-aware 집계)이 필요"는 novelty 방어.
+- ⚠️ 단일 시드 baseline(ours는 4-seed). 필요 시 baseline도 4-seed 확장 가능.
+
+---
+
 ## C ablation @ h192 — 채널 통일 (fp32, seed 42, 2026-07-06 완료)
 
 > 기존 C ablation은 h128이라 flagship(h192)과 채널 불일치 → h192로 재실행. both=flagship seed42(95.33) 재사용.
