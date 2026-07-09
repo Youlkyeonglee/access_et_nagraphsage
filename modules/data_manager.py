@@ -214,6 +214,25 @@ def _recompute_edges(node_seq: np.ndarray, nbr_node_seqs: np.ndarray,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# DRIFT 정제·표준화 (추적 노이즈 대응)
+#   DRIFT는 원시 데이터에 NaN/inf + 극단값(accel±1500, dir±30)이 있어 그대로 GRU/AMP에
+#   넣으면 발산한다. drift_ab.py에서 검증된 레시피(nan_to_num→clip→z-score)를 로드 시점에
+#   적용한다. 결측(all-zero) 슬롯은 0을 유지해 마스크/엣지 파생 정합성을 지킨다.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_SANITIZE_CLIP = 200.0   # 표준화 전 극단값 상한 (drift_ab는 500; ego_relative라 더 조임)
+
+def _sanitize(arr: np.ndarray) -> np.ndarray:
+    return np.clip(np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0),
+                   -_SANITIZE_CLIP, _SANITIZE_CLIP).astype(np.float32)
+
+def _standardize_present(arr: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarray:
+    """마지막 축 피처를 z-score. 결측(all-zero) 슬롯은 0 유지."""
+    present = (np.abs(arr).sum(-1, keepdims=True) > 0)
+    return (((arr - mean) / std) * present).astype(np.float32)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Dataset
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -243,6 +262,7 @@ class TemporalVehicleDataset(Dataset):
         train_ratio: float = 0.70,
         val_ratio: float   = 0.15,
         neighbor_mode: str = 'hybrid',   # 'hybrid' | 'count' | 'radius' (Ablation E)
+        ego_relative: bool = False,      # 장면 불변: ego(t) 기준 position 상대화 (DRIFT 다도로)
         verbose: bool      = True,
         use_cache: bool    = True,       # 조립 텐서 디스크 캐시 사용
     ):
@@ -254,6 +274,9 @@ class TemporalVehicleDataset(Dataset):
         self.split         = split
         self.train_ratio   = train_ratio
         self.val_ratio     = val_ratio
+        # 장면 불변화: 프레임 t의 ego 위치를 기준으로 모든 노드 position(0:2)을 상대화.
+        # 좌표계가 다른 여러 도로(DRIFT A~I)를 합쳐 학습할 때 절대위치 과적합 방지.
+        self.ego_relative  = ego_relative
         # Ablation E: 이웃 선택 정책
         #   'hybrid' (기본): 반경 r 내에서 최근접 K대 (radius 필터 + count 상한)
         #   'count'        : 반경 무관, 최근접 K대 (NAGraphSAGE 최고기록 방식)
@@ -263,6 +286,7 @@ class TemporalVehicleDataset(Dataset):
 
         self.samples: List[Tuple[str, int, List[int]]] = []
         self._cache: Dict[str, np.ndarray] = None  # {key: memmap} (캐시 로드 시)
+        self._norm: dict = None  # ego_relative 시 {node_mean/std, edge_mean/std}
 
         cache_dir = os.path.join(CACHE_ROOT, self._cache_key(csv_files)) if use_cache else None
 
@@ -274,6 +298,7 @@ class TemporalVehicleDataset(Dataset):
                            for k in _CACHE_KEYS_STORED}
             if verbose:
                 print(f'[{split}] 캐시 로드(fp16, 엣지 파생): {len(self.samples):,}개  ({cache_dir})')
+            self._setup_norm(cache_dir, verbose)
             return
 
         # ── 캐시 없음: 기존 방식으로 샘플 인덱스 빌드 ─────────────────────────
@@ -289,6 +314,7 @@ class TemporalVehicleDataset(Dataset):
         # ── 캐시 생성 (조립 텐서를 1회 계산해 디스크에 저장) ─────────────────
         if cache_dir is not None:
             self._build_cache(cache_dir, split, verbose)
+        self._setup_norm(cache_dir, verbose)
 
     # ── 캐시 유틸 ────────────────────────────────────────────────────────────
     def _cache_key(self, csv_files: List[str]) -> str:
@@ -300,6 +326,7 @@ class TemporalVehicleDataset(Dataset):
             h.update(f'{os.path.basename(p)}:{st.st_size}:{int(st.st_mtime)}'.encode())
         sig = (f'T{self.T}_r{self.radius}_K{self.K}-{self.K2}'
                f'_{self.neighbor_mode}_{_CACHE_FMT}'
+               f'{"_egorel" if self.ego_relative else ""}'
                f'_tr{self.train_ratio}_vr{self.val_ratio}')
         h.update(sig.encode())
         return f'{self.split}_{sig}_{h.hexdigest()[:10]}'
@@ -345,6 +372,64 @@ class TemporalVehicleDataset(Dataset):
         if verbose:
             print(f'[{split}] 캐시 저장 완료: {cache_dir}')
 
+    def _setup_norm(self, cache_dir, verbose: bool):
+        """ego_relative(DRIFT) 시 노드·엣지 z-score 통계를 계산/로드해 self._norm 설정.
+        표준화 통계는 split 자신의 데이터에서 계산(무감독 스케일링 → 누수 아님)."""
+        if not self.ego_relative:
+            self._norm = None
+            return
+        stats_path = os.path.join(cache_dir, 'norm_stats.npz') if cache_dir else None
+        if stats_path and os.path.exists(stats_path):
+            z = np.load(stats_path)
+            self._norm = {k: z[k].astype(np.float32) for k in
+                          ('node_mean', 'node_std', 'edge_mean', 'edge_std')}
+            if verbose:
+                print(f'[{self.split}] 정규화 통계 로드: {stats_path}')
+            return
+
+        # ── 통계 계산 (최대 M 샘플로 running sum/sqsum) ──────────────────────
+        N = len(self.samples)
+        M = min(N, 30000)
+        rng = np.random.default_rng(0)
+        idxs = rng.choice(N, size=M, replace=False) if N > M else np.arange(N)
+        ns_sum = np.zeros(NODE_DIM); ns_sq = np.zeros(NODE_DIM); ns_cnt = 0
+        es_sum = np.zeros(EDGE_DIM); es_sq = np.zeros(EDGE_DIM); es_cnt = 0
+        c = self._cache
+        for i in idxs:
+            i = int(i)
+            if c is not None:
+                node = _sanitize(np.asarray(c['node_seq'][i],       np.float32))
+                nbr  = _sanitize(np.asarray(c['nbr_node_seqs'][i],  np.float32))
+                nbr2 = _sanitize(np.asarray(c['nbr2_node_seqs'][i], np.float32))
+            else:
+                s = self._assemble_np(i)
+                node = _sanitize(s['node_seq']); nbr = _sanitize(s['nbr_node_seqs'])
+                nbr2 = _sanitize(s['nbr2_node_seqs'])
+            e1, e2 = _recompute_edges(node, nbr, nbr2)
+            for arr, sm, sq, dim in ((node, 'n', 'n', NODE_DIM), (nbr, 'n', 'n', NODE_DIM),
+                                     (nbr2, 'n', 'n', NODE_DIM)):
+                r = arr.reshape(-1, dim); r = r[np.abs(r).sum(-1) > 0]
+                ns_sum += r.sum(0); ns_sq += (r**2).sum(0); ns_cnt += len(r)
+            for arr in (e1, e2):
+                if arr.size == 0: continue
+                r = arr.reshape(-1, EDGE_DIM); r = r[np.abs(r).sum(-1) > 0]
+                es_sum += r.sum(0); es_sq += (r**2).sum(0); es_cnt += len(r)
+        ns_cnt = max(ns_cnt, 1); es_cnt = max(es_cnt, 1)
+        node_mean = ns_sum / ns_cnt
+        node_std  = np.sqrt(np.maximum(ns_sq / ns_cnt - node_mean**2, 1e-6))
+        edge_mean = es_sum / es_cnt
+        edge_std  = np.sqrt(np.maximum(es_sq / es_cnt - edge_mean**2, 1e-6))
+        node_std = np.maximum(node_std, 1e-3); edge_std = np.maximum(edge_std, 1e-3)
+        self._norm = {'node_mean': node_mean.astype(np.float32),
+                      'node_std':  node_std.astype(np.float32),
+                      'edge_mean': edge_mean.astype(np.float32),
+                      'edge_std':  edge_std.astype(np.float32)}
+        if stats_path:
+            np.savez(stats_path, **self._norm)
+        if verbose:
+            print(f'[{self.split}] 정규화 통계 계산({M:,}표본): '
+                  f'node_std={np.round(node_std,2)} edge_std={np.round(edge_std,2)}')
+
     def __len__(self) -> int:
         return len(self.samples)
 
@@ -360,8 +445,23 @@ class TemporalVehicleDataset(Dataset):
             nbr_mask       = np.asarray(c['nbr_mask'][idx],       dtype=np.float32)
             nbr2_node_seqs = np.asarray(c['nbr2_node_seqs'][idx], dtype=np.float32)
             nbr2_mask      = np.asarray(c['nbr2_mask'][idx],      dtype=np.float32)
-            edge_seqs, nbr2_edge_seqs = _recompute_edges(
-                node_seq, nbr_node_seqs, nbr2_node_seqs)
+            if self._norm is not None:
+                # DRIFT: nan/inf 제거 + clip → 엣지 재계산(실거리) → z-score(결측 0 유지)
+                node_seq       = _sanitize(node_seq)
+                nbr_node_seqs  = _sanitize(nbr_node_seqs)
+                nbr2_node_seqs = _sanitize(nbr2_node_seqs)
+                edge_seqs, nbr2_edge_seqs = _recompute_edges(
+                    node_seq, nbr_node_seqs, nbr2_node_seqs)
+                nm, ns = self._norm['node_mean'], self._norm['node_std']
+                em, es = self._norm['edge_mean'], self._norm['edge_std']
+                node_seq       = _standardize_present(node_seq, nm, ns)
+                nbr_node_seqs  = _standardize_present(nbr_node_seqs, nm, ns)
+                nbr2_node_seqs = _standardize_present(nbr2_node_seqs, nm, ns)
+                edge_seqs      = _standardize_present(edge_seqs, em, es)
+                nbr2_edge_seqs = _standardize_present(nbr2_edge_seqs, em, es)
+            else:
+                edge_seqs, nbr2_edge_seqs = _recompute_edges(
+                    node_seq, nbr_node_seqs, nbr2_node_seqs)
             out = {
                 'node_seq':       torch.from_numpy(node_seq),
                 'nbr_node_seqs':  torch.from_numpy(nbr_node_seqs),
@@ -383,6 +483,17 @@ class TemporalVehicleDataset(Dataset):
 
         # 캐시 미사용/미생성 시: 즉석 조립 후 torch 변환
         s = self._assemble_np(idx)
+        if self._norm is not None:
+            for k in ('node_seq', 'nbr_node_seqs', 'nbr2_node_seqs'):
+                s[k] = _sanitize(s[k])
+            s['edge_seqs'], s['nbr2_edge_seqs'] = _recompute_edges(
+                s['node_seq'], s['nbr_node_seqs'], s['nbr2_node_seqs'])
+            nm, ns = self._norm['node_mean'], self._norm['node_std']
+            em, es = self._norm['edge_mean'], self._norm['edge_std']
+            for k in ('node_seq', 'nbr_node_seqs', 'nbr2_node_seqs'):
+                s[k] = _standardize_present(s[k], nm, ns)
+            s['edge_seqs']      = _standardize_present(s['edge_seqs'], em, es)
+            s['nbr2_edge_seqs'] = _standardize_present(s['nbr2_edge_seqs'], em, es)
         out = {k: torch.from_numpy(s[k]) for k in _CACHE_KEYS if k != 'y'}
         out['y']    = torch.tensor(int(s['y']), dtype=torch.long)
         out['meta'] = s['meta']
@@ -485,7 +596,23 @@ class TemporalVehicleDataset(Dataset):
             nbr2_edge_seqs = np.zeros((self.K, 0, self.T, EDGE_DIM), dtype=np.float32)
             nbr2_mask      = np.zeros((self.K, 0), dtype=np.float32)
 
-        # ── 6. 레이블 ──────────────────────────────────────────────────────
+        # ── 6. 장면 불변화: ego(t) 위치 기준 상대화 ────────────────────────
+        # 좌표계가 다른 여러 도로를 합쳐 학습할 때 절대위치 과적합을 막는다.
+        # 기준 = 프레임 t(윈도우 마지막)의 ego 위치. 결측(all-zero) 슬롯은 유지.
+        if self.ego_relative:
+            ref = node_seq[-1, :2].copy()   # ego at frame t (라벨 보장 → 존재)
+
+            def _rel(arr):
+                present = (np.abs(arr).sum(-1, keepdims=True) > 0)  # [...,1]
+                shift = np.zeros(arr.shape[-1], dtype=np.float32)
+                shift[0], shift[1] = ref[0], ref[1]
+                return arr - shift * present
+
+            node_seq       = _rel(node_seq)
+            nbr_node_seqs   = _rel(nbr_node_seqs)
+            nbr2_node_seqs  = _rel(nbr2_node_seqs)
+
+        # ── 7. 레이블 ──────────────────────────────────────────────────────
         y = fd.frame_label[t][ego_id]
 
         return {
@@ -534,13 +661,14 @@ def build_dataloaders(
     val_ratio: float   = 0.15,
     num_workers: int   = 4,
     neighbor_mode: str = 'hybrid',
+    ego_relative: bool = False,
     verbose: bool      = True,
     use_cache: bool    = True,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     kwargs = dict(T=T, radius=radius, K_max=K_max, K_max2=K_max2,
                   train_ratio=train_ratio, val_ratio=val_ratio,
-                  neighbor_mode=neighbor_mode, verbose=verbose,
-                  use_cache=use_cache)
+                  neighbor_mode=neighbor_mode, ego_relative=ego_relative,
+                  verbose=verbose, use_cache=use_cache)
     train_ds = TemporalVehicleDataset(csv_files, split='train', **kwargs)
     val_ds   = TemporalVehicleDataset(csv_files, split='val',   **kwargs)
     test_ds  = TemporalVehicleDataset(csv_files, split='test',  **kwargs)

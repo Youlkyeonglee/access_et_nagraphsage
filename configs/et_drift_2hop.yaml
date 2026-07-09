@@ -1,0 +1,52 @@
+# ET-NAGraphSAGE 2-hop — DRIFT 다도로 (A~E,I)
+# ============================================
+# 본 spatial-temporal GNN(2-hop 엣지-시계열)을 DRIFT 전체에 적용.
+# 핵심: 장면 불변 설계(ego_relative=True → 절대위치 제거) + 파일별 시간분할(장면 누수 없음).
+# DRIFT는 공업탑과 달리 상호작용이 강함 → edge 시계열이 살아나는 데이터 (drift_edge_report.html).
+
+data:
+  dataset: drift
+  data_dir: /home/oem/data/TII_data/DRIFT_csv/   # CSV 디렉터리 직접 지정 (99파일)
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+graph:
+  T:      10
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+  neighbor_mode: hybrid
+  ego_relative:  true     # ★ 장면 불변: ego(t) 기준 position 상대화 (다도로 좌표계 차이 제거)
+
+model:
+  node_dim:      6
+  edge_dim:      5
+  hidden_dim:    128
+  d_e:           32
+  encoder_type:  gru
+  use_attention: true
+  use_2hop:      true
+  num_classes:   3
+  dropout:       0.5
+  temporal_target: both   # both | node | edge (Ablation C)
+
+train:
+  batch_size:   2048
+  num_epochs:   200
+  lr:           0.001
+  weight_decay: 1.0e-4
+  scheduler:    cosine
+  patience:     40
+  num_workers:  8
+  use_amp:      true
+
+loss:
+  type:              ce
+  kl_weight:         0.0
+  label_smoothing:   0.1
+  use_class_weights: true    # DRIFT 클래스 불균형 (LaneChange 소수) 보정
+
+seed:       42
+save_dir:   ./checkpoints/
+log_dir:    ./logs/
+experiment: et_drift_2hop_both

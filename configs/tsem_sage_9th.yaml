@@ -1,0 +1,72 @@
+# TSEM-SAGE 9차 전용 설정 (2026-07-08)
+# 8차(configs/tsem_sage_8th.yaml, 라벨 B안 + multiloss + polar + 불확실성loss)와 동일 +
+# 데이터 augmentation 조합 1(노이즈)+2(이웃 드롭아웃)+3(프레임 드롭아웃) 추가.
+# 7·8차 500-epoch 연장 실험에서 val_acc가 epoch~90 부근 정점(79%대) 이후 계속 하락하는
+# 과적합이 관측됨(train loss는 계속 감소) — 매 epoch 완전히 동일한 입력만 반복 학습한 게
+# 원인 중 하나로 지목됨. augmentation이 이 과적합을 완화해 500 epoch가 실제로 도움이 되는지
+# 확인하는 것이 9차의 목적. docs/TSEM_journal_design.html §12.13(손실+augmentation 설계) 참조.
+# 실행: python train_tsem.py --config configs/tsem_sage_9th.yaml --gpus 0,1,2,3
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+# W=과거 관측, H=미래 지평 (ego 궤적상 H스텝 뒤 instant state)
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage          # tsem_sage | tsem_semantic_only
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 500
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50   # 2026-07-08 신규: val_acc가 50 epoch 연속 best 갱신 못 하면 조기 종료 (0=미사용)
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+# 2026-07-08 신규 — modules/tsem_augment.py::TsemAugment, train split에만 적용(val/test 원본 그대로)
+# 조합 번호는 docs §12.13/구조 페이지 augmentation 표와 일치:
+#   1) noise_std        — 속도·가속도·위치·방향 가우시안 노이즈 (스케일 배수, 0=off)
+#   2) neighbor_dropout_p — 존재하는 이웃 슬롯을 학습 시 랜덤 결측 처리할 확률
+#   3) frame_dropout_p  — 과거 W프레임 중 앵커(t) 제외하고 랜덤 결측 처리할 확률
+#   4) rotate_deg       — ego 기준 좌표 회전(도) — 9차엔 미적용(0)
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_w10_h10_labelB_unc_aug123_e500

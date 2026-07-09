@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRIFT 전환 — edge가 사는 데이터 (spatial-temporal+edge 확정)</title>
+<style>
+  :root{--ink:#1a2233;--mute:#667085;--line:#e4e7ec;--bg:#f7f9fc;--accent:#2563eb;--good:#16a34a;--bad:#dc2626;--pur:#7c3aed;}
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,'Segoe UI',Roboto,'Malgun Gothic',sans-serif;color:var(--ink);line-height:1.75;max-width:920px;margin:0 auto;padding:40px 28px;font-size:15px}
+  h1{font-size:25px;margin:0 0 6px} h2{font-size:19px;margin:32px 0 12px;padding-top:14px;border-top:2px solid var(--line)}
+  h3{font-size:15px;margin:18px 0 8px;color:var(--accent)}
+  .sub{color:var(--mute);font-size:13.5px;margin-bottom:22px}
+  code{background:var(--bg);padding:1px 6px;border-radius:5px;font-size:13px}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left} th{background:var(--bg);font-weight:700}
+  .box{border-left:4px solid var(--accent);background:var(--bg);padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .box.good{border-color:var(--good);background:#f0fdf4} .box.key{border-color:var(--pur);background:#f5f3ff} .box.bad{border-color:var(--bad);background:#fef2f2}
+  ul{margin:8px 0 8px 4px;padding-left:20px} li{margin:4px 0}
+  .hl{background:#dcfce7} .hlb{background:#fef2f2} .small{font-size:12.5px;color:var(--mute)}
+  figure{margin:18px 0;text-align:center} figure svg{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+  figcaption{font-size:12.5px;color:var(--mute);margin-top:8px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff} .tag.g{background:var(--good)}
+</style></head>
+<body>
+
+<h1>DRIFT 전환 — "edge 무용"은 방법이 아니라 데이터 탓이었다</h1>
+<div class="sub">spatial-temporal + edge 연구 성립 확정 · 2026-07-04</div>
+
+<div class="box key">
+  <b>결론:</b> 긴 검증 끝에 — <b>공업탑에는 차량 간 상호작용이 없어서 edge가 죽었던 것</b>이고, 상호작용이 강한 <b>DRIFT 데이터셋에선 edge가 6개 도로 전부에서 LaneChange를 유의미하게 향상</b>(+2.0~+9.5%p)시킨다. <b>원 novelty(엣지 시계열)는 DRIFT에서 정당하게 성립.</b>
+</div>
+
+<h2>1. 왜 데이터를 의심했나 — 공업탑 4중 음성</h2>
+<table>
+  <thead><tr><th>검정</th><th>결과 (공업탑)</th></tr></thead>
+  <tbody>
+    <tr><td>C-ablation (엣지-시계열)</td><td>node+edge 94.36 ≈ node-only 94.40 → 기여 ≈0</td></tr>
+    <tr><td>2×2 절제 (강한 base)</td><td>엣지 추가 시 오히려 −0.4~0.9%p</td></tr>
+    <tr><td>car-following 결합</td><td>근접 감속 −1.1 vs −0.3 (미미)</td></tr>
+    <tr><td>진입-양보 (최강 장면)</td><td>순환차 gap에 무반응 (corr +0.005)</td></tr>
+  </tbody>
+</table>
+<div class="box bad"><b>진단:</b> 공업탑은 <b>측정 가능한 상호작용이 거의 없다</b>(저밀도 로터리 + magnitude-only accel). → edge가 배울 신호 자체가 없음. "방법/설계 문제"가 아니라 "데이터 문제" 가설.</div>
+
+<h2>2. DRIFT — 상호작용이 있는 데이터</h2>
+<table>
+  <thead><tr><th></th><th>공업탑</th><th>DRIFT</th></tr></thead>
+  <tbody>
+    <tr><td>장면</td><td>로터리(저밀도)</td><td>다차로(6개 도로 A~E·I)</td></tr>
+    <tr><td>밀도</td><td>희소</td><td><b>51대/프레임</b></td></tr>
+    <tr><td>가속도</td><td>magnitude-only (불량)</td><td><b>부호 있음</b> (양질)</td></tr>
+    <tr><td>근접 앞차 감속</td><td>−1.1 vs −0.3</td><td><b>−21 vs −11</b> (강함)</td></tr>
+  </tbody>
+</table>
+
+<h2>3. 결정적 검정 — DRIFT A(ego) vs B(+edge)</h2>
+<p class="small">6개 도로 균등(각 5파일) 1,048,332 표본 · 5-seed GRU · 시간분할 · 현재상태 분류(3-class) · lane_id 미입력(누수방지).</p>
+<table>
+  <thead><tr><th>지표 (전 도로 합침)</th><th>A: ego</th><th>B: +edge</th><th>Δ</th><th>p</th></tr></thead>
+  <tbody>
+    <tr><td>macro-AUC</td><td>0.8987 ± 0.0023</td><td>0.9190 ± 0.0015</td><td>+0.0203</td><td>0.0002 <span class="tag g">유의미</span></td></tr>
+    <tr><td class="hl"><b>LaneChange-AUC</b></td><td>0.8261 ± 0.0036</td><td class="hl"><b>0.8617 ± 0.0028</b></td><td class="hl"><b>+0.0356</b></td><td>0.0002 <span class="tag g">유의미</span></td></tr>
+  </tbody>
+</table>
+
+<h3>도로별 LaneChange-AUC — 6개 전부 edge가 향상 ✓</h3>
+<table>
+  <thead><tr><th>도로</th><th>A (ego)</th><th>B (+edge)</th><th>Δ</th></tr></thead>
+  <tbody>
+    <tr><td>A</td><td>0.719</td><td>0.799</td><td class="hl"><b>+8.0%p</b></td></tr>
+    <tr><td>B</td><td>0.676</td><td>0.771</td><td class="hl"><b>+9.5%p</b></td></tr>
+    <tr><td>C</td><td>0.755</td><td>0.839</td><td class="hl"><b>+8.4%p</b></td></tr>
+    <tr><td>D</td><td>0.769</td><td>0.791</td><td>+2.2%p</td></tr>
+    <tr><td>E</td><td>0.822</td><td>0.866</td><td>+4.4%p</td></tr>
+    <tr><td>I</td><td>0.885</td><td>0.905</td><td>+2.0%p</td></tr>
+  </tbody>
+</table>
+<figure>
+<svg viewBox="0 0 640 300" role="img" aria-label="도로별 edge 이득">
+  <line x1="60" y1="30" x2="60" y2="240" stroke="#94a3b8"/><line x1="60" y1="240" x2="620" y2="240" stroke="#94a3b8"/>
+  <g font-size="10" fill="#667085" text-anchor="end">
+    <line x1="56" y1="240" x2="60" y2="240" stroke="#94a3b8"/><text x="53" y="244">0.65</text>
+    <line x1="56" y1="176" x2="60" y2="176" stroke="#94a3b8"/><text x="53" y="180">0.75</text>
+    <line x1="56" y1="112" x2="60" y2="112" stroke="#94a3b8"/><text x="53" y="116">0.85</text>
+    <line x1="56" y1="48"  x2="60" y2="48"  stroke="#94a3b8"/><text x="53" y="52">0.95</text>
+  </g>
+  <text x="22" y="135" font-size="10.5" fill="#667085" transform="rotate(-90 22 135)" text-anchor="middle">LaneChange AUC</text>
+  <!-- per road: A(gray), B(green). y = 240 - (v-0.65)*640 -->
+  <!-- roads at x: 100,180,260,340,420,500 ; barw 30 -->
+  <g>
+    <!-- A 0.719/0.799 -->
+    <rect x="88" y="196" width="24" height="44" fill="#94a3b8"/><rect x="114" y="145" width="24" height="95" fill="#16a34a"/>
+    <!-- B 0.676/0.771 -->
+    <rect x="168" y="223" width="24" height="17" fill="#94a3b8"/><rect x="194" y="163" width="24" height="77" fill="#16a34a"/>
+    <!-- C 0.755/0.839 -->
+    <rect x="248" y="173" width="24" height="67" fill="#94a3b8"/><rect x="274" y="119" width="24" height="121" fill="#16a34a"/>
+    <!-- D 0.769/0.791 -->
+    <rect x="328" y="164" width="24" height="76" fill="#94a3b8"/><rect x="354" y="150" width="24" height="90" fill="#16a34a"/>
+    <!-- E 0.822/0.866 -->
+    <rect x="408" y="130" width="24" height="110" fill="#94a3b8"/><rect x="434" y="102" width="24" height="138" fill="#16a34a"/>
+    <!-- I 0.885/0.905 -->
+    <rect x="488" y="90" width="24" height="150" fill="#94a3b8"/><rect x="514" y="77" width="24" height="163" fill="#16a34a"/>
+  </g>
+  <g font-size="12" text-anchor="middle" font-weight="700">
+    <text x="113" y="256">A</text><text x="193" y="256">B</text><text x="273" y="256">C</text>
+    <text x="353" y="256">D</text><text x="433" y="256">E</text><text x="513" y="256">I</text>
+  </g>
+  <rect x="360" y="34" width="12" height="12" fill="#94a3b8"/><text x="377" y="44" font-size="11">ego</text>
+  <rect x="420" y="34" width="12" height="12" fill="#16a34a"/><text x="437" y="44" font-size="11">+edge</text>
+</svg>
+<figcaption>그림 1. DRIFT 6개 도로 전부에서 +edge(초록)가 ego(회색)보다 LaneChange AUC 향상. 공업탑에선 이 향상이 없었다.</figcaption>
+</figure>
+
+<div class="box good"><b>판정:</b> edge 이득이 <b>도로 A 하나가 아니라 6개 전 도로에서 일반적</b>(+2.0~+9.5%p). edge 피처가 상대(heading gap)라 <b>장면 불변</b> → 좌표 다른 도로 간에도 전이. <b>DRIFT로 spatial-temporal+edge 연구 확정.</b></div>
+
+<h2>4. 최종 그림</h2>
+<table>
+  <thead><tr><th></th><th>공업탑</th><th>DRIFT (6도로)</th></tr></thead>
+  <tbody>
+    <tr><td>상호작용</td><td>없음 (4중 음성)</td><td><b>강함, 전 도로</b></td></tr>
+    <tr><td>edge 기여 (LaneChange)</td><td class="hlb">≈0 / 해로움</td><td class="hl"><b>+2~9.5%p, 전부 유의미</b></td></tr>
+  </tbody>
+</table>
+<div class="box key"><b>한 줄:</b> "edge가 안 되는 건 방법·설계가 아니라 <b>데이터에 상호작용이 없어서</b>"라는 가설이 <b>완전히 입증</b>됐다. 원 novelty(엣지 시계열)는 <b>상호작용 있는 DRIFT</b>에서 성립한다.</div>
+
+<h2>5. 다음 단계</h2>
+<div class="box">
+  <b>[1]</b> 본 spatial-temporal GNN(2-hop 엣지-시계열)을 DRIFT에 적용 — 전체 파일 + <b>장면 불변 설계</b>(ego 상대 + edge; 절대위치 제거) + 장면별 시간분할 →
+  <b>[2]</b> 지평/인코더(Mamba)/edge 종류별 절제 →
+  <b>[3]</b> 다seed 확정.
+</div>
+
+<h2>부록 — 재현</h2>
+<ul class="small">
+  <li>데이터: <code>/home/oem/data/TII_data/DRIFT_csv/*.csv</code> (99파일, 도로 A~E·I). 실험은 6도로 각 5파일.</li>
+  <li>코드: <code>journal/drift_features.py</code>(6도로 균등·scene_id), <code>journal/drift_ab.py</code>(A/B 5-seed·도로별), npz <code>journal/drift_data.npz</code>(1.05M)</li>
+  <li>공업탑 음성근거: <code>docs/edge_temporal_report.html</code></li>
+</ul>
+
+</body></html>

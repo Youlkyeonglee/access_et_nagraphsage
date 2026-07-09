@@ -81,7 +81,8 @@ class ETSAGELayer(nn.Module):
         h_nbr:    torch.Tensor,  # [B, K, in_dim]
         e_temp:   torch.Tensor,  # [B, K, d_e]
         nbr_mask: torch.Tensor,  # [B, K]
-    ) -> torch.Tensor:
+        return_extra: bool = False,
+    ):
         # C1: Vector Gate
         alpha       = torch.sigmoid(self.lin_gate(e_temp))     # [B, K, in_dim]
         h_nbr_gated = alpha * h_nbr                            # [B, K, in_dim]
@@ -108,6 +109,8 @@ class ETSAGELayer(nn.Module):
         ))
         h_new = self.bn(h_new)
         h_new = self.dropout(h_new)
+        if return_extra:
+            return h_new, h_N, beta
         return h_new
 
 

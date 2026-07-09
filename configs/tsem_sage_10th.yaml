@@ -1,0 +1,66 @@
+# TSEM-SAGE 10차 전용 설정 (2026-07-08) — NAGraphSAGE-adapted 베이스라인
+# 9차(configs/tsem_sage_9th.yaml, 라벨 B안 + multiloss + polar + 불확실성loss + augmentation 1+2+3)와
+# 동일 파이프라인·동일 (W,H)·동일 loss 설계를 유지한 채, model.name만 tsem_nagraphsage_adapted로 바꿔
+# Stage A(SemanticDerivation, 의미 분해)를 건너뛰고 raw 6D를 그대로 시계열 인코더에 넣는다
+# (models/tsem_sage.py::TSEMNAGraphSAGEAdapted, use_semantic=False). 공간 집계(ETSAGELayer)는 그대로
+# 유지 — "semantic 분해 자체가 얼마나 기여하는가"만 격리해서 보기 위함.
+# 목적: 논문 §구조 "베이스라인" 표의 NAGraphSAGE-adapted 행을 채움 — 지금까지 9차까지 전부
+# "semantic + spatial" 조합만 봤지 "raw + spatial"과 비교한 적이 없었음.
+# 실행: python train_tsem.py --config configs/tsem_sage_10th.yaml --gpus 0,1,2,3
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_nagraphsage_adapted   # 2026-07-08 신규 — Stage A(semantic) off, Stage C(spatial)는 유지
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 500
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_w10_h10_nagraphsage_adapted

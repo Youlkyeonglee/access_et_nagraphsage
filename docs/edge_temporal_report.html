@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge-Temporal 한계 진단 및 저널 방향 보고</title>
+<style>
+  :root{--ink:#1a2233;--mute:#667085;--line:#e4e7ec;--bg:#f7f9fc;--accent:#2563eb;
+        --good:#16a34a;--bad:#dc2626;--warn:#b45309;--pur:#7c3aed;}
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,'Segoe UI',Roboto,'Malgun Gothic',sans-serif;color:var(--ink);
+       line-height:1.75;max-width:920px;margin:0 auto;padding:40px 28px;background:#fff;font-size:15px}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.3px}
+  h2{font-size:19px;margin:34px 0 12px;padding-top:14px;border-top:2px solid var(--line)}
+  h3{font-size:15.5px;margin:20px 0 8px;color:var(--accent)}
+  .sub{color:var(--mute);font-size:13.5px;margin-bottom:22px}
+  p{margin:10px 0}
+  code{background:var(--bg);padding:1px 6px;border-radius:5px;font-size:13px;color:#0f172a}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+  th{background:var(--bg);font-weight:700}
+  .box{border-left:4px solid var(--accent);background:var(--bg);padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .box.good{border-color:var(--good);background:#f0fdf4}
+  .box.bad{border-color:var(--bad);background:#fef2f2}
+  .box.warn{border-color:var(--warn);background:#fffbeb}
+  .box.key{border-color:var(--pur);background:#f5f3ff}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff}
+  .tag.g{background:var(--good)} .tag.b{background:var(--bad)} .tag.a{background:var(--accent)}
+  ul{margin:8px 0 8px 4px;padding-left:20px} li{margin:4px 0}
+  .hl{background:#dcfce7} .hlb{background:#fef2f2}
+  .small{font-size:12.5px;color:var(--mute)}
+  figure{margin:18px 0;text-align:center}
+  figure svg{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+  figcaption{font-size:12.5px;color:var(--mute);margin-top:8px;text-align:center}
+  .svg-mono{font-family:'Segoe UI',sans-serif}
+</style>
+</head>
+<body>
+
+<h1>Edge-Temporal 인코딩의 한계 진단 및 저널 연구 방향</h1>
+<div class="sub">ET-NAGraphSAGE 후속 · 공업탑(로터리) 차량 데이터 · 2026-07-03 · 내부 보고자료</div>
+
+<div class="box key">
+  <b>요약 (4줄):</b>
+  <ul style="margin-bottom:0">
+    <li>원 novelty인 <b>edge-temporal 인코딩</b>은 탐지 과제에서 기여가 거의 없었다(Ablation C: node+edge 94.36% ≈ node-only 94.40%). 원인: <b>①엣지=노드의 함수라 정보 중복</b> + <b>②차선변경 라벨이 ego 자신으로만 정의</b>.</li>
+    <li>이를 되살릴 두 가설(<b>맵 기반 비중복 엣지</b> · <b>미래 예측 재정의</b>)을 <b>엄밀한 2×2 절제(표현×엣지, 5-seed)</b>로 검증했다.</li>
+    <li><b>결과(정직):</b> <b>raw world ego 시계열이 최강</b>이며, 도로정렬 재표현도·엣지도 이를 <b>넘지 못한다</b>. 엣지는 <b>약한 base에서만</b> 도움되고 <b>강한 world base에선 오히려 해롭다</b>(−0.4~0.9%p).</li>
+    <li><b>결론:</b> 이 데이터/과제에선 <b>ego 시계열이 지배</b>하고 <b>관계(엣지) 모델링은 불필요</b>함을 정식 절제로 재확인. → <b>비판적 연구(음성결과)</b> 또는 <b>상호작용이 인과적인 다른 과제</b>가 남은 정직한 길.</li>
+  </ul>
+</div>
+
+<h2>1. 배경 — 원 연구의 주장</h2>
+<p>ET-NAGraphSAGE는 NAGraphSAGE(IEEE TII)의 직접 후속으로, <b>핵심 novelty를 "edge feature 시계열 인코딩"</b>으로 삼았다: 이웃 차량과의 kinematic 관계(상대 속도·방향·거리)의 <b>시간적 변화</b>를 학습하면 차량 상태 분류(Stop/LaneChange/Normal)가 향상된다는 가설.</p>
+<table>
+  <thead><tr><th>모델</th><th>Test Acc</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td>GraphSAGE</td><td>92.74%</td><td>이웃 미인지</td></tr>
+    <tr><td>NAGraphSAGE (baseline)</td><td>94.07±0.28 / 94.54(best)</td><td>공간적 이웃 인지(프레임별)</td></tr>
+  </tbody>
+</table>
+
+<h2>2. 이웃 관계가 모델에 반영되는 방법 (메커니즘)</h2>
+<p>모델은 3단계로 이웃 관계를 처리한다.</p>
+<table>
+  <thead><tr><th>단계</th><th>처리</th></tr></thead>
+  <tbody>
+    <tr><td><b>1. 시계열 인코딩</b></td><td>노드 스트림: 차량 i의 T프레임 <b>노드 피처</b> 시퀀스 → GRU → h<sub>i</sub><br>엣지 스트림: 이웃 j와의 T프레임 <b>엣지 피처</b> 시퀀스 → GRU → e<sub>ij</sub> <span class="tag a">novelty</span></td></tr>
+    <tr><td><b>2. 공간 집계</b></td><td>엣지-aware 메시지 패싱(NAGraphSAGE): 이웃 j의 메시지를 e<sub>ij</sub>로 변조 → Add 집계 → 노드 갱신</td></tr>
+    <tr><td><b>3. 출력</b></td><td>현재 상태 분류 (Stop/LaneChange/Normal)</td></tr>
+  </tbody>
+</table>
+<h3>피처 정의</h3>
+<table>
+  <thead><tr><th>종류</th><th>정의</th></tr></thead>
+  <tbody>
+    <tr><td>노드 (6D)</td><td><code>[pos_x, pos_z, speed, dir_x, dir_z, accel]</code></td></tr>
+    <tr><td>엣지 (5D)</td><td><code>[rel_speed, rel_accel, rel_dir_x, rel_dir_z, distance]</code><br><span class="small">rel_speed = speed<sub>j</sub> − speed<sub>i</sub>, rel_dir = dir<sub>j</sub> − dir<sub>i</sub>, distance = ‖pos<sub>j</sub> − pos<sub>i</sub>‖</span></td></tr>
+  </tbody>
+</table>
+<div class="box"><b>핵심 관찰:</b> 엣지 5개 중 4개가 <b>두 노드 피처의 단순 차(선형)</b>이고, distance도 위치의 함수다. 즉 <b>엣지 = 노드의 결정론적 함수</b>.</div>
+
+<figure>
+<svg viewBox="0 0 720 250" class="svg-mono" role="img" aria-label="이웃 관계 반영 구조">
+  <!-- inputs -->
+  <rect x="20" y="45" width="150" height="46" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="95" y="66" font-size="12.5" text-anchor="middle" fill="#1a2233">노드 시퀀스</text>
+  <text x="95" y="82" font-size="11" text-anchor="middle" fill="#667085">[T, 6]  차량 i</text>
+  <rect x="20" y="150" width="150" height="46" rx="6" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="95" y="171" font-size="12.5" text-anchor="middle" fill="#1a2233">엣지 시퀀스</text>
+  <text x="95" y="187" font-size="11" text-anchor="middle" fill="#667085">[T, 5]  이웃 j 관계</text>
+  <!-- GRU -->
+  <rect x="235" y="45" width="90" height="46" rx="6" fill="#fff" stroke="#94a3b8"/>
+  <text x="280" y="73" font-size="13" text-anchor="middle">GRU</text>
+  <rect x="235" y="150" width="90" height="46" rx="6" fill="#fff" stroke="#94a3b8"/>
+  <text x="280" y="178" font-size="13" text-anchor="middle">GRU</text>
+  <!-- encodings -->
+  <text x="360" y="72" font-size="13" fill="#2563eb">h_i</text>
+  <text x="360" y="177" font-size="13" fill="#7c3aed">e_ij</text>
+  <!-- message passing -->
+  <rect x="410" y="90" width="150" height="60" rx="6" fill="#f0fdf4" stroke="#16a34a"/>
+  <text x="485" y="114" font-size="12" text-anchor="middle">엣지-aware</text>
+  <text x="485" y="131" font-size="12" text-anchor="middle">메시지 패싱 (Add)</text>
+  <!-- output -->
+  <rect x="605" y="97" width="95" height="46" rx="6" fill="#fff" stroke="#1a2233"/>
+  <text x="652" y="118" font-size="12" text-anchor="middle">분류</text>
+  <text x="652" y="133" font-size="10.5" text-anchor="middle" fill="#667085">상태/예측</text>
+  <!-- arrows -->
+  <g stroke="#94a3b8" stroke-width="1.6" fill="none" marker-end="url(#ah)">
+    <path d="M170 68 H233"/><path d="M170 173 H233"/>
+    <path d="M325 68 C370 68 380 110 408 112"/>
+    <path d="M325 173 C370 173 380 132 408 130"/>
+    <path d="M560 120 H603"/>
+  </g>
+  <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+    <path d="M0 0 L6 4 L0 8 z" fill="#94a3b8"/></marker></defs>
+  <!-- redundancy callout -->
+  <path d="M95 91 V150" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="4 3" fill="none"/>
+  <text x="105" y="125" font-size="10.5" fill="#dc2626">엣지 = 노드의 차분</text>
+  <text x="105" y="139" font-size="10.5" fill="#dc2626">(정보 중복)</text>
+</svg>
+<figcaption>그림 1. 이웃 관계 반영 구조 — 엣지 스트림(보라)이 novelty. 단 엣지는 노드의 차분이라 정보가 중복된다(빨강).</figcaption>
+</figure>
+
+<h2>3. 라벨 정의 (자동 생성 규칙)</h2>
+<table>
+  <thead><tr><th>클래스</th><th>규칙</th></tr></thead>
+  <tbody>
+    <tr><td>stop</td><td>speed ≤ 1</td></tr>
+    <tr><td class="hlb"><b>lane_change</b></td><td class="hlb"><b>ego 자신의 <code>lane_id</code>가 바뀌는 시점 ±6프레임</b> (stop 제외)</td></tr>
+    <tr><td>normal_driving</td><td>나머지</td></tr>
+  </tbody>
+</table>
+<div class="box bad"><b>중요:</b> lane_change 라벨은 <b>ego 자신의 lane_id 전이로만</b> 정의된다. <b>이웃 차량이 라벨 정의에 전혀 개입하지 않는다.</b> (근거: 라벨링 스크립트 <code>road_data/20250318json_class_lanechage.py</code>)</div>
+
+<h2>4. 문제 — 원 edge-temporal이 왜 기여하지 못했는가</h2>
+<h3>Ablation C (시계열 대상 격리, 전체 500ep, 3-class 탐지)</h3>
+<table>
+  <thead><tr><th>시계열 대상</th><th>Test Acc</th><th>LaneChange</th><th>해석</th></tr></thead>
+  <tbody>
+    <tr><td>node-only</td><td class="hl"><b>94.40%</b></td><td>82.9</td><td>노드-시계열만으로 최고 성능</td></tr>
+    <tr><td>node+edge (both, 제안)</td><td>94.36%</td><td>81.9</td><td><b>엣지-시계열 추가 → 기여 ≈ 0</b></td></tr>
+    <tr><td>edge-only</td><td>92.52%</td><td>74.2</td><td>ego 궤적(진짜 신호) 제거 시 급락</td></tr>
+  </tbody>
+</table>
+<figure>
+<svg viewBox="0 0 560 280" class="svg-mono" role="img" aria-label="Ablation C 막대그래프">
+  <!-- axis -->
+  <line x1="70" y1="30" x2="70" y2="220" stroke="#94a3b8"/>
+  <line x1="70" y1="220" x2="530" y2="220" stroke="#94a3b8"/>
+  <!-- y ticks 92,93,94,95 (span 92-95 → 60px/unit, base y=220=92) -->
+  <g font-size="10.5" fill="#667085" text-anchor="end">
+    <line x1="66" y1="220" x2="70" y2="220" stroke="#94a3b8"/><text x="62" y="224">92</text>
+    <line x1="66" y1="160" x2="70" y2="160" stroke="#94a3b8"/><text x="62" y="164">93</text>
+    <line x1="66" y1="100" x2="70" y2="100" stroke="#94a3b8"/><text x="62" y="104">94</text>
+    <line x1="66" y1="40"  x2="70" y2="40"  stroke="#94a3b8"/><text x="62" y="44">95</text>
+  </g>
+  <text x="24" y="130" font-size="11" fill="#667085" transform="rotate(-90 24 130)" text-anchor="middle">Test Acc (%)</text>
+  <!-- bars: node 94.40→y66 h154 ; both 94.36→y68.4 h151.6 ; edge 92.52→y188.8 h31.2 -->
+  <rect x="110" y="66"   width="90" height="154"  fill="#16a34a" opacity=".85"/>
+  <rect x="250" y="68.4" width="90" height="151.6" fill="#2563eb" opacity=".85"/>
+  <rect x="390" y="188.8" width="90" height="31.2" fill="#dc2626" opacity=".7"/>
+  <g font-size="13" text-anchor="middle" fill="#1a2233" font-weight="700">
+    <text x="155" y="58">94.40</text><text x="295" y="60">94.36</text><text x="435" y="181">92.52</text>
+  </g>
+  <g font-size="12" text-anchor="middle" fill="#334155">
+    <text x="155" y="238">node-only</text>
+    <text x="295" y="238">node+edge</text><text x="295" y="252" font-size="10.5" fill="#667085">(제안)</text>
+    <text x="435" y="238">edge-only</text>
+  </g>
+  <!-- ≈ bracket node vs node+edge -->
+  <path d="M155 45 C210 32 240 32 295 47" stroke="#dc2626" stroke-width="1.4" fill="none"/>
+  <text x="225" y="30" font-size="13" text-anchor="middle" fill="#dc2626">≈ 기여 0</text>
+</svg>
+<figcaption>그림 2. Ablation C — 엣지-시계열을 빼도(node-only) 성능이 유지(94.40≈94.36) → 엣지-시계열 추가 기여 ≈ 0. edge-only 급락은 ego 궤적이 진짜 신호임을 보여줌.</figcaption>
+</figure>
+
+<div class="box bad">
+  <b>두 가지 구조적 원인:</b>
+  <ul style="margin-bottom:0">
+    <li><b>① 정보 중복</b> — 엣지가 노드의 차분(§2)이라, 노드 스트림이 이미 i·j 시퀀스를 인코딩하면 "엣지의 시간 변화 = 노드 변화의 차"가 <b>이미 담겨 있다</b>. 엣지-시계열은 재표현(중복). <span class="small">(both≈node가 직접 증거: 엣지-시계열을 빼도 성능 유지)</span></li>
+    <li><b>② 라벨이 이웃 무관</b>(§3) — 메시지 패싱이 이웃 정보를 실어 날라도, 정답(ego 정의)이 그 정보를 <b>보상하지 않는다</b>.</li>
+  </ul>
+</div>
+<div class="box warn"><b>NAGraphSAGE와의 관계(오해 방지):</b> NAGraphSAGE가 검증한 것은 <b>공간적 이웃 인지</b>(프레임별)이고, 우리 발견은 <b>엣지의 *시계열* 인코딩</b>에 국한된다 — <b>NAGraphSAGE를 반박하지 않는다.</b> 오히려 node-시계열 단독(94.40%)이 NAGraphSAGE(94.07%)를 넘어, 시계열 노드 인코딩이 공간 이웃 이득을 흡수한 것으로 보인다.</div>
+
+<h2>5. 검증 — 정식 2×2 절제 (표현 × 엣지)</h2>
+<p>edge-temporal을 되살릴 두 가설 — <b>(A) 맵 기반 비중복 엣지</b>, <b>(B) 미래 예측 재정의</b> — 을 엄밀히 검증하기 위해, <b>표현(world 좌표 vs 극좌표)</b> × <b>엣지(없음 vs +맵엣지)</b> 2×2를 <b>같은 GRU·5-seed</b>로 탐지·예측 각각에 측정했다. <span class="small">(초기엔 극좌표 base에서 엣지가 유의미해 보였으나, 표현을 통제하자 결과가 달라졌다.)</span></p>
+<h3>설정</h3>
+<ul>
+  <li>데이터: 공업탑 로터리 전체 11파일, <b>537,555 표본</b>(정지·저속 제외), 시간분할(앞 70% train / 뒤 30% test)</li>
+  <li>ego 피처: HD맵 기반 <b>극좌표</b>(반경 ρ=어느 링, Δρ=링 횡단 속도, 접선속도 등) — 로터리 도로정렬</li>
+  <li>엣지 피처: <b>맵 기반 링-gap</b>(같은 링 리더/팔로워, 인접(내·외) 링 앞/뒤 gap+상대속도) — <b>노드로 유도 불가</b>(링 위상·순환방향 필요)</li>
+  <li>모델: GRU(시계열), 5-seed, paired t-test · 입력에 <b>lane_id 미사용</b>(누수 방지)</li>
+</ul>
+
+<figure>
+<svg viewBox="0 0 560 300" class="svg-mono" role="img" aria-label="로터리 극좌표 개념도">
+  <!-- concentric rings -->
+  <g fill="none" stroke="#cbd5e1">
+    <circle cx="180" cy="150" r="45"/><circle cx="180" cy="150" r="80"/>
+    <circle cx="180" cy="150" r="115"/>
+  </g>
+  <circle cx="180" cy="150" r="6" fill="#94a3b8"/>
+  <text x="180" y="172" font-size="10.5" text-anchor="middle" fill="#667085">로터리 중심</text>
+  <!-- ego on middle ring (angle ~ -40deg) -->
+  <g>
+    <circle cx="241" cy="99" r="7" fill="#2563eb"/>
+    <text x="252" y="95" font-size="11.5" fill="#2563eb" font-weight="700">ego</text>
+    <!-- radial arrow outward (Δρ = lane change) -->
+    <path d="M245 96 L272 74" stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+    <text x="286" y="66" font-size="10.5" fill="#dc2626">반경 Δρ</text>
+    <text x="286" y="79" font-size="10.5" fill="#dc2626">(링 횡단=차선변경)</text>
+    <!-- tangential arrow -->
+    <path d="M236 105 L210 133" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+    <text x="150" y="120" font-size="10.5" fill="#16a34a">접선(순환)</text>
+  </g>
+  <!-- adjacent outer-ring neighbor ahead, with gap -->
+  <circle cx="286" cy="150" r="6" fill="#7c3aed"/>
+  <text x="296" y="154" font-size="10.5" fill="#7c3aed">이웃(외링)</text>
+  <path d="M255 128 A80 80 0 0 1 286 150" stroke="#7c3aed" stroke-width="1.6" stroke-dasharray="4 3" fill="none"/>
+  <text x="300" y="128" font-size="10.5" fill="#7c3aed">인접 링 gap</text>
+  <!-- ring labels -->
+  <text x="180" y="108" font-size="9.5" text-anchor="middle" fill="#94a3b8">내링</text>
+  <text x="180" y="42"  font-size="9.5" text-anchor="middle" fill="#94a3b8">외링</text>
+  <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+    <path d="M0 0 L6 4 L0 8 z" fill="#334155"/></marker></defs>
+  <!-- right: feature legend -->
+  <g font-size="12" fill="#1a2233">
+    <text x="400" y="70" font-weight="700">피처 (도로정렬)</text>
+    <circle cx="406" cy="92" r="4" fill="#2563eb"/><text x="418" y="96">ρ = 어느 링</text>
+    <circle cx="406" cy="114" r="4" fill="#dc2626"/><text x="418" y="118">Δρ = 링 횡단 속도</text>
+    <circle cx="406" cy="136" r="4" fill="#16a34a"/><text x="418" y="140">접선속도 = 순환</text>
+    <circle cx="406" cy="158" r="4" fill="#7c3aed"/><text x="418" y="162">인접 링 gap (엣지)</text>
+    <text x="400" y="188" font-size="10.5" fill="#667085">※ 모두 위치에서 계산</text>
+    <text x="400" y="202" font-size="10.5" fill="#667085">  (lane_id 미사용)</text>
+  </g>
+</svg>
+<figcaption>그림 4. (시도한 표현) HD맵 기반 극좌표 — ego를 로터리 중심 극좌표로. 아래 절제 결과, 이 극좌표는 world를 <b>대체</b>하면서 절대위치·방향 정보를 잃어 오히려 성능이 낮았다.</figcaption>
+</figure>
+
+<h3>결과 — 2×2 절제 (5-seed AUC)</h3>
+<table>
+  <thead><tr><th>표현 \ 엣지</th><th>엣지 없음</th><th>+맵엣지</th><th>엣지 이득</th></tr></thead>
+  <tbody>
+    <tr><td colspan="4" style="background:#f7f9fc"><b>탐지 (현재 lane_change)</b></td></tr>
+    <tr><td><b>world 좌표</b></td><td class="hl"><b>0.9394</b></td><td>0.9352</td><td class="hlb">−0.0042 (해로움)</td></tr>
+    <tr><td>극좌표(도로정렬)</td><td>0.9001</td><td>0.9098</td><td>+0.0097</td></tr>
+    <tr><td colspan="4" style="background:#f7f9fc"><b>예측 (미래 6프레임)</b></td></tr>
+    <tr><td><b>world 좌표</b></td><td class="hl"><b>0.9084</b></td><td>0.8990</td><td class="hlb">−0.0094 (해로움)</td></tr>
+    <tr><td>극좌표(도로정렬)</td><td>0.8327</td><td>0.8470</td><td>+0.0143</td></tr>
+  </tbody>
+</table>
+<p class="small">표현 이득(world→극좌표, 엣지없음): 탐지 <b>−0.039</b>, 예측 <b>−0.076</b> (p&lt;.0001) — 극좌표가 <b>더 나쁨</b>.</p>
+
+<figure>
+<svg viewBox="0 0 640 300" class="svg-mono" role="img" aria-label="2x2 절제 (예측)">
+  <line x1="70" y1="30" x2="70" y2="240" stroke="#94a3b8"/>
+  <line x1="70" y1="240" x2="620" y2="240" stroke="#94a3b8"/>
+  <g font-size="10.5" fill="#667085" text-anchor="end">
+    <line x1="66" y1="240" x2="70" y2="240" stroke="#94a3b8"/><text x="62" y="244">0.80</text>
+    <line x1="66" y1="177" x2="70" y2="177" stroke="#94a3b8"/><text x="62" y="181">0.84</text>
+    <line x1="66" y1="114" x2="70" y2="114" stroke="#94a3b8"/><text x="62" y="118">0.88</text>
+    <line x1="66" y1="50"  x2="70" y2="50"  stroke="#94a3b8"/><text x="62" y="54">0.92</text>
+  </g>
+  <text x="24" y="135" font-size="11" fill="#667085" transform="rotate(-90 24 135)" text-anchor="middle">AUC (예측)</text>
+  <!-- world/none 0.9084 y58.4 h181.6 (best) -->
+  <rect x="110" y="58.4" width="80" height="181.6" fill="#16a34a"/>
+  <text x="150" y="51" font-size="12" text-anchor="middle" fill="#16a34a" font-weight="700">0.908</text>
+  <text x="150" y="256" font-size="11.5" text-anchor="middle" font-weight="700">world</text>
+  <text x="150" y="270" font-size="10" text-anchor="middle" fill="#667085">엣지없음 ★</text>
+  <!-- world/edge 0.8990 y73.3 h166.7 -->
+  <rect x="230" y="73.3" width="80" height="166.7" fill="#86efac"/>
+  <text x="270" y="66" font-size="12" text-anchor="middle">0.899</text>
+  <text x="270" y="256" font-size="11.5" text-anchor="middle">world</text>
+  <text x="270" y="270" font-size="10" text-anchor="middle" fill="#dc2626">+엣지 ↓</text>
+  <!-- polar/none 0.8327 y178.2 h61.8 -->
+  <rect x="360" y="178.2" width="80" height="61.8" fill="#94a3b8"/>
+  <text x="400" y="171" font-size="12" text-anchor="middle">0.833</text>
+  <text x="400" y="256" font-size="11.5" text-anchor="middle">극좌표</text>
+  <text x="400" y="270" font-size="10" text-anchor="middle" fill="#667085">엣지없음</text>
+  <!-- polar/edge 0.8470 y155.6 h84.4 -->
+  <rect x="480" y="155.6" width="80" height="84.4" fill="#cbd5e1"/>
+  <text x="520" y="148" font-size="12" text-anchor="middle">0.847</text>
+  <text x="520" y="256" font-size="11.5" text-anchor="middle">극좌표</text>
+  <text x="520" y="270" font-size="10" text-anchor="middle" fill="#16a34a">+엣지 ↑</text>
+</svg>
+<figcaption>그림 3. 2×2 절제 (예측). <b>raw world(엣지없음)가 최강.</b> 엣지 추가는 <b>강한 world base에선 성능↓</b>, 약한 극좌표 base에서만 ↑ → 엣지의 "기여"는 <b>약한 base 보충일 뿐</b>. (탐지도 동일 패턴)</figcaption>
+</figure>
+
+<div class="box bad">
+  <b>핵심 발견 (정직):</b>
+  <ul style="margin-bottom:0">
+    <li><b>raw world ego 시계열이 최강</b>(탐지 0.9394, 예측 0.9084). 도로정렬(극좌표) 재표현은 정보를 잃어 <b>더 나빴다</b>.</li>
+    <li>엣지는 <b>약한 극좌표 base에서만</b> 도움(+0.010/+0.014), <b>강한 world base에선 오히려 해로움</b>(−0.004/−0.009). ⇒ 엣지의 겉보기 "기여"는 <b>표현이 버린 정보를 부분 보충</b>한 착시였다.</li>
+    <li>⇒ 앞선 "맵 엣지 부활" 결론은 <b>철회.</b> <b>강한 ego 표현엔 엣지가 안 보탠다</b> — Ablation C(ego-지배)를 정식 절제로 재확인.</li>
+  </ul>
+</div>
+
+<h2>6. 종합 해석 및 남은 방향</h2>
+<table>
+  <thead><tr><th>가설</th><th>검증 결과</th></tr></thead>
+  <tbody>
+    <tr><td>(A) 맵 기반 비중복 엣지가 기여를 살린다</td><td class="hlb"><b>기각</b> — 강한 world base에선 엣지가 해로움</td></tr>
+    <tr><td>(B) 예측 재정의로 이웃이 인과적 기여</td><td class="hlb"><b>기각</b> — 예측에서도 world ego가 최강, 엣지 불필요</td></tr>
+    <tr><td>도로정렬(극좌표) 표현이 이득</td><td class="hlb"><b>기각</b> — world 대체 시 정보 손실로 더 나쁨</td></tr>
+  </tbody>
+</table>
+<div class="box key">
+  <b>정직한 결론:</b> 이 데이터/과제(로터리 차선변경, 탐지·예측 모두)에선 <b>raw ego 시계열이 지배</b>하고, <b>관계(엣지) 모델링·도로정렬 재표현은 성능을 개선하지 못한다.</b> Ablation C의 ego-지배·엣지-중복 결론이 정식 절제로 재확인됨.
+</div>
+<div class="box warn">
+  <b>남은 정직한 두 길:</b>
+  <ul style="margin-bottom:0">
+    <li><b>① 비판적 연구(음성 결과) 논문</b> — "차량행동 분류/예측에서 ego 시계열이 지배하며, 관계 모델링·도로정렬은 이 과제에 불필요함"을 엄밀히 규명. 지금 증거가 강하게 뒷받침. <b>가장 정직·완결.</b></li>
+    <li><b>② 상호작용이 인과적인 과제로 전환</b> — anticipation조차 ego가 이겼으므로, <b>정의상 2체(pair) 라벨</b>(gap-acceptance·양보·충돌)이라야 엣지가 살 여지. 단 재검증 필요(ego 지배 위험).</li>
+  </ul>
+</div>
+<p class="small"><b>공정성 단서:</b> 여기 극좌표는 world를 <b>대체</b>(정보 손실)했다. world에 ρ를 <b>추가(augment)</b>하는 방식은 미검. 다만 <b>엣지가 강한 base에서 해롭다</b>는 핵심 결론은 표현 방식과 무관하게 성립한다.</p>
+
+<h2>부록 — 재현 정보</h2>
+<ul class="small">
+  <li>데이터: <code>/home/oem/data/TII_data/Gongeoptap/*.csv</code> (11파일), lane_id·HD지도 <code>road_data/lane_annotations.json</code>(48 링 차선)</li>
+  <li>이미지→world 호모그래피 재투영 오차 중앙값 0.05m (맵·운동학 좌표 결합)</li>
+  <li>검증 코드: <code>journal/anticipation_features.py</code>(피처·라벨), <code>journal/detection_vs_anticipation.py</code>(탐지vs예측 5-seed), <code>journal/multiseed_ab.py</code></li>
+  <li>C-ablation 출처: <code>results/school.md</code>(C-node/C-edge), <code>results/local.md</code>(C-both)</li>
+</ul>
+
+<p class="small" style="margin-top:30px;border-top:1px solid var(--line);padding-top:12px">
+  ※ 한계·후속: 검증은 극좌표+맵gap 경량 파이프라인(GRU) 기준. 본 모델(2-hop lane-aware GNN)로의 통합, world↔극좌표 표현 절제, 엣지 피처 종류별 절제, 지평별 분석은 후속 예정.
+</p>
+
+</body>
+</html>

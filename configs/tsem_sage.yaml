@@ -1,0 +1,53 @@
+# TSEM-SAGE 기본 설정 (ET-NAGraphSAGE configs/ 와 분리)
+# 실행: python train_tsem.py --config configs/tsem_sage.yaml
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+# W=과거 관측, H=미래 지평 (ego 궤적상 H스텝 뒤 instant state)
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage          # tsem_sage | tsem_semantic_only
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 100
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true    # future_window_state(t+H) 분포 기반 (A안: LC는 window 내 발생 여부)
+  class_weight_power: 0.7    # 2026-07-07: power=1.0에서 normal 과소예측(-15.7pp) 확인 → normal 가중치 0.774→0.836, LC 1.631→1.408로 완화
+  lambda_temporal: 0.3       # 2026-07-07 신규: L_temporal — classifier_temporal(h_ego) 보조헤드, 명제 H1 직접 감독
+  lambda_spatial: 0.3        # 2026-07-07 신규: L_spatial — classifier_spatial(h_N) 보조헤드, 명제 H2 직접 감독
+  kl_weight: 0.1             # 2026-07-07: train.py(ET-NAGraphSAGE)와 동일한 KL(softmax(logits)‖Uniform) — 이제 실제로 배선됨(이전엔 config만 있고 미사용)
+  use_uncertainty_weight: false  # 2026-07-08: 8차 안 1 — stop_conf(Beta-Binomial 사후분산 기반, docs §12.12) 배치 재정규화 가중치를 FocalLoss에 곱함. 6·7차는 false, 8차 실행 시에만 true로 전환(현재 8차는 이미 실행 중이라 이 값과 무관)
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_w10_h10_labelA_multiloss_polar

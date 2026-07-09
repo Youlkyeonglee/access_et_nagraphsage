@@ -94,7 +94,15 @@ def get_csv_files(cfg: dict) -> list:
     if dataset == 'gongeoptap':
         pattern = os.path.join(data_dir, 'Gongeoptap/*.csv')
     elif dataset == 'drift':
-        pattern = os.path.join(data_dir, 'Drift/**/*.csv')
+        # DRIFT 다도로(A~E,I) — data_dir이 CSV 디렉터리를 직접 가리킴
+        pattern = os.path.join(data_dir, '*.csv')
+        files = sorted(glob.glob(pattern))
+        if not files:
+            pattern = os.path.join(data_dir, 'Drift/**/*.csv')
+            files = sorted(glob.glob(pattern, recursive=True))
+        if not files:
+            raise FileNotFoundError(f"CSV 파일 없음: {data_dir}")
+        return files
     else:  # both
         patterns = [
             os.path.join(data_dir, 'Gongeoptap/*.csv'),
@@ -184,6 +192,7 @@ def train(cfg: dict):
         val_ratio=cfg['data']['val_ratio'],
         num_workers=cfg['train']['num_workers'],
         neighbor_mode=cfg['graph'].get('neighbor_mode', 'hybrid'),
+        ego_relative=cfg['graph'].get('ego_relative', False),
         use_cache=cfg['train'].get('use_cache', True),
     )
 
@@ -394,6 +403,9 @@ def parse_args():
                         choices=['both', 'node', 'edge'])
     parser.add_argument('--neighbor_mode',     type=str,   default=None,
                         choices=['hybrid', 'count', 'radius'])
+    parser.add_argument('--ego_relative',      action='store_true', default=None)
+    parser.add_argument('--dataset',           type=str,   default=None)
+    parser.add_argument('--data_dir',          type=str,   default=None)
     parser.add_argument('--radius',            type=float, default=None)
     parser.add_argument('--K_max',             type=int,   default=None)
     parser.add_argument('--K_max2',            type=int,   default=None)
@@ -428,6 +440,9 @@ if __name__ == '__main__':
     if args.loss_type        is not None: cfg['loss']['type']                   = args.loss_type
     if args.temporal_target  is not None: cfg['model']['temporal_target']       = args.temporal_target
     if args.neighbor_mode    is not None: cfg['graph']['neighbor_mode']         = args.neighbor_mode
+    if args.ego_relative                : cfg['graph']['ego_relative']          = True
+    if args.dataset          is not None: cfg['data']['dataset']                = args.dataset
+    if args.data_dir         is not None: cfg['data']['data_dir']               = args.data_dir
     if args.no_cache                    : cfg['train']['use_cache']             = False
     if args.radius           is not None: cfg['graph']['radius']                = args.radius
     if args.K_max            is not None: cfg['graph']['K_max']                 = args.K_max

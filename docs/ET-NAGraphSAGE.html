@@ -241,6 +241,13 @@
     </li>
   </ul>
 
+  <div class="toc-section" style="color:#7c3aed;">📘 Access 저널</div>
+  <ul class="toc">
+    <li class="toc-item">
+      <a class="toc-link" data-page="journal" style="font-weight:700;">차선변경 예측 + HD맵 (edge-temporal)</a>
+    </li>
+  </ul>
+
   <div class="toc-section">목차</div>
   <ul class="toc">
 
@@ -385,6 +392,96 @@
     </div></div>
 
     <div class="callout tip" style="margin-top:12px;"><span class="ci">🔀</span><div><b>2-트랙 구조:</b> 이 페이지(IWIS2026 컨퍼런스) = 완결된 성능/규명 결과. 나머지 목차(Ablation·방법론 등)는 공유 자산이며, <b>edge-temporal·심화 novelty는 저널 트랙에서 별도 진행</b>한다.</div></div>
+  </div>
+
+  <!-- ▸ Access 저널 — 차선변경 예측 + HD맵 -->
+  <div class="page" id="page-journal">
+    <div class="hero">
+      <div class="eyebrow">IEEE Access 저널 트랙 · edge-temporal 부활 · 2026-07-02</div>
+      <h1>Access 저널 — 차선변경 예측(anticipation) + HD맵</h1>
+      <p>컨퍼런스(성능·구조 규명)와 <b>다른 문제를 푼다.</b> "차선변경을 <b>미리 예측</b>"하도록 문제를 재정의해, 이웃/엣지가 진짜 필요한 무대를 만들고 <b>edge-temporal novelty를 정직하게 부활</b>시킨다.</p>
+    </div>
+
+    <div class="callout err" style="margin-top:8px;">
+      <span class="ci">🔑</span>
+      <div><b>왜 방향을 바꿨나 (핵심 진단):</b> 현재 <code>lane_change</code> 라벨은 <b>"ego의 lane_id가 바뀐 ±6프레임"</b>으로 정의됨(라벨링 스크립트 확인). <b>이웃이 라벨 정의에 전혀 개입하지 않는다</b> → 그래서 C ablation에서 edge가 기여 0이었다(우연 아님, 구조적). 또한 lane_id/맵을 그대로 입력하면 <b>라벨 누수</b>(정답을 정답으로 예측). ⇒ 기존 "탐지" 문제로는 edge-temporal이 살 수 없다.</div>
+    </div>
+
+    <h2 style="margin-top:24px;">0. edge-시계열이 왜 구조적으로 한계인가 (근거)</h2>
+    <p style="font-size:13.5px;line-height:1.9;">여러 실험으로 확인한 <b>세 겹의 이유</b>. 단순 튜닝으로 못 넘는 <b>구조적</b> 한계다.</p>
+    <table>
+      <thead><tr><th>#</th><th>한계 원인</th><th>근거(실증)</th></tr></thead>
+      <tbody>
+        <tr><td>①</td><td><b>정보 중복</b> — 엣지 피처는 두 노드 피처의 결정론적 함수(대부분 선형 차: rel_speed=nbr−ego 등). 노드를 다 아는 모델엔 새 정보 ≈ 0. <code>I(edge;y|nodes)≈0</code></td><td>엣지 정의식이 노드의 차분 (<code>_compute_edge_feat</code>)</td></tr>
+        <tr><td>②</td><td><b>라벨이 이웃과 무관</b> — <code>lane_change</code>=ego 자신의 lane_id 전이 ±6프레임으로 정의. 이웃이 정의에 개입 안 함 → 이웃 정보는 이 라벨에 대해 <b>구조적으로 무의미</b></td><td>라벨링 스크립트 <code>20250318json_class_lanechage.py</code>; C-ablation node+edge(94.36)≈node-only(94.40), edge-only 92.52</td></tr>
+        <tr><td>③</td><td><b>ego 지배</b> — ego 도로정렬 동역학을 비선형모델로 제대로 잡으면 이웃 추가 기여 ≈ 0. (선형모델의 +0.011은 이웃이 ego신호의 <b>대리</b> 역할했을 뿐)</td><td>GBDT: A(ego극좌표)=0.834, B(+edge)=0.836 → <b>+0.002</b></td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip" style="margin-top:8px;"><span class="ci">🔓</span><div><b>유일한 탈출구:</b> 위 한계는 "탐지 + 단기"에서 성립. <b>장기 지평(의도) 예측</b>에선 ego 운동학이 포화하고 이웃 gap이 유일한 단서가 되어 edge 기여가 부활한다(§2 지평 분석). ⇒ 저널은 이 niche(장기 의도)로 간다.</div></div>
+
+    <h2 style="margin-top:24px;">1. 전환: "탐지" → "예측(anticipation)"</h2>
+    <p style="font-size:13.5px;line-height:1.9;">차선변경을 <b>일어난 뒤 맞히기</b>가 아니라 <b>일어나기 전에 예측</b>하기로 바꾼다. 로터리에서 옆 링으로 옮길지는 <b>옆 링의 빈 공간(gap)</b>을 보고 정하므로 — 예측 문제에선 이웃이 본질적으로 중요해진다.</p>
+    <table>
+      <thead><tr><th>문제</th><th>이웃(edge) 기여</th><th>의미</th></tr></thead>
+      <tbody>
+        <tr><td>탐지 (현재 라벨)</td><td>≈ 0</td><td>라벨이 ego lane_id로 정의 → 이웃 무관</td></tr>
+        <tr style="background:#ede9fe"><td><b>예측 (anticipation)</b></td><td><b>양성 (+)</b></td><td>미래 결정엔 옆 링 gap이 중요 → edge 정당</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:20px;">2. 정식 2×2 절제 (표현 × 엣지) — 결론이 뒤집힘</h2>
+    <p style="font-size:13px;color:var(--mute);">전체 53.7만, 5-seed GRU, 시간분할. 표현(world vs 극좌표) × 엣지(없음 vs +맵엣지). AUC.</p>
+    <table>
+      <thead><tr><th>표현 \ 엣지 (예측 H=6)</th><th>엣지없음</th><th>+맵엣지</th><th>엣지 이득</th></tr></thead>
+      <tbody>
+        <tr style="background:#dcfce7"><td><b>world 좌표</b></td><td><b>0.9084</b> (최강)</td><td>0.8990</td><td style="background:#fef2f2">−0.0094 (해로움)</td></tr>
+        <tr><td>극좌표(도로정렬)</td><td>0.8327</td><td>0.8470</td><td>+0.0143</td></tr>
+      </tbody>
+    </table>
+    <div class="callout err" style="margin-top:8px;"><span class="ci">🔴</span><div><b>정직한 반전 (2026-07-03):</b> 같은 GRU로 표현을 통제하니 — ① <b>raw world ego가 최강</b>(극좌표는 정보손실로 −0.076 더 나쁨), ② <b>엣지는 강한 world base에선 오히려 해로움</b>(−0.009), 약한 극좌표 base에서만 도움(+0.014). ⇒ 앞선 <b>"맵 엣지가 예측서 부활" 결론은 철회</b>(약한 base 착시였음). <b>강한 ego 시계열엔 엣지가 안 보탠다 — Ablation C(ego지배)를 정식 절제로 재확인.</b> 탐지도 동일 패턴(world 0.9394 최강, 엣지 −0.004).</div></div>
+
+    <h2 style="margin-top:24px;">3. HD맵을 어떻게 쓰나</h2>
+    <p style="font-size:13px;color:var(--mute);">호모그래피로 맵(링 centerline·폴리곤)을 world 좌표로 변환(오차 0.05m) → 차량 운동학과 결합.</p>
+    <table>
+      <thead><tr><th>용도</th><th>계산</th><th>피처 위치</th></tr></thead>
+      <tbody>
+        <tr><td><b>① ego 도로정렬</b></td><td>centerline에 투영 → 접선(순환)/반경(링횡단) 분해, 반경 속도·offset</td><td>노드</td></tr>
+        <tr style="background:#ede9fe"><td><b>② 인접 링 gap ★</b></td><td>대상 링의 앞/뒤 차까지 <b>순환방향 gap</b> + 상대속도 (맵 없이는 불가)</td><td>엣지</td></tr>
+      </tbody>
+    </table>
+    <div class="callout info" style="margin-top:8px;"><span class="ci">🆚</span><div>아까 검증의 KDTree 이웃(직선거리, 링 구분 없음) → HD맵은 <b>"인접 링의 차만, 곡선 링 따라 gap"</b>을 정확히 잰다. ②가 edge-temporal이 예측에서 기여하는 핵심.<br><b>누수 방지:</b> lane_id는 입력 안 함. 위치에서 계산한 연속량만. 라벨이 미래라 현재 gap은 정당한 단서.</div></div>
+
+    <h2 style="margin-top:24px;">4. 대안 문제 정의 (관계성 순)</h2>
+    <table>
+      <thead><tr><th>정의</th><th>예측 대상</th><th>HD맵 역할</th><th>관계성</th></tr></thead>
+      <tbody>
+        <tr style="background:#ede9fe"><td><b>1. 차선변경 예측</b> ✅검증</td><td>H프레임 뒤 링 변경 여부</td><td>인접 링 gap</td><td>중</td></tr>
+        <tr><td>2. Gap acceptance</td><td>옆 링 gap 수용해 진입?</td><td>대상 링 앞/뒤 gap</td><td><b>높음</b></td></tr>
+        <tr><td>3. 충돌/near-miss 예측</td><td>합류 상충 발생</td><td>경로 교차·합류 지오메트리</td><td><b>매우 높음</b></td></tr>
+        <tr><td>4. 양보/우선권 예측</td><td>합류 시 누가 양보</td><td>링 우선권·진입점</td><td>높음</td></tr>
+        <tr><td>5. Time-to-lane-change</td><td>다음 변경까지 프레임(회귀)</td><td>링 위치·gap 추세</td><td>중~높음</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn" style="margin-top:8px;"><span class="ci">🎯</span><div><b>추천 척추:</b> <b>1(차선변경 예측)</b> 메인(검증됨·라벨 자동생성) + <b>2(gap acceptance)</b> novelty 강화. 3(충돌)은 확장. 관계성이 클수록 edge-temporal이 강해진다.</div></div>
+
+    <h2 style="margin-top:24px;">5. 🔴 방향 재고 — 정식 절제로 (가+바) 기각</h2>
+    <div class="callout err" style="margin-top:8px;"><span class="ci">🔴</span><div>
+      <b>2×2 절제 결과 (2026-07-03):</b> 앞서 세운 "도로정렬 표현(가) + 예측 재정의로 edge 부활(바)"이 <b>모두 기각</b>됐다.
+      <ul style="margin:6px 0 0 18px;">
+        <li><b>도로정렬(극좌표) 표현</b>: world 대체 시 정보손실로 <b>더 나쁨</b>(−0.076). 기각.</li>
+        <li><b>맵 엣지 부활</b>: 강한 world base에선 엣지가 <b>해로움</b>(−0.009); 약한 극좌표 base 착시였음. 기각.</li>
+        <li><b>결론</b>: <b>raw ego 시계열이 지배</b>, 관계(엣지)·도로정렬 재표현은 개선 못함. Ablation C(ego지배) 재확인.</li>
+      </ul>
+    </div></div>
+
+    <h2 style="margin-top:20px;">6. 남은 정직한 방향</h2>
+    <div class="callout warn" style="margin-top:8px;"><span class="ci">🧭</span><div>
+      <b>① 비판적 연구(음성결과)</b> — "차량행동 분류·예측에서 ego 시계열이 지배; 관계모델·도로정렬 불필요"를 엄밀 규명(현 증거 강함, 가장 정직). <br>
+      <b>② 상호작용이 인과적인 과제로 전환</b> — 정의상 2체(pair) 라벨(gap-acceptance·양보·충돌)이라야 엣지가 살 여지. 단 ego 지배 위험 재검 필요. <br>
+      <span class="small">단서: 극좌표는 world를 <b>대체</b>(손실)했음 — <b>augment</b>(world+ρ)는 미검. 단 "엣지가 강한 base서 해롭다"는 표현 무관하게 성립.</span>
+    </div></div>
+
+    <div class="callout tip" style="margin-top:12px;"><span class="ci">🔀</span><div><b>컨퍼런스와의 차이:</b> IWIS2026=<b>탐지 문제</b>에서 성능·구조 규명(용량·receptive field, 95.3%, ego 시계열 중심). Access 저널=현재 <b>재고 중</b>(위 ①/②). 데이터·코드·HD맵 공유. 상세 근거: <code>docs/edge_temporal_report.html</code>.</div></div>
   </div>
 
   <!-- ▸ 연구 개요 -->

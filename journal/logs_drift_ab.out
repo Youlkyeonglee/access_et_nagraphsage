@@ -1,0 +1,20 @@
+저장 /home/oem/TNA_research/journal/drift_data.npz  표본 549,821  ego (549821, 10, 6) edge (549821, 10, 8)
+클래스 분포: {'stop': 15408, 'LC': 61682, 'normal': 472731}
+=== A/B 검정 ===
+표본 549,821 train 385,298 test 164,523 dev cuda
+Traceback (most recent call last):
+  File "/home/oem/TNA_research/journal/drift_ab.py", line 56, in <module>
+    a=run(Xa,s); b=run(Xb,s); mA.append(a[0]);lA.append(a[1]);mB.append(b[0]);lB.append(b[1])
+  File "/home/oem/TNA_research/journal/drift_ab.py", line 49, in run
+    macro=roc_auc_score(yte,pr,multi_class='ovr',average='macro')
+  File "/home/oem/anaconda3/envs/tna_research/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 218, in wrapper
+    return func(*args, **kwargs)
+  File "/home/oem/anaconda3/envs/tna_research/lib/python3.10/site-packages/sklearn/metrics/_ranking.py", line 665, in roc_auc_score
+    y_score = check_array(y_score, ensure_2d=False)
+  File "/home/oem/anaconda3/envs/tna_research/lib/python3.10/site-packages/sklearn/utils/validation.py", line 1105, in check_array
+    _assert_all_finite(
+  File "/home/oem/anaconda3/envs/tna_research/lib/python3.10/site-packages/sklearn/utils/validation.py", line 120, in _assert_all_finite
+    _assert_all_finite_element_wise(
+  File "/home/oem/anaconda3/envs/tna_research/lib/python3.10/site-packages/sklearn/utils/validation.py", line 169, in _assert_all_finite_element_wise
+    raise ValueError(msg_err)
+ValueError: Input contains NaN.

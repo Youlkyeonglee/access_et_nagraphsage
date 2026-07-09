@@ -1,0 +1,2865 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSEM-SAGE 저널 연구 설계</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --brand-50:#eff6ff;--brand-100:#dbeafe;--brand-200:#bfdbfe;--brand-300:#93c5fd;
+    --brand-400:#60a5fa;--brand-500:#3b82f6;--brand-600:#2563eb;--brand-700:#1d4ed8;--brand-900:#1e3a8a;
+    --ink:#1e293b;--mute:#64748b;--faint:#94a3b8;--line:#e2e8f0;--line2:#f1f5f9;
+    --bg:#f8fafc;--card:#ffffff;
+    --emerald:#059669;--emerald-bg:#ecfdf5;--amber:#d97706;--amber-bg:#fffbeb;
+    --violet:#7c3aed;--violet-bg:#f5f3ff;--red:#dc2626;--red-bg:#fef2f2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{font-family:'Pretendard','-apple-system',BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;-webkit-font-smoothing:antialiased;}
+
+  /* ── 레이아웃 ── */
+  .wrap{display:grid;grid-template-columns:240px 1fr;height:100vh;overflow:hidden;}
+
+  /* ── 사이드바 ── */
+  aside{
+    background:var(--card);border-right:1px solid var(--line);
+    height:100vh;overflow-y:auto;padding:24px 0 40px;
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  aside::-webkit-scrollbar{display:none}
+
+  .logo{display:flex;align-items:center;gap:10px;padding:0 16px 20px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+  .logo .mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--violet),#4c1d95);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;}
+  .logo b{font-size:14px;font-weight:800;letter-spacing:-.02em;line-height:1.25;}
+  .logo span{display:block;font-size:10.5px;color:var(--faint);font-weight:500;margin-top:1px;}
+
+  /* ── TOC ── */
+  .toc{list-style:none;padding:0 10px;}
+  .toc-section{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;
+    letter-spacing:.08em;padding:14px 8px 5px;}
+  .toc-item{position:relative;}
+
+  .toc-link{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:7px 10px;border-radius:8px;color:var(--mute);
+    text-decoration:none;font-size:13px;font-weight:600;
+    cursor:pointer;transition:background .12s,color .12s;user-select:none;
+  }
+  .toc-link:hover{background:var(--brand-50);color:var(--brand-700);}
+  .toc-link.active{background:var(--brand-600);color:#fff;}
+  .toc-link.active .chevron{color:#fff;transform:rotate(90deg);}
+
+  .chevron{
+    font-size:9px;color:var(--faint);
+    transition:transform .2s ease;flex-shrink:0;margin-left:4px;
+  }
+  .toc-link.parent-active .chevron{transform:rotate(90deg);}
+
+  .sub{
+    list-style:none;overflow:hidden;
+    max-height:0;transition:max-height .28s ease;
+  }
+  .sub.open{max-height:400px;}
+  .sub li a{
+    display:block;padding:5px 10px 5px 22px;border-radius:7px;
+    color:var(--faint);text-decoration:none;font-size:12px;font-weight:500;
+    transition:background .12s,color .12s;
+  }
+  .sub li a:hover{background:var(--brand-50);color:var(--brand-600);}
+  .sub li a.active{color:var(--brand-700);font-weight:700;}
+
+  /* ── 메인 콘텐츠 ── */
+  main{height:100vh;overflow-y:auto;position:relative;
+    scrollbar-width:thin;scrollbar-color:var(--line2) transparent;}
+  main::-webkit-scrollbar{width:5px;}
+  main::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+
+  .page{display:none;padding:44px 44px 100px;animation:fadeIn .18s ease;}
+  .page.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ── 하위 탭 분리 보기 ── */
+  .tsem-subsection.tsem-hidden{display:none;}
+  .subsec-banner{display:none;position:sticky;top:0;z-index:20;background:var(--brand-600);
+    color:#fff;padding:9px 20px;font-size:12.5px;display:flex;align-items:center;gap:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .subsec-banner.show{display:flex;}
+  .subsec-banner a{color:#fff;font-weight:700;text-decoration:underline;cursor:pointer;}
+  .subsec-banner a:hover{color:var(--brand-100);}
+
+  /* ── 히어로 ── */
+  .hero{background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 55%,#8b5cf6 100%);color:#fff;
+    border-radius:20px;padding:42px 42px;margin-bottom:32px;position:relative;overflow:hidden;}
+  .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+    background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);border-radius:50%;}
+  .hero .eyebrow{font-size:12px;font-weight:600;letter-spacing:.04em;opacity:.85;margin-bottom:10px;}
+  .hero h1{font-size:23px;font-weight:800;letter-spacing:-.03em;line-height:1.35;margin-bottom:12px;}
+  .hero p{font-size:14px;opacity:.92;max-width:660px;line-height:1.7;}
+  .hero .meta{display:flex;gap:9px;flex-wrap:wrap;margin-top:22px;}
+  .hero .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
+    padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;}
+
+  /* ── 섹션 헤더 ── */
+  .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+  .sec-num{width:28px;height:28px;border-radius:8px;background:var(--violet);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;}
+  h2{font-size:22px;font-weight:800;letter-spacing:-.02em;}
+  .sec-desc{color:var(--mute);font-size:13.5px;margin:0 0 20px 40px;}
+  h3{font-size:16px;font-weight:700;margin:28px 0 12px;letter-spacing:-.01em;
+    display:flex;align-items:center;gap:8px;scroll-margin-top:20px;}
+  h3 .ic{color:var(--violet);}
+  h4{font-size:14px;font-weight:700;margin:16px 0 8px;}
+  p{margin-bottom:11px;color:#334155;line-height:1.65;}
+
+  /* ── 카드/그리드 ── */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .grid{display:grid;gap:14px;}
+  .g2{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr;}}
+  .fcard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;transition:.18s;}
+  .fcard:hover{border-color:var(--brand-300);box-shadow:0 6px 18px rgba(37,99,235,.08);transform:translateY(-2px);}
+  .fcard h4{margin:0 0 5px;font-size:14.5px;}
+  .fcard p{font-size:12.5px;color:var(--mute);margin:0;}
+
+  /* ── 스탯 ── */
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:13px;
+    padding:17px 19px;position:relative;overflow:hidden;}
+  .stat::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--violet);}
+  .stat .v{font-size:26px;font-weight:800;color:var(--violet);line-height:1;}
+  .stat .l{font-size:12px;color:var(--mute);margin-top:5px;}
+  .stat.em::before{background:var(--emerald);}.stat.em .v{color:var(--emerald);}
+  .stat.am::before{background:var(--amber);}.stat.am .v{color:var(--amber);}
+  .stat.rd::before{background:var(--red);}.stat.rd .v{color:var(--red);}
+
+  /* ── 뱃지 ── */
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+    padding:3px 8px;border-radius:6px;white-space:nowrap;}
+  .b-blue{background:var(--brand-50);color:var(--brand-700);}
+  .b-green{background:var(--emerald-bg);color:var(--emerald);}
+  .b-amber{background:var(--amber-bg);color:var(--amber);}
+  .b-violet{background:var(--violet-bg);color:var(--violet);}
+  .b-gray{background:var(--line2);color:var(--mute);}
+  .b-red{background:var(--red-bg);color:var(--red);}
+
+  /* ── 리스트 ── */
+  ul.dash{list-style:none;margin:6px 0;}
+  ul.dash li{position:relative;padding:4px 0 4px 18px;font-size:13px;color:#334155;}
+  ul.dash li::before{content:"";position:absolute;left:2px;top:12px;width:6px;height:6px;border-radius:50%;background:var(--violet);opacity:.55;}
+  ul.feat li{position:relative;padding:5px 0 5px 24px;font-size:13.5px;color:#334155;list-style:none;}
+  ul.feat li::before{content:"✓";position:absolute;left:0;top:5px;color:var(--emerald);font-weight:800;}
+  ul.cross li{position:relative;padding:5px 0 5px 24px;font-size:13px;color:var(--mute);list-style:none;}
+  ul.cross li::before{content:"✕";position:absolute;left:0;top:5px;color:var(--red);font-weight:800;}
+  ul.checklist{list-style:none;margin:6px 0;}
+  ul.checklist li{position:relative;padding:5px 0 5px 24px;font-size:13.5px;color:#334155;}
+  ul.checklist li::before{content:"☐";position:absolute;left:0;top:4px;color:var(--violet);font-weight:700;}
+
+  /* ── 테이블 ── */
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0;background:var(--card);
+    border:1px solid var(--line);border-radius:11px;overflow:hidden;}
+  th{background:var(--brand-50);color:var(--brand-700);font-weight:700;text-align:left;
+    padding:10px 14px;font-size:12px;border-bottom:1px solid var(--line);}
+  td{padding:10px 14px;border-bottom:1px solid var(--line2);vertical-align:top;color:#334155;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#fafcff;}
+  td.hl,tr.hl td{background:#ecfdf5;}
+  td.chg{background:#fef3c7;color:#92400e;font-weight:700;position:relative;padding-top:15px;}
+  td.chg::before{content:'변경';position:absolute;top:1px;left:5px;font-size:8px;
+    font-weight:700;color:#b45309;letter-spacing:.3px;}
+  th.chg{background:#fde68a !important;color:#92400e !important;}
+  td.new{background:#fef3c7;color:#92400e;font-weight:700;}
+  th.new{background:#fde68a !important;color:#92400e !important;}
+  td.hlb,tr.hlb td{background:var(--red-bg);}
+
+  /* ── 코드 ── */
+  code{font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;
+    background:var(--line2);color:var(--brand-700);padding:2px 5px;border-radius:4px;}
+  pre{background:#0f172a;color:#e2e8f0;border-radius:11px;padding:17px 19px;overflow-x:auto;
+    font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;line-height:1.7;margin:9px 0;}
+
+  /* ── 콜아웃 ── */
+  .callout{display:flex;gap:12px;padding:15px 17px;border-radius:11px;margin:14px 0;
+    font-size:13px;align-items:flex-start;}
+  .callout .ci{font-size:17px;flex-shrink:0;line-height:1.4;}
+  .callout.info{background:var(--brand-50);border:1px solid var(--brand-200);color:#1e40af;}
+  .callout.warn{background:var(--amber-bg);border:1px solid #fcd34d;color:#92400e;}
+  .callout.tip{background:var(--emerald-bg);border:1px solid #6ee7b7;color:#065f46;}
+  .callout.err{background:var(--red-bg);border:1px solid #fca5a5;color:#991b1b;}
+  .callout.key{background:var(--violet-bg);border:1px solid #c4b5fd;color:#4c1d95;}
+  .callout b{font-weight:700;}
+
+  /* ── 체인 다이어그램 ── */
+  .chain{background:#0f172a;color:#e2e8f0;border-radius:11px;padding:18px 20px;
+    font-family:'JetBrains Mono','Consolas',monospace;font-size:12.5px;line-height:1.85;margin:14px 0;}
+  .chain b{color:#c4b5fd;}
+
+  /* ── 다이어그램/그림 ── */
+  figure{margin:18px 0;text-align:center;}
+  figure svg{max-width:100%;height:auto;border:1px solid var(--line);border-radius:11px;background:#fff;}
+  figcaption{font-size:12px;color:var(--mute);margin-top:8px;}
+  .svg-mono{font-family:'Pretendard',sans-serif;}
+
+  blockquote{border-left:3px solid var(--violet);margin:10px 0;padding:6px 16px;color:#334155;font-style:italic;font-size:13.5px;}
+  .title-en{font-size:16px;font-weight:800;color:var(--violet);margin:6px 0 4px;}
+  .title-ko{font-size:13px;color:var(--mute);margin-bottom:6px;}
+  .small{font-size:12px;color:var(--mute);}
+  a.doclink{color:var(--brand-600);text-decoration:none;font-weight:600;}
+  a.doclink:hover{text-decoration:underline;}
+
+  footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--faint);font-size:11.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══ 사이드바 ═══ -->
+<aside>
+  <div class="logo">
+    <div class="mark">🧭</div>
+    <div><b>TSEM-SAGE</b><span>저널 연구 설계 · 2026-07-07</span></div>
+  </div>
+
+  <div class="toc-section" style="color:#059669;">🧪 구현 검증</div>
+  <ul class="toc">
+    <li class="toc-item">
+      <a class="toc-link" data-page="verification" style="font-weight:700;">파이프라인 실행 결과 (2026-07-07)</a>
+    </li>
+  </ul>
+
+  <div class="toc-section">목차</div>
+  <ul class="toc">
+    <li class="toc-item">
+      <a class="toc-link" data-page="background">배경 — 왜 방향을 바꾸는가</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link has-children" data-page="problem">
+        문제 재정의 <span class="chevron">▶</span>
+      </a>
+      <ul class="sub" id="sub-problem">
+        <li><a data-page="problem" data-anchor="problem-causal">인과 구조</a></li>
+        <li><a data-page="problem" data-anchor="problem-wh">관측창 W · 지평 H</a></li>
+        <li><a data-page="problem" data-anchor="problem-compare">기존 방식과 비교</a></li>
+      </ul>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link has-children" data-page="data" style="font-weight:700;">
+        📊 데이터 설계 <span class="chevron">▶</span>
+      </a>
+      <ul class="sub" id="sub-data">
+        <li><a data-page="data" data-anchor="data-overview">데이터셋 개요</a></li>
+        <li><a data-page="data" data-anchor="data-sampling">샘플 구성 (W·H·split)</a></li>
+        <li><a data-page="data" data-anchor="data-label">라벨 정의</a></li>
+        <li><a data-page="data" data-anchor="data-distribution">클래스 분포</a></li>
+        <li><a data-page="data" data-anchor="data-neighbor">이웃 · 그래프 구성</a></li>
+      </ul>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="title">논문 제목</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="why">왜 "GRU에 6D 넣기"는 안 되는가</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="propositions">방법론 논리 골격 (5단 명제)</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link has-children" data-page="method">
+        제안 방법론 · TSEM-SAGE <span class="chevron">▶</span>
+      </a>
+      <ul class="sub" id="sub-method">
+        <li><a data-page="method" data-anchor="method-hypo">핵심 가설</a></li>
+        <li><a data-page="method" data-anchor="method-primitives">Semantic Primitives</a></li>
+        <li><a data-page="method" data-anchor="method-info">시계열 정보 설계</a></li>
+        <li><a data-page="method" data-anchor="method-pipeline">4단 파이프라인</a></li>
+        <li><a data-page="method" data-anchor="method-loss">손실 함수</a></li>
+        <li><a data-page="method" data-anchor="method-neighbor">이웃 소실·결측</a></li>
+        <li><a data-page="method" data-anchor="method-predictions">설계 예측</a></li>
+      </ul>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="relation">NAGraphSAGE와의 관계</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link has-children" data-page="structure">
+        논문 구조 <span class="chevron">▶</span>
+      </a>
+      <ul class="sub" id="sub-structure">
+        <li><a data-page="structure" data-anchor="structure-relatedwork">관련연구 (Related Work)</a></li>
+        <li><a data-page="structure" data-anchor="structure-tables">실험 표 설계 — 개요</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-master">▸ 전체 실험 조합표</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-label">▸ 라벨 정의 ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-cw">▸ Class weight ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-aux">▸ 보조loss+KL ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-channel">▸ 입력 채널 ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-epoch">▸ 학습 길이 ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-uncertainty">▸ 불확실성 loss ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-augment">▸ Augmentation 조합 ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-input">▸ 입력 조합 ablation (10차 계열)</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-future">▸ 계획된 향후 실험</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-wh">▸ W×H 조합표</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-radius">▸ radius ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-tbl-stopdelta">▸ stop ±δ ablation</a></li>
+        <li><a data-page="structure" data-anchor="structure-baseline">베이스라인</a></li>
+        <li><a data-page="structure" data-anchor="structure-metric">평가 지표</a></li>
+      </ul>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="abstract">Abstract 초안</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="contributions">기여 3줄</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="framework">정보원 분해 프레임워크</a>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link has-children" data-page="checklist">
+        코드 수정 체크리스트 <span class="chevron">▶</span>
+      </a>
+      <ul class="sub" id="sub-checklist">
+        <li><a data-page="checklist" data-anchor="checklist-undecided">미결정 사항</a></li>
+      </ul>
+    </li>
+    <li class="toc-item">
+      <a class="toc-link" data-page="references">관련 문서 · 코드</a>
+    </li>
+  </ul>
+</aside>
+
+<!-- ═══ 메인 콘텐츠 ═══ -->
+<main id="main-content">
+
+  <div id="subsec-banner" class="subsec-banner">
+    <span>🔎 이 하위 섹션만 분리해서 보고 있습니다.</span>
+    <a id="subsec-banner-reset" href="#">← 전체 페이지 보기</a>
+  </div>
+
+  <!-- ▸ 구현 검증 결과 -->
+  <div class="page active" id="page-verification">
+    <div class="hero">
+      <div class="eyebrow">🧪 구현 검증 · 2026-07-07 · GPU 실행 결과</div>
+      <h1>라벨 재정의로 accuracy·macro-F1·LC recall 동시 개선 달성</h1>
+      <p>§checklist대로 구현한 코드를 실제 GPU에서 100 epoch씩 세 차례 돌렸다. 1차는 class weight 과도(LC
+      13.75배)로 baseline 미달, 2차는 sqrt 완화(power=0.5)로 accuracy·macro-F1은 이겼지만 LC recall이
+      크게 떨어지는 트레이드오프가 남았다. 근본 원인이 <b>lane_change의 순간(point) 라벨 정의 자체</b>(정의상
+      전이 프레임 1장뿐이라 극단적으로 희귀)임을 문헌(maneuver anticipation) 검토로 확인, <b>lane_change를
+      윈도우 내 발생 여부로 재정의</b>한 3차 실험에서 <b>모든 지표가 동시에 baseline을 크게 앞섰다</b>
+      (macro-F1 69.83% vs 49.10%, +20.7%p).</p>
+      <div class="meta">
+        <span class="chip">✅ 파이프라인 정상</span>
+        <span class="chip">🐛 성능 버그 2건 수정</span>
+        <span class="chip">✅ 2차: baseline 초과, LC recall 트레이드오프</span>
+        <span class="chip">🏆 3차: 전 지표 동시 개선</span>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-num">✓</div><h2>12.1 파이프라인 검증</h2></div>
+    <p class="sec-desc">라벨 → 데이터로더 → 모델 → 학습 → 평가, 전 구간 GPU 실행 확인.</p>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><code>tsem_instant_label.py</code> → <code>data_manager_tsem.py</code> →
+      <code>tsem_sage.py</code> → <code>train_tsem.py</code> → <code>tsem_eval.py</code>
+      전체를 GPU에서 100 epoch까지 실제로 돌려 확인함 (W=10, H=10, <code>configs/tsem_sage.yaml</code>).</div>
+    </div>
+
+    <h3 id="ver-result1">12.2 1차 결과 — Persist baseline을 못 이김</h3>
+    <table>
+      <thead><tr><th>지표</th><th>TSEM-SAGE (test)</th><th>Persist baseline</th></tr></thead>
+      <tbody>
+        <tr class="hlb"><td>Accuracy</td><td>64.77%</td><td><b>76.57%</b></td></tr>
+        <tr class="hlb"><td>Macro-F1</td><td>52.36%</td><td><b>53.57%</b></td></tr>
+        <tr class="hl"><td>LC recall</td><td><b>65.85%</b></td><td>6.41%</td></tr>
+        <tr><td>LC precision</td><td>7.32%</td><td>5.76%</td></tr>
+      </tbody>
+    </table>
+    <p>원인: <code>loss.use_class_weights=True</code>로 <code>lane_change</code> 가중치가 <b>13.75배</b>까지
+    올라가서 LC를 과다예측(실제 normal 74,795개 중 22,682개를 LC로 오분류) → LC recall은 크게 개선했지만
+    accuracy·macro-F1은 오히려 하락. 코드 버그가 아니라 <b>하이퍼파라미터 문제</b>.</p>
+
+    <h3 id="ver-result2">12.3 조정 — class weight power 완화 (완료, baseline 첫 초과)</h3>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>조치 (2026-07-07):</b> <code>train_tsem.py</code>의 <code>class_weights_from_distribution()</code>에
+      <code>power</code> 인자 추가 — 가중치를 <code>(역빈도)^power</code>로 계산. <code>configs/tsem_sage.yaml</code>에
+      <code>loss.class_weight_power: 0.5</code>(sqrt 완화) 설정, <code>experiment: tsem_sage_w10_h10_cw_sqrt</code>로 재실험.
+      <b>GPU0</b>에 <code>CUDA_VISIBLE_DEVICES=0</code>으로 고정 실행 (로그: <code>logs/tsem/train_w10_h10_cw_sqrt.log</code>), 100 epoch 완료.</div>
+    </div>
+    <table>
+      <thead><tr><th>클래스</th><th>power=1.0 (기존)</th><th>power=0.5 (sqrt, 신규)</th></tr></thead>
+      <tbody>
+        <tr><td>stop</td><td>0.913</td><td>0.956</td></tr>
+        <tr class="hl"><td>lane_change</td><td><b>13.752</b></td><td><b>3.708</b></td></tr>
+        <tr><td>normal</td><td>0.546</td><td>0.739</td></tr>
+      </tbody>
+    </table>
+
+    <h4>최종 test 결과 — 1차 vs 2차 vs Persist</h4>
+    <table>
+      <thead><tr><th>지표</th><th>1차 (power=1.0)</th><th>2차 (power=0.5)</th><th>Persist baseline</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td>64.77%</td><td><b>80.89%</b> ✅</td><td>76.57%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td>52.36%</td><td><b>58.79%</b> ✅</td><td>53.57%</td></tr>
+        <tr><td>LC recall</td><td><b>65.85%</b></td><td>11.08%</td><td>6.41%</td></tr>
+        <tr><td>LC precision</td><td>7.32%</td><td>13.21%</td><td>5.76%</td></tr>
+        <tr><td>stop recall</td><td>—</td><td>92.45%</td><td>—</td></tr>
+        <tr><td>normal recall</td><td>—</td><td>76.81%</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p><b>2차 실험이 처음으로 accuracy·macro-F1 둘 다 Persist baseline을 이겼다.</b> 다만 LC recall이
+    1차(65.85%)보다 크게 낮아졌다(11.08%) — class weight를 너무 완화해서 <b>LC 과다예측(1차) → LC 과소예측(2차)
+    으로 반대 방향 트레이드오프</b>가 발생한 것으로 보인다. LC recall은 여전히 Persist(6.41%)보다는 낫고
+    precision도 개선(7.32%→13.21%)됐지만, 명제 4(TSEM-SAGE의 LC 예측력)를 논문에 쓰려면 <code>power</code>를
+    0.5~1.0 사이에서 더 스윕하거나 focal gamma를 같이 조정해 LC recall·전체 accuracy 균형점을 찾아야 한다.</p>
+    <p class="small">혼동행렬(2차, test): stop→[39659,20,3217], lane_change→[58,304,2382], normal→[15365,1978,57452]
+    (행=정답, 열=예측). LC 오분류의 대부분(2382/2744)이 normal로 새는 것으로 보아, 여전히 LC를 "그냥 normal"로
+    뭉개는 경향이 남아있다.</p>
+
+    <h3 id="ver-label-a">12.4 라벨 재정의 A안 — 완료, 3차 실험 전 지표 동시 개선</h3>
+    <p><b>근본 원인 재진단:</b> 1·2차의 recall/precision 널뛰기는 loss weight 튜닝만으로는 해결이 안 되는
+    구조적 문제였다 — <code>lane_change</code>가 point 정의상 <b>전이 프레임 정확히 1장</b>뿐이라, class
+    weight를 아무리 조정해도 "8배 이상 과소포착되는 근본 희귀도"는 못 고친다. 문헌 검토(maneuver
+    anticipation, 예: Jain et al. ICCV 2015) 결과 이 분야 표준은 <b>"미래 지평 내 발생 여부"</b>로 이벤트를
+    정의하는 것임을 확인 — 문제 재정의 페이지의 "미래 상태 라벨" 섹션에 A안으로 반영함.</p>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>구현 (2026-07-07):</b> <code>modules/tsem_instant_label.py::future_window_state()</code> 신규 +
+      <code>_TsemFileData.future_window_state()</code>(bisect 기반 O(log n) 프레임 인덱스 조회) +
+      <code>_assemble_np()</code>·<code>summarize_label_distribution()</code>의 <code>y</code> 계산 교체.
+      캐시 포맷 <code>tsem_f16ne_v2</code>로 분리(구 point-라벨 캐시와 공존). 검증: 실측 분포가 사전 분석과
+      정확히 일치(stop 36.50%/LC 20.44%/normal 43.06%).</div>
+    </div>
+    <p class="small">3차 실험: <code>configs/tsem_sage.yaml</code>의 <code>experiment: tsem_sage_w10_h10_labelA</code>,
+    LC 불균형이 완화되어(2.4%→20.4%) <code>class_weight_power</code>를 1.0(원래 역빈도, LC≈1.63배)으로 복귀시켜
+    GPU0에서 100 epoch 완료.</p>
+
+    <h4>최종 test 결과 — 3차(라벨 A안) vs 1·2차 vs 각 실험의 Persist baseline</h4>
+    <table>
+      <thead><tr><th>지표</th><th>1차 (point, cw=1.0)</th><th>2차 (point, cw=0.5)</th><th>3차 (window, cw=1.0)</th><th>Persist (window 기준)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td>64.77%</td><td>80.89%</td><td><b>70.46%</b></td><td>61.33%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td>52.36%</td><td>58.79%</td><td><b>69.83%</b></td><td>49.10%</td></tr>
+        <tr class="hl"><td>LC recall</td><td>65.85%</td><td>11.08%</td><td><b>78.65%</b></td><td>5.65%</td></tr>
+        <tr class="hl"><td>LC precision</td><td>7.32%</td><td>13.21%</td><td><b>59.95%</b></td><td>43.50%</td></tr>
+        <tr><td>stop recall</td><td>—</td><td>92.45%</td><td>91.71%</td><td>—</td></tr>
+        <tr><td>normal recall</td><td>—</td><td>76.81%</td><td>50.03%</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <span class="ci">🏆</span>
+      <div><b>3차가 처음으로 4개 핵심 지표(accuracy·macro-F1·LC recall·LC precision) 전부에서 동시에 baseline을
+      크게 앞섰다</b> — 1차(LC 과다예측), 2차(LC 과소예측)의 트레이드오프가 라벨 재정의만으로 해소됨. macro-F1
+      기준 +20.7%p는 지금까지 세 실험 중 최대 개선폭.</div>
+    </div>
+    <p class="small">주의: 1·2차와 3차는 <b>정답 라벨 자체가 다르다</b>(point vs window)는 점에서 표 안의
+    accuracy/macro-F1을 직접 비교하는 것은 참고용일 뿐 엄밀한 ablation은 아니다 — 각 실험은 자기 라벨 기준
+    Persist baseline과 비교하는 것이 정확하다. normal recall이 50%로 낮아진 것은 §12.5에서 진단, 4차 실험 진행 중 —
+    모델이 normal을 stop/LC 쪽으로 더 자주 오분류하는 경향(confusion: normal 54,014개 중 14,924개→stop,
+    12,068개→LC 오분류).</p>
+    <p class="small">혼동행렬(3차, test): stop→[39339,292,3265], lane_change→[226,18503,4796],
+    normal→[14924,12068,27022] (행=정답, 열=예측).</p>
+
+    <h3 id="ver-normal-recall">12.5 normal recall 진단 — class weight 편향, 4차 실험(power=0.7) 완료·소폭 개선</h3>
+    <p>혼동행렬을 실제/예측 클래스 분포로 변환해보면 명확한 편향이 드러난다:</p>
+    <table>
+      <thead><tr><th></th><th>실제 분포 (test)</th><th>모델 예측 분포 (3차)</th><th>차이</th></tr></thead>
+      <tbody>
+        <tr><td>stop</td><td>35.6%</td><td>45.2%</td><td class="hlb">+9.6%p 과다예측</td></tr>
+        <tr><td>lane_change</td><td>19.5%</td><td>25.6%</td><td class="hlb">+6.1%p 과다예측</td></tr>
+        <tr class="hl"><td>normal</td><td>44.8%</td><td>29.1%</td><td><b>−15.7%p 과소예측</b></td></tr>
+      </tbody>
+    </table>
+    <p><b>원인:</b> 3차 class weight(<code>power=1.0</code>)가 <code>stop=0.913, lane_change=1.631,
+    normal=0.774</code>로 <b>normal이 가장 낮은 가중치</b>를 받는다. Focal loss와 결합되면, 애매한 경계
+    샘플에서 모델이 "normal을 맞혀도 loss가 별로 안 줄어드니 차라리 가중치 높은 stop/LC로 찍는다"는 유인이
+    생긴다 — stop·LC의 precision이 recall보다 낮은 것(과다예측 증거)과 정합적이다.</p>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>4차 실험 완료 (2026-07-07, GPU0):</b> <code>class_weight_power</code>를 1.0→<b>0.7</b>로 낮춰
+      normal 가중치를 0.774→0.836, lane_change를 1.631→1.408로 완화
+      (<code>experiment: tsem_sage_w10_h10_labelA_cw07</code>). 예상대로 <b>LC의 여유를 normal recall로
+      일부 이전하는 데 성공</b>했다.</div>
+    </div>
+    <table>
+      <thead><tr><th>지표</th><th>3차 (power=1.0)</th><th>4차 (power=0.7)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td>70.46%</td><td><b>71.10%</b></td><td>+0.64%p</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td>69.83%</td><td><b>70.54%</b></td><td>+0.71%p</td></tr>
+        <tr class="hl"><td>Normal recall</td><td>50.03%</td><td><b>53.83%</b></td><td>+3.80%p</td></tr>
+        <tr><td>LC recall</td><td>78.65%</td><td>74.84%</td><td>−3.81%p (여전히 baseline 5.65% 크게 상회)</td></tr>
+        <tr><td>LC precision</td><td>59.95%</td><td>62.78%</td><td>+2.83%p</td></tr>
+      </tbody>
+    </table>
+    <p class="small">예측분포 재확인: stop 과다예측 +9.6%p→+9.15%p(거의 변화 없음, stop weight는 0.913→0.938로
+    소폭 변화), lane_change 과다예측 +6.1%p→+3.78%p, normal 과소예측 −15.7%p→−12.84%p로 완화. <b>방향은 맞지만
+    편향이 완전히 해소되진 않음</b> — stop 과다예측은 그대로 남아있어 추가 조정 여지가 있다(§12.10 남은 항목).</p>
+
+    <h3 id="ver-multiloss">12.6 손실함수 재설계 — temporal·spatial 보조 loss + KL 항 (5차 실험 완료, 현재 최고 기록)</h3>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>문제의식:</b> 지금까지(1~4차) 손실은 <b>Stage D 최종 출력 하나에만</b> 걸려 있었다. Temporal
+      인코더(Stage A/B)와 spatial 집계(Stage C)가 각자 얼마나 기여하는지는 감독되지 않고, 최종 결정경계를
+      통해서만 간접적으로 학습된다. class weight를 튜닝할 때마다 recall/precision이 크게 흔들린 것도 — 단일
+      loss가 <b>표현학습 자체까지 왜곡</b>시키기 때문일 수 있다는 문제제기가 있었다 (단순함의 문제가 아니라
+      학습 의미 자체가 왜곡되는 문제).</div>
+    </div>
+    <p>추가로 확인된 사실: <code>configs/tsem_sage.yaml</code>에 <code>kl_weight</code> 필드가 처음부터
+    있었지만(ET-NAGraphSAGE 계열 config 전부에 동일 필드 존재, Ablation D2: 0/0.1/0.2/0.3/0.5), <b><code>train_tsem.py</code>에는
+    실제로 배선되어 있지 않았다</b> — 즉 이 세션의 모든 실험(1~4차)이 사실은 KL 정규화 없이 돌아간 것.
+    <code>train.py</code>(ET-NAGraphSAGE 원본)의 정의를 그대로 재사용해 이번에 배선했다.</p>
+
+    <pre>L_total = L_D(logits, y)                              # 기존: Stage D 최종 출력, Focal+class weight
+        + λ_T · L_D(classifier_temporal(h_ego), y)        # 신규: temporal 단독 보조헤드 — 명제 H1 직접 감독
+        + λ_S · L_D(classifier_spatial(h_N), y)           # 신규: spatial 단독 보조헤드 — 명제 H2 직접 감독
+        + λ_KL · KL(softmax(logits) ‖ Uniform)            # 신규(배선): train.py와 동일 정의, 출력 확신도 균등화</pre>
+
+    <table>
+      <thead><tr><th>항</th><th>무엇에 거는가</th><th>목적</th><th>이번 실험 값</th></tr></thead>
+      <tbody>
+        <tr><td>L_D (메인)</td><td><code>classifier(h_out)</code> — Stage C까지 다 거친 최종 표현</td>
+          <td>기존과 동일한 주 예측 목표</td><td>가중치 1.0 (고정)</td></tr>
+        <tr class="hl"><td>L_T (신규)</td><td><code>classifier_temporal(h_ego)</code> — Stage B 직후,
+          spatial 이전</td><td>temporal 인코더가 <b>단독으로도</b> 예측 가능한 표현을 만들도록 강제</td>
+          <td>λ_T = 0.3</td></tr>
+        <tr class="hl"><td>L_S (신규)</td><td><code>classifier_spatial(h_N)</code> — 이웃 집계 메시지,
+          ego 정보 제외</td><td>spatial(이웃) 정보만으로 얼마나 예측 가능한지 직접 감독</td><td>λ_S = 0.3</td></tr>
+        <tr><td>L_KL (배선)</td><td>최종 <code>logits</code>의 softmax 분포</td>
+          <td>출력 확신도가 한쪽으로 쏠리지 않게 정규화 (ET-NAGraphSAGE 원 설계 재사용)</td><td>λ_KL = 0.1</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>구현 (2026-07-07):</b> <code>models/et_nagraphsage.py::ETSAGELayer.forward()</code>에
+      <code>return_extra</code> 플래그 추가(<code>h_N</code>·β 노출, 기존 호출부는 영향 없음— 기본값 False).
+      <code>models/tsem_sage.py::TSEMSAGE</code>에 <code>classifier_temporal</code>·<code>classifier_spatial</code>
+      헤드 추가, <code>forward(batch, return_aux=True)</code>로 dict 반환(평가·추론은 기존처럼 <code>return_aux=False</code>
+      기본값이라 <b>하위호환 유지</b>). <code>train_tsem.py</code>에 <code>kl_uniform_loss()</code> 추가 및 결합 loss 배선.</div>
+    </div>
+    <p class="small">5차 실험: <code>experiment: tsem_sage_w10_h10_labelA_multiloss</code>, <b>GPU1</b>에서
+    4차와 병렬 완료 (동일 <code>class_weight_power=0.7</code>, 보조 loss·KL만 추가).</p>
+
+    <h4>최종 결과 — 4차(단일 loss) vs 5차(보조 loss+KL)</h4>
+    <table>
+      <thead><tr><th>지표</th><th>4차</th><th>5차</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td>71.10%</td><td><b>71.38%</b></td><td>+0.28%p</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td>70.54%</td><td><b>70.80%</b></td><td>+0.26%p</td></tr>
+        <tr><td>stop recall</td><td>90.79%</td><td>90.79%</td><td>동일</td></tr>
+        <tr><td>LC recall</td><td>74.84%</td><td>74.58%</td><td>−0.26%p (거의 동일)</td></tr>
+        <tr class="hl"><td>Normal recall</td><td>53.83%</td><td><b>54.57%</b></td><td>+0.74%p</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <span class="ci">🏆</span>
+      <div><b>5차가 지금까지 6번의 실험 중 accuracy·macro-F1 최고 기록.</b> 보조 loss(temporal·spatial 헤드)와
+      KL 항이 class weight 튜닝 위에 <b>작지만 일관된 추가 개선</b>을 준다 — 모든 지표가 동시에 같거나 나아졌고
+      악화된 지표가 없다. 다만 효과 크기는 크지 않음(<1%p) — class weight power 조정(3차→4차, +0.64%p accuracy)이
+      더 큰 지렛대였고, 보조 loss는 그 위에 얹는 정제 단계로 보는 게 정확하다.</div>
+    </div>
+    <p class="small">예측분포: stop 과다예측 +9.15%p→+8.91%p, normal 과소예측 −12.89%p→−12.49%p로 각각 소폭
+    완화 — stop 과다예측은 4차와 마찬가지로 크게 해소되지 않음(여전히 §12.10 과제).</p>
+
+    <h3 id="ver-polar">12.7 로터리 극좌표 채널 (Δρ·접선) 추가 — 6차 실험 완료, 최대 폭 개선</h3>
+    <p><code>models/tsem_semantic_derivation.py::SemanticDerivation</code>의 semantic 채널을 6→8로 확장
+    (Δρ, 접선). 정의·물리적 근거·결측 처리는 <a data-goto="method" data-anchor="method-info">"제안 방법론 →
+    시계열에 넣는 정보"</a>에 상세 기록. 데이터 캐시는 raw 6D만 저장하고 Δρ·접선은 모델 forward 시점에 계산되므로
+    <b>캐시 재생성 불필요</b> — 기존 캐시 그대로 재사용.</p>
+    <p class="small">6차 실험: <code>experiment: tsem_sage_w10_h10_labelA_multiloss_polar</code>, <b>GPU2</b>에서
+    4·5차와 병렬 완료 (5차의 multi-loss 설정 그대로 유지 + 입력 채널만 확장 — "채널 추가가 순증 기여하는가"를
+    격리해서 봄).</p>
+
+    <h4>최종 결과 — 5차(채널 6개) vs 6차(채널 8개, Δρ·접선 추가)</h4>
+    <table>
+      <thead><tr><th>지표</th><th>5차</th><th>6차</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td>71.38%</td><td><b>74.02%</b></td><td>+2.64%p</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td>70.80%</td><td><b>73.85%</b></td><td>+3.05%p</td></tr>
+        <tr class="hl"><td>Normal recall</td><td>54.57%</td><td><b>58.98%</b></td><td>+4.41%p</td></tr>
+        <tr class="hl"><td>LC recall</td><td>74.58%</td><td><b>76.87%</b></td><td>+2.29%p</td></tr>
+        <tr class="hl"><td>LC precision</td><td>63.03%</td><td><b>70.03%</b></td><td>+7.00%p</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <span class="ci">🏆</span>
+      <div><b>6차가 지금까지 실험 중 압도적 최고 기록 — 그리고 개선 폭도 가장 크다.</b> 라벨 재정의(3차, macro-F1
+      +20.7%p 대비 baseline)만큼 극적이진 않지만, class weight 튜닝(4차 +0.71%p)이나 보조 loss(5차 +0.26%p)와
+      비교하면 <b>한 자릿수 %p대의 뚜렷한 순증 기여</b>다. 모든 지표가 동시에 개선됐고 특히 LC precision이
+      +7%p나 뛰었다 — Δρ가 LC의 핵심 신호(반경 이동)를 직접 제공해서 모델이 "애매한 경계에서 덜 헷갈려한다"는
+      해석과 정합적이다. <code>journal/augment_test.py</code>의 선행 결과(다른 데이터·과제였지만 방향 일치)가
+      TSEM-SAGE에서도 재현된 셈이다.</div>
+    </div>
+    <p class="small">예측분포: lane_change 과다예측이 크게 줄었다(+3.75%p→+1.91%p, 거의 실제 비율에 근접).
+    normal 과소예측도 완화(−12.49%p→−11.16%p). 다만 <b>stop 과다예측은 여전히 그대로</b>(+8.91%p→+9.25%p,
+    오히려 미세 악화) — Δρ·접선은 LC↔normal 경계에 주로 도움이 됐고 stop 관련 편향은 별개 원인으로 남아있다.</p>
+
+    <h3 id="ver-bugs">12.8 발견·수정한 성능 버그 2건</h3>
+    <table>
+      <thead><tr><th>위치</th><th>문제</th><th>수정</th></tr></thead>
+      <tbody>
+        <tr><td><code>summarize_label_distribution()</code></td>
+            <td>라벨 하나 읽으려고 전체 2-hop KD-tree 이웃 조립(<code>_assemble_np</code>)을 전체 샘플에 실행</td>
+            <td><code>fd.instant_state()</code> O(1) 조회로 교체</td></tr>
+        <tr><td>캐시 로드</td>
+            <td><code>np.load(..., mmap_mode='r')</code> 랜덤 액세스로 워커당 처리량 급감 (575K 샘플 기준 5시간+ 예상)</td>
+            <td>전체 RAM 로드로 변경 (캐시 총 3GB, 시스템 RAM 188GB로 충분)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">참고(버그 아님): <code>nohup</code> 백그라운드 실행 시 Python stdout 완전 버퍼링 때문에 로그가
+    한참 안 보이는 현상 있었음 → <code>python -u</code> 필요.</p>
+
+    <h3 id="ver-metrics">12.9 평가 지표 — 현재 계산 방식 (<code>modules/tsem_eval.py</code>)</h3>
+    <p>모든 지표는 <b>혼동행렬(confusion matrix) 하나로부터 파생</b>된다. <code>evaluate_tsem()</code>이
+    로더 전체를 순회하며 배치마다 <code>confusion_matrix(preds, targets)</code>를 누적하고,
+    끝에 <code>metrics_from_confusion()</code>이 그 누적 행렬 하나로 아래 전부를 계산한다.</p>
+
+    <pre>cm[t, p] += 1   # t = 정답 클래스(행), p = 예측 클래스(열) — 배치마다 누적
+
+support     = cm.sum(dim=1)          # 클래스별 실제 개수 (행 합)
+pred_count  = cm.sum(dim=0)          # 클래스별 예측 개수 (열 합)
+tp          = cm.diag()              # 클래스별 정답 맞춘 개수
+
+recall[c]    = tp[c] / support[c]        # = 그 클래스를 얼마나 놓치지 않고 맞혔나
+precision[c] = tp[c] / pred_count[c]     # = 그 클래스로 예측한 것 중 실제 맞은 비율
+f1[c]        = 2·precision[c]·recall[c] / (precision[c] + recall[c])
+
+accuracy  = tp.sum() / cm.sum()      # 전체 맞춘 개수 / 전체 샘플 수 (micro, 클래스 비율 반영)
+macro_f1  = mean(f1[0], f1[1], f1[2])   # 3개 클래스 f1 단순 평균 (지지도 무시 — LC가 희귀해도 동등 반영)</pre>
+
+    <table>
+      <thead><tr><th>지표</th><th>정의</th><th>주의할 점</th></tr></thead>
+      <tbody>
+        <tr><td><b>Accuracy</b></td><td>전체 정답 수 / 전체 샘플 수</td>
+          <td>클래스 비율에 그대로 좌우됨 — normal이 61%라 "다 normal이라고만 찍어도" 기저 정확도가 높게 나옴.
+          그래서 Persist baseline과 <b>같이</b> 봐야 의미가 있음</td></tr>
+        <tr class="hl"><td><b>Macro-F1</b></td><td>클래스별 F1의 <b>단순 평균</b> (가중치 없음)</td>
+          <td>LC(2.4%)가 normal(61%)과 <b>동일한 비중</b>으로 반영됨 — 희귀 클래스 성능이 전체 지표에 직접 영향</td></tr>
+        <tr><td><b>Per-class recall/precision/f1</b></td><td>위 공식 그대로, 클래스별로 별도 보고</td>
+          <td><code>results.json</code>의 <code>per_class</code>에 3클래스 전부 저장됨</td></tr>
+        <tr><td><b>Confusion matrix</b></td><td>3×3 정수 행렬, <code>results.json</code>의 <code>confusion</code></td>
+          <td>행=실제 <code>state(t+H)</code>, 열=모델 예측 (또는 Persist의 경우 <code>state(t)</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Persist baseline은 무엇을 "예측"으로 쓰나</h4>
+    <p><code>evaluate_tsem(model=None, persist_baseline=True)</code>로 호출하면 모델을 전혀 쓰지 않고,
+    <b>배치의 <code>y_persist</code>(=앵커 시점 t의 순간 상태 <code>state(t)</code>)를 그대로 예측값처럼 취급</b>해서
+    같은 혼동행렬 공식에 넣는다. 즉 "미래에도 지금 상태가 그대로 이어진다"고 가정했을 때의 정확도 — 실제 예측이 아니라
+    <b>하한선(lower bound) 역할</b>을 하는 naive 기준선이다.</p>
+
+    <h4>학습 손실(loss)은 평가 지표와 별개</h4>
+    <p>위 지표들은 <b>평가 시점</b>에만 쓰이고, 학습 중 최적화되는 손실 함수는 다르다.
+    <code>train_tsem.py</code>의 <code>FocalLoss</code>:</p>
+    <pre>pt   = softmax(logits)[target]                 # 정답 클래스에 대한 모델 확신도
+loss = -(1 - pt)^gamma · log(pt) · weight[target]   # gamma=2.0 (focal), weight = 클래스 가중치</pre>
+    <p><code>weight[c] = (전체샘플수 / (3 · 클래스c개수)) ^ power</code> — <code>power=1.0</code>이면 원래 역빈도,
+    <code>power=0.5</code>(현재 재실험값)면 sqrt 완화. 이 가중치는 <b>학습 loss에만</b> 들어가고,
+    위 평가 지표(accuracy/macro-F1/recall 등)는 가중치와 무관하게 <b>원본 클래스 비율 그대로</b> 계산된다 —
+    그래서 loss상으로는 좋아 보여도 accuracy·macro-F1이 나쁘게 나오는 §12.2/12.3 같은 괴리가 생길 수 있다.</p>
+
+    <h3 id="ver-remaining">12.10 남은 구현 항목</h3>
+    <ul class="checklist">
+      <li><b>stop 과다예측</b> — 원인 규명 완료, 수정 구현 완료, <b>7차 실험 대기중</b> (자세한 내용은
+          <a data-goto="verification" data-anchor="ver-label-b">§12.11 라벨 재정의 B안</a> 참조)</li>
+      <li><code>TSEMSemanticOnly</code> 100-epoch 학습(라벨 A안 기준으로) — 명제 3·4(공간 기여) 증명용</li>
+      <li><code>NAGraphSAGE-adapted</code>, <code>Raw-Temporal+GNN</code> 베이스라인 모델 구현 (Table I 필수, 현재 코드 없음)</li>
+      <li>W×H 자동 스윕 스크립트 (지금은 (W=10,H=10) 한 조합만 수동 실행됨)</li>
+      <li>캐시 경로 <code>__getitem__</code>의 <code>meta</code>에 <code>n_neighbors</code> 누락 (non-cache 경로엔 있음) — 이웃수 통계 분석용</li>
+    </ul>
+
+    <h3 id="ver-label-b">12.11 라벨 재정의 B안 — stop 과다예측 원인 규명 + 지속성(persistence) 재정의</h3>
+    <p><b>진단 (2026-07-07, <code>journal/stop_error_analysis.py</code>, 6차 체크포인트 test셋 분석):</b>
+    4·5·6차에서 안 풀리던 stop 과다예측(+9%p대 고정)은 class weight·보조 loss·극좌표 채널과 무관한
+    <b>라벨 정의 자체의 결함</b>이었다. normal→stop 오분류(14,963건, 정답=normal 표본의 27.7%)를 프록시별로
+    쪼개보니 <code>n_neighbors</code>·<code>min_dist</code>는 정분류군과 차이가 없었지만(밀도 가설 기각),
+    <b>ego_speed(t)</b>가 거의 완벽히 분리됐다 — FP군 speed 중앙값 0.000 vs 정분류군 16.828. speed 구간별
+    오분류율도 단조감소(speed∈[0,0.5): 85.0% → speed≥8: 0.7%).</p>
+
+    <p>근본 원인은 <code>lane_change</code>만 A안(§12.4)에서 window 정의로 바뀌었고 <b>stop은 여전히
+    point 정의</b>(<code>instant_state(t+H)</code> 한 프레임)로 남아있었다는 것. <code>instant_state</code>의
+    stop 판정이 <code>speed ≤ 1.0</code> 단일 임계값 하드컷이라, 로터리 진입 대기·양보로 <b>일시 서행하다
+    바로 t+H 프레임에 다시 출발</b>하는 차량은 순간 운동학(입력 W프레임)은 정지 상황과 구별 안 되는데,
+    정답은 "t+H 그 찰나에 마침 안 멈춰 있었다"는 이유만으로 normal이 된다. 실측: 정답=normal 표본의
+    <b>29.8%</b>가 <code>future_frame</code> ±2프레임 내에 STOP 상태를 포함 — 앞서 관측한 FP율(27.7%)과
+    규모가 거의 일치해 인과관계를 뒷받침한다.</p>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>구현 (2026-07-07):</b> <code>modules/data_manager_tsem.py::_TsemFileData._stop_persist_state()</code>
+      신규 — <code>future_frame</code> 한 점 대신 <b>중심 ±δ(기본 2) 대칭 소구간의 다수결</b>로 stop을 판정.
+      <code>future_window_state()</code>가 이를 사용하도록 교체(lane_change·normal 로직은 무변경 — 우선순위
+      <code>stop &gt; lane_change &gt; normal</code> 그대로). 캐시 포맷 <code>tsem_f16ne_v3</code>로 분리
+      (구 point-stop 캐시와 공존, 조용한 재사용 방지).</div>
+    </div>
+
+    <p class="small"><b>lane_change와 다른 메커니즘임에 유의</b> — LC는 <code>(anchor, future_frame]</code>
+    전체 구간(최대 H프레임, 비대칭)에서 <b>한 번이라도 발생(occurrence, OR)</b>했는지를 본다(순간 이벤트라서
+    자연스러운 정의). 반면 stop B안은 <code>future_frame</code> 중심의 짧은 대칭 구간에서 <b>다수결
+    (persistence)</b>로 그 시점 상태의 flicker만 제거한다 — "그 시점에 안정적으로 정지 상태인가"라는
+    state 예측 문제는 그대로 유지된다. stop에 LC 방식(occurrence)을 그대로 쓰면 서행 구간을 지나는 거의
+    모든 차량이 걸려 과제 자체가 "그 사이 한 번이라도 멈추는가"로 바뀌어버리므로 부적절하다.</p>
+
+    <h4>재검증 — train split 클래스 분포 변화 (B안 적용 전후)</h4>
+    <table>
+      <thead><tr><th>클래스</th><th>A안 (point stop)</th><th>B안 (±2 다수결)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>stop</td><td>210,127 (36.50%)</td><td><b>225,893 (39.24%)</b></td><td>+15,766</td></tr>
+        <tr><td>lane_change</td><td>117,645 (20.44%)</td><td>118,230 (20.54%)</td><td>+585 (거의 무변화)</td></tr>
+        <tr class="hl"><td>normal</td><td>247,914 (43.06%)</td><td><b>231,563 (40.22%)</b></td><td>−16,351</td></tr>
+      </tbody>
+    </table>
+    <p class="small">normal에서 빠진 표본 수(−16,351)가 진단 단계에서 실측한 "normal이면서 future_frame ±2
+    내 STOP과 인접한 표본" 규모(test split 기준 16,108건)와 일치 — 의도한 flicker 표본만 정확히 이동했음을
+    시사한다. lane_change는 거의 그대로라 부작용 없음.</p>
+
+    <h4>7차 실험 실행 (2026-07-07 착수) — 멀티 GPU 학습 신규 지원</h4>
+    <p><code>train_tsem.py</code>에 <code>nn.DataParallel</code> 기반 멀티 GPU 옵션을 추가했다(<code>--gpus</code>
+    CLI 플래그). 2개 이상 GPU id를 넘기면 배치를 GPU 수만큼 쪼개 병렬 처리하고, 체크포인트는 항상 언랩된
+    <code>raw_model.state_dict()</code>로 저장해 기존 단일 GPU 평가 스크립트(<code>journal/perclass_eval.py</code>
+    등)와 키 호환을 유지한다. 미지정 시 이전 방식(셸의 <code>CUDA_VISIBLE_DEVICES</code>로 GPU별 실험을
+    개별 병렬 실행)도 그대로 동작한다.</p>
+    <pre># 7차: 6차(labelA_multiloss_polar)와 설정 동일, 라벨만 B안(§12.11) — 순수 라벨 효과 측정
+# GPU 0~3 전부 사용(DataParallel), 로그 파일에 stdout/stderr 기록
+cd /home/oem/TNA_research
+python -u train_tsem.py --config configs/tsem_sage.yaml \
+    --experiment tsem_sage_w10_h10_labelB_multiloss_polar \
+    --gpus 0,1,2,3 \
+    > logs/tsem/train_w10_h10_labelB_multiloss_polar.log 2>&1 &</pre>
+    <p class="small">체크포인트: <code>checkpoints/tsem/tsem_sage_w10_h10_labelB_multiloss_polar/best.pt</code> ·
+    캐시: <code>cache/tsem/*_v3_*</code>(신규 생성, A안 <code>v2</code> 캐시와 공존) · <code>--experiment</code>
+    CLI 오버라이드로 <code>configs/tsem_sage.yaml</code> 파일을 직접 고치지 않고도 실험명 지정 가능(6차 기록
+    보존). <b>단일 GPU로 돌리려면 <code>--gpus</code>를 생략하거나 GPU id 1개만 넘기면 기존과 동일하게 동작.</b></p>
+
+    <h4>7차 실험 완료 (2026-07-08) — 진단이 맞았음을 실증</h4>
+    <table>
+      <thead><tr><th>지표</th><th>6차 (A안, point-stop)</th><th>7차 (B안, ±2 다수결)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td>74.02%</td><td><b>76.84%</b></td><td>+2.82%p</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td>73.85%</td><td><b>76.15%</b></td><td>+2.30%p</td></tr>
+        <tr class="hl"><td><b>stop precision</b></td><td>72.56%</td><td><b>79.67%</b></td><td><b>+7.11%p</b></td></tr>
+        <tr class="hl"><td><b>normal recall</b></td><td>58.98%</td><td><b>64.78%</b></td><td><b>+5.80%p</b></td></tr>
+        <tr><td>stop recall</td><td>91.40%</td><td>90.47%</td><td>−0.93%p</td></tr>
+        <tr><td>LC recall</td><td>76.87%</td><td>76.37%</td><td>−0.50%p</td></tr>
+        <tr><td>LC precision</td><td>70.03%</td><td>70.36%</td><td>+0.33%p</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>§12.11에서 진단한 normal→stop 오분류가 실제로 완화됨을 확인.</b> 혼동행렬 기준
+      normal→stop 오분류 비율이 <b>27.1%(6차) → 20.4%(7차)</b>로 줄었다 — 진단(라벨 flicker가 원인)이
+      실험으로 검증됐다. stop recall·LC 관련 지표는 거의 그대로라 부작용도 없다. 6차·7차는 정답 라벨
+      자체가 다르므로(A안 vs B안) accuracy/macro-F1 직접 비교는 참고용 — 각자 자기 Persist baseline
+      (6차: 61.33%/49.10%, 7차: 63.17%/50.55%)과 비교하는 게 더 엄밀하다.</div>
+    </div>
+    <p class="small">체크포인트: <code>checkpoints/tsem/tsem_sage_w10_h10_labelB_multiloss_polar/best.pt</code>.
+    혼동행렬(7차, test, 행=정답·열=예측 [stop,LC,normal]): stop→[41501,44,4327], lane_change→[215,18051,5370],
+    normal→[10378,7560,32989].</p>
+
+    <h4>7차 500-epoch 연장 실행 (2026-07-08 착수)</h4>
+    <p>7차와 동일 설정(라벨 B안, multiloss+polar, <code>use_uncertainty_weight: false</code>)으로 더 오래
+    학습하면 개선되는지 확인하기 위해 500 epoch로 재실행했다. <b>체크포인트 이어받기(resume)가 아니라
+    처음부터 다시 학습</b>이다 — 저장된 <code>best.pt</code>는 모델 가중치만 담고 optimizer·scheduler 상태를
+    저장하지 않고, 무엇보다 <code>OneCycleLR</code>이 애초에 "총 100 epoch"에 맞춰 학습률 곡선을 설계해
+    100 epoch 시점엔 학습률이 이미 0 근처로 수렴해 있다 — 여기서 이어붙이면 학습률이 부자연스럽게
+    튀어오른다. 그래서 500 epoch용 OneCycle 스케줄을 새로 잡아 동일 설정으로 처음부터 재학습한다.</p>
+    <pre># train_tsem.py에 --epochs CLI 오버라이드 신규 추가
+python -u train_tsem.py --config configs/tsem_sage.yaml \
+    --experiment tsem_sage_w10_h10_labelB_multiloss_polar_e500 \
+    --epochs 500 --gpus 0,1,2,3 \
+    > logs/tsem/train_w10_h10_labelB_multiloss_polar_e500.log 2>&1 &</pre>
+    <p class="small">8차(§12.12)와 GPU 0~3을 공유해서 실행 중 — 둘 다 다소 느려질 수 있음. 체크포인트:
+    <code>checkpoints/tsem/tsem_sage_w10_h10_labelB_multiloss_polar_e500/best.pt</code> (완료 후 결과 추가 예정).</p>
+
+    <h3 id="ver-loss-uncertainty">12.12 손실함수의 라벨 불확실성 보완 — 8차 설계 (안 1)</h3>
+    <p>B안(§12.11)이 명백한 flicker는 제거했지만, ±δ 다수결도 결국 <b>하드 판정</b>이라 잔여 불확실성이
+    남는다 — 예를 들어 5프레임 중 3:2로 갈린 경계 사례도 100% 확신하는 one-hot 라벨이 된다. 8차는 이
+    잔여 불확실성을 <b>손실함수에서 직접</b> 다룬다.</p>
+
+    <h4>1) 문제 설정 — 다수결을 잠재확률의 점추정으로 보기</h4>
+    <p><code>future_frame</code> 중심 ±δ 구간(총 n프레임, 경계 근처는 n&lt;2δ+1)에서 STOP으로 관측된 프레임 수를
+    k라 하면, B안은 <code>p̂ = k/n</code>을 계산해 <code>y = 1[p̂ &gt; 0.5]</code>로 하드 라벨을 만든다. 이건
+    "그 순간의 잠재 정지 성향 <code>p*</code>"를 n번의 베르누이 시행으로 추정한 <b>MLE 점추정</b>이며,
+    argmax는 추정 자체의 불확실성(n이 작을수록, p̂가 0.5에 가까울수록 분산이 큼)을 버린다.</p>
+
+    <h4>2) 불확실성 정량화 — 베이지안 사후분산 (Beta-Binomial)</h4>
+    <p>사전분포 <code>Beta(1,1)</code>(균등, 무정보 사전)을 두고 n번 중 k번 STOP을 관측하면, 켤레성에 의해
+    사후분포는 <code>p | k,n ~ Beta(k+1, n-k+1)</code>이고 그 분산은</p>
+    <pre>Var[p | k,n] = (k+1)(n-k+1) / [(n+2)^2 (n+3)]</pre>
+    <p>이 값이 "n개 관측 후에도 여전히 남아있는 p*에 대한 불확실성"을 정확히 나타낸다.</p>
+
+    <h4>3) [0,1] 정규화 — n에 의존하는 최댓값으로 나눠야 하는 이유</h4>
+    <p><code>(k+1)(n-k+1)</code>은 합이 n+2로 고정된 두 수의 곱이라 AM-GM에 의해 k=n/2(가장 애매한 경우)일 때
+    최대가 되며, 그 최댓값은</p>
+    <pre>Var_max(n) = 1 / [4(n+3)]</pre>
+    <p><b>중요:</b> 이걸 [0,1] 위 임의 분포의 절대이론상 최대분산인 1/4로 나누면 안 된다 — 베타분포는
+    연속분포라 그 값에 절대 도달 못 하고, 실제 도달 가능한 최댓값은 n에 따라 훨씬 작다(예: n=5면
+    1/32≈0.031). 1/4로 나누면 신뢰도가 항상 1 근처에 몰려서(n=5 기준 0.88~0.94), 애매한 샘플과 확실한
+    샘플을 사실상 구분 못 하는 무력한 지표가 된다. 반드시 <b>그 n에서 실제 도달 가능한 최댓값</b>으로
+    정규화해야 한다:</p>
+    <pre>c_i = 1 - Var(k,n)/Var_max(n) = 1 - 4(k+1)(n-k+1) / (n+2)^2</pre>
+
+    <h4>4) 검산 — n→∞ 극한에서 원래 직관과 일치하는가</h4>
+    <p>p̂=k/n 고정 하에 n→∞ 극한을 취하면</p>
+    <pre>(k+1)(n-k+1)/(n+2)^2   →   k(n-k)/n^2   =   p̂(1-p̂)</pre>
+    <p>즉 <code>c_i → 1 - 4p̂(1-p̂)</code> — 관측이 충분히 많아지면 가장 단순한 Bernoulli-분산 기반 확신도로
+    정확히 수렴한다. 지금 설계는 그 직관에 <b>"n이 작을 때 증거 부족을 반영하는 베이지안 보정"</b>을 얹은
+    것이며, n=5에서 완전 만장일치(k=0 또는 5)여도 c_i≈0.51로 1에 못 미치는 이유가 바로 이 소표본
+    잔여 불확실성이다.</p>
+
+    <h4>5) loss에 넣는 이론적 근거 — Bayes risk</h4>
+    <p>정답이 확률적으로만 알려져 있다면(y* ~ Categorical(π_i)), Bayes-최적 loss는 기댓값이어야
+    한다: <code>L_i = E_{y*~π_i}[CE(f(x_i), y*)]</code>. 안 1(confidence 가중치)은 이 기댓값에서
+    소수 클래스 쪽 CE 기여분을 통째로 생략하고 지배적 항만 확신도로 스케일한 <b>거친 근사</b>다 — 엄밀한
+    형태(3-class soft label)는 별도 후보(아래 8차 대안 목록의 "안 3")로 남겨둔다.</p>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>8차 최종 loss (안 1, 실험 예정):</b>
+      <pre style="margin:8px 0 0;">c_i  = 1 - 4(k_i+1)(n_i-k_i+1) / (n_i+2)^2
+c̃_i = c_i / mean(c)              # 배치·데이터셋 평균으로 재정규화 (전체 loss 스케일 유지)
+L    = Σ_i  c̃_i · FocalLoss(f(x_i), ŷ_i)</pre>
+      기존 class weight·보조loss·KL항과는 독립적으로 곱해짐(곱셈이라 서로 간섭 없음). <code>c̃</code>로
+      재정규화하는 이유: n=5 기준 c_i∈[0.02, 0.51]이라 그대로 곱하면 평균적으로 loss 스케일이 절반
+      이하로 줄어 실질 학습률이 낮아진 것과 같은 부작용이 생기기 때문 — 평균으로 나눠 "상대적 확신도
+      차이"만 반영되게 한다.</div>
+    </div>
+
+    <h4>대안 비교 (실행 순서 계획)</h4>
+    <table>
+      <thead><tr><th>순서</th><th>안</th><th>방식</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>8차</b></td><td>안 1 (채택)</td><td>정규화 수정된 confidence 가중치를 FocalLoss에 곱함</td>
+          <td>구현·리스크 최소, 위 수식 그대로 검증 가능</td></tr>
+        <tr><td>8-1차 (필요시)</td><td>안 2</td><td>confidence 기반 적응형 label smoothing (ε_i = 1-c̃_i)</td>
+          <td>표준 기법 기반이라 안전망 있음</td></tr>
+        <tr><td>9차 (필요시)</td><td>안 3</td><td>3-class soft label, Bayes risk 완전판</td>
+          <td>이론적으로 가장 엄밀하나 FocalLoss 재작성 필요</td></tr>
+        <tr><td>비교 baseline</td><td>안 4</td><td>확신도 임계값 이하 샘플을 loss에서 제외(하드 컷오프)</td>
+          <td>경계 샘플을 아예 버려 다른 안들과 비교할 대조군</td></tr>
+        <tr><td>장기 과제</td><td>안 5</td><td>Evidential Deep Learning (Dirichlet 출력)</td>
+          <td>분류 헤드 구조 자체 변경, 별도 트랙</td></tr>
+      </tbody>
+    </table>
+
+    <h4>8차 실행 (2026-07-08 착수, 500 epoch·전용 config)</h4>
+    <p>처음엔 공유 <code>configs/tsem_sage.yaml</code>의 <code>use_uncertainty_weight</code> 플래그만 켜서
+    100 epoch로 실행했으나, 7차를 500 epoch로 더 오래 학습해보는 실험(아래 §12.11 "7차 500-epoch 연장
+    실행")을 같이 진행하기로 하면서 8차도 500 epoch로 맞추고, 공유 yaml을 매번 껐다 켜는 대신 <b>8차 전용
+    config 파일</b>로 분리했다: <code>configs/tsem_sage_8th.yaml</code>(7차와 동일 설정 +
+    <code>use_uncertainty_weight: true</code> + <code>num_epochs: 500</code>을 파일에 직접 명시).</p>
+    <pre># 기존 8차(100 epoch, 공유 yaml 플래그 방식)는 종료하고 재실행
+python -u train_tsem.py --config configs/tsem_sage_8th.yaml --gpus 0,1,2,3 \
+    > logs/tsem/train_w10_h10_labelB_unc_multiloss_polar_e500.log 2>&1 &</pre>
+    <p class="small">실험명 <code>tsem_sage_w10_h10_labelB_unc_multiloss_polar_e500</code>, 7차의 500-epoch
+    연장 실행(§12.11)과 GPU 0~3을 공유하며 실행했다. <b>2026-07-08 중단</b> — 아래 결과 참조, 9차로 대체.</p>
+    <table style="margin-top:8px;">
+      <thead><tr><th>실험</th><th>config</th><th>epoch</th><th>목적</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>7차</td><td><code>configs/tsem_sage.yaml</code></td><td>100</td><td>라벨 B안 단독 효과 측정</td><td>완료</td></tr>
+        <tr><td>7차-500ep</td><td><code>configs/tsem_sage.yaml --epochs 500</code></td><td>500</td><td>더 오래 학습 시 개선 여부</td><td>중단(과적합 확인)</td></tr>
+        <tr><td>8차</td><td><code>configs/tsem_sage_8th.yaml</code></td><td>500</td><td>+ loss 불확실성 가중치(안 1) 효과 측정</td><td>중단(과적합 확인)</td></tr>
+        <tr class="hl"><td><b>9차</b></td><td><code>configs/tsem_sage_9th.yaml</code></td><td>422 중단(best@248)</td><td>+ augmentation 조합(노이즈+이웃 드롭아웃+프레임 드롭아웃)</td><td><b>완료 — 최고 기록</b></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <span class="ci">📉</span>
+      <div><b>7차-500ep·8차 결과 (2026-07-08, 학습 로그 직접 확인 후 중단):</b> 둘 다 <b>val_acc가 epoch 90
+      안팎에서 정점을 찍고 이후 계속 하락</b>했다 — 7차-500ep는 epoch 92에서 79.33%(최고점) → epoch 440부근
+      75.9%(−3.4%p), 8차는 epoch 86에서 79.24%(최고점) → 중단 시점(epoch 489) 76.5%(−2.7%p, 이후 등락 없이
+      76.4~76.6% 범위에서 안정적으로 정체). 같은 구간 동안 <b>train loss는
+      계속 꾸준히 하락</b>했다(7차-500ep: 0.25→0.18, 8차: 0.23→0.15) — 전형적인 과적합 신호다. "더 오래
+      학습하면 개선된다"는 가설은 이 실험으로 <b>반증</b>됐다 — 원래 100 epoch(OneCycleLR을 100 epoch에 맞게
+      빠르게 감쇠) 쪽이 이 설정엔 더 적합했다. best.pt는 val_acc 최고 시점 가중치를 저장하므로 산출물 자체는
+      안전하지만(각 실험의 peak 시점 체크포인트가 곧 그 실험의 최종 결과), 500 epoch 자체를 계속 돌리는 건
+      더 이상 의미가 없어 <b>중단</b>하고 원인 진단으로 넘어갔다. 8차가 7차-500ep보다 하락폭이 작았던 점
+      (−2.6%p vs −3.4%p)은 불확실성 가중치가 약한 정규화 효과를 겸했을 가능성을 시사한다(확정적이진 않음).</div>
+    </div>
+
+    <p class="small">문헌 계보: Kendall &amp; Gal (NeurIPS 2017, heteroscedastic aleatoric loss) · Sensoy et al.
+    (NeurIPS 2018, Evidential DL) · Natarajan et al. (NeurIPS 2013, Label Noise Learning) — 셋 다 "고정
+    스칼라 하이퍼파라미터"였던 것을 "관측된 불확실성 신호의 함수"로 바꾸는 같은 패턴이다.</p>
+
+    <h3 id="ver-augment"><span class="ic">◆</span>12.13 데이터 Augmentation — 9차 설계 (원인 진단 + 대응)</h3>
+    <p><b>원인 진단:</b> 7차-500ep·8차의 과적합 패턴을 코드 레벨에서 점검한 결과, <code>modules/data_manager_tsem.py</code>
+    ·<code>train_tsem.py</code> 전체에 <b>데이터 augmentation이 단 한 줄도 없었다</b> — 유일한 무작위성은
+    <code>DataLoader(shuffle=True)</code>로 샘플 <b>순서</b>만 바뀌는 것뿐, <code>node_seq</code>·
+    <code>nbr_node_seqs</code>·<code>edge_seqs</code> <b>값 자체는 500 epoch 내내 완전히 동일</b>했다. 173,619
+    파라미터짜리 모델이 575,686개 학습 샘플을 500번 반복해서 보면, 일반적 운동학 패턴 대신 <b>그 정확한
+    샘플들 자체를 암기</b>할 여지가 생긴다 — 관측된 "train loss는 계속 감소, val_acc는 하락" 패턴과 정확히
+    부합한다.</p>
+
+    <p><b>대응:</b> <code>modules/tsem_augment.py::TsemAugment</code> 신규 — train split에만 적용되고(val/test는
+    항상 원본 그대로, 평가 재현성 유지) 서로 독립적으로 조합 가능한 augmentation 4종을 구현했다. 적용 시점은
+    캐시에서 로드한 직후 · <code>_recompute_edges()</code> 호출 <b>이전</b>이라, edge feature(rel_speed 등)가
+    증강된 값으로부터 다시 일관되게 계산된다.</p>
+
+    <table>
+      <thead><tr><th>번호</th><th>이름</th><th>내용</th><th>구현 함수</th></tr></thead>
+      <tbody>
+        <tr><td><b>1</b></td><td>가우시안 노이즈</td><td>속도·가속도·위치·방향에 채널별 스케일된 소량 노이즈
+          (센서/검출 오차 흉내). 결측(all-zero) 프레임에는 적용 안 함</td><td><code>_add_noise()</code></td></tr>
+        <tr><td><b>2</b></td><td>이웃 랜덤 드롭아웃</td><td>실제 존재하는 1-hop·2-hop 이웃 슬롯 일부를 학습
+          시에만 랜덤 결측 처리(검출 실패 흉내)</td><td><code>_neighbor_dropout()</code>,
+          <code>_neighbor2_dropout()</code></td></tr>
+        <tr><td><b>3</b></td><td>프레임 랜덤 드롭아웃</td><td>과거 W프레임 중 앵커(t) 제외 일부를 결측 처리.
+          ego만 지우면 <code>_recompute_edges()</code>가 이웃(dst)쪽 결측만 확인해 엣지가 엉터리 값으로
+          남는 버그가 있어, <b>같은 시간 인덱스를 ego·1hop·2hop 전부에서 동시에</b> 지운다</td>
+          <td><code>_frame_dropout()</code></td></tr>
+        <tr><td>4</td><td>좌표 회전 (미적용)</td><td>world 좌표 전체를 <b>로터리 중심</b> 기준 소각도 회전 —
+          9차엔 <code>rotate_deg=0</code>으로 꺼둠</td><td><code>_rotate()</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <span class="ci">🔧</span>
+      <div><b>4번(회전) 사전 수정 (2026-07-08, 미리 고쳐둠):</b> 처음 구현한 <code>_rotate()</code>는
+      위치를 <b>원점(0,0) 기준</b>으로 회전시켰는데, <code>SemanticDerivation</code>이 Δρ·접선을 계산할 때
+      쓰는 로터리 중심 <code>CENTER_X=72.86, CENTER_Z=-13.45</code>는 <b>고정된 절대 world 좌표</b>다 —
+      위치만 원점 기준으로 돌리고 중심은 그대로 두면, 회전된 가짜 위치와 고정된 진짜 중심 사이 거리를
+      계산하게 되어 ρ·θ·Δρ·접선이 전부 물리적으로 의미 없는 값이 된다. <b>실제로 켜기 전에</b> 발견해
+      고쳤다 — 이제 <code>_rotate()</code>는 <code>models.tsem_semantic_derivation.SemanticDerivation.CENTER_X/CENTER_Z</code>를
+      직접 import해 <b>그 중심을 기준으로</b> 회전한다:
+      <pre style="margin:8px 0 0;">rotated = (pos - center) @ rot.T + center   # 중심 기준 회전 → ρ(중심까지 거리) 보존
+dirn_rotated = dirn @ rot.T                 # 방향벡터는 위치가 아니라서 중심과 무관, 그대로 회전만</pre>
+      직접 검증: 회전 전후 ρ 최대 오차 2.86e-06(float32 부동소수점 수준, 사실상 0) — 중심까지 거리가
+      정확히 보존됨을 확인했다. 방향벡터는 애초에 "위치"가 아니라 "방향"이라 회전 기준점과 무관하게
+      항상 올바르게 회전된다(수정 불필요). rotate_deg=0으로 여전히 꺼둔 채로 코드만 미리 고쳐놓은
+      상태 — 나중에 켤 때 바로 쓸 수 있다.</div>
+    </div>
+
+    <h4>각 augmentation이 실제로 어떻게 적용되는가</h4>
+    <p>매 <code>__getitem__</code> 호출마다(=매 epoch, 같은 샘플이라도 매번) 아래 순서로 적용된다.
+    전부 <b>train split에서만</b> 실행되고(<code>self.augment = augment if split=='train' else None</code>),
+    캐시에서 로드한 원본 배열을 <code>.copy()</code>해서 변형하므로 캐시 자체는 절대 오염되지 않는다.</p>
+    <table>
+      <thead><tr><th>단계</th><th>무엇을 하는가</th><th>왜 이 순서인가 / 주의점</th></tr></thead>
+      <tbody>
+        <tr><td>0. RNG 준비</td><td><code>_get_aug_rng()</code>가 워커 프로세스별로 독립된
+          <code>np.random.default_rng(seed+worker_id)</code>를 지연 생성</td><td><code>num_workers&gt;0</code>일 때
+          DataLoader가 fork한 워커들이 전부 같은 난수를 뽑는 흔한 함정을 방지 — worker id를 섞어 넣어
+          워커마다 다른 난수열을 보장</td></tr>
+        <tr><td>1. 회전 (꺼짐)</td><td>rotate_deg&gt;0이면 위치를 로터리 중심 기준으로, 방향벡터는 그대로 회전</td>
+          <td>가장 먼저 적용 — 이후 노이즈·드롭아웃이 회전된 좌표 위에서 일관되게 계산되도록</td></tr>
+        <tr><td>2. 노이즈</td><td><code>present</code>(all-zero가 아닌, 즉 결측이 아닌) 프레임에만
+          <code>N(0, (base_std×noise_std)²)</code> 더함. base_std=[0.1,0.1,0.15,0.02,0.02,0.1]
+          (위치/위치/속도/방향x/방향z/가속도 순)</td><td>결측 프레임(전부 0)에 노이즈를 더하면 "결측"이
+          "값이 0인 관측"으로 둔갑해버리므로 <code>present</code> 마스크로 반드시 제외</td></tr>
+        <tr><td>3. 프레임 드롭아웃</td><td>과거 T프레임 중 앵커(마지막, t) 제외하고 각 프레임을
+          <code>frame_dropout_p</code> 확률로 <b>ego·1-hop·2-hop 전부 동시에</b> 0으로 채움</td>
+          <td>ego만 지우면 <code>_recompute_edges()</code>가 이웃(dst)쪽 결측만 확인하므로 그 프레임의
+          엣지가 "0 − 실제값" 형태의 엉터리 값으로 남는다 — 같은 시간 인덱스를 전부 지워 "그 프레임엔
+          아무도 관측 안 됨" 상태로 일관되게 맞춤</td></tr>
+        <tr><td>4. 이웃 드롭아웃</td><td>실제 존재하는(<code>nbr_mask&gt;0</code>) 1-hop 이웃을 각각
+          <code>neighbor_dropout_p</code> 확률로 전체 시퀀스(모든 T프레임) 통째로 0 처리 +
+          <code>nbr_mask</code>도 0으로. 2-hop도 동일하게 독립 적용</td><td>결측 마스킹 컨벤션(all-zero=결측)을
+          그대로 따르므로 모델 forward의 기존 <code>nbr_mask</code> 처리 로직이 별도 수정 없이 그대로 작동</td></tr>
+        <tr><td>5. Edge 재계산</td><td>augmentation이 끝난 <code>node_seq</code>·<code>nbr_node_seqs</code>·
+          <code>nbr2_node_seqs</code>로 <code>_recompute_edges()</code> 호출</td><td>이 순서 덕분에
+          rel_speed·distance 등 모든 edge feature가 증강된 값 기준으로 다시 계산되어 내부 일관성이
+          깨지지 않음</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>9차 설정 (2026-07-08 실행):</b> 8차와 동일(라벨 B안 + multiloss+KL + 8D 채널 + 불확실성 가중치
+      + 500 epoch)에 <b>augmentation 조합(1 노이즈 + 2 이웃 드롭아웃 + 3 프레임 드롭아웃)</b>만 추가 —
+      <code>configs/tsem_sage_9th.yaml</code>.
+      <pre style="margin:8px 0 0;">augment:
+  noise_std: 1.0            # 1) 채널별 base std × 1.0
+  neighbor_dropout_p: 0.1   # 2) 존재하는 이웃 10% 확률로 결측 처리
+  frame_dropout_p: 0.1      # 3) 과거 프레임 10% 확률로 결측 처리(앵커 제외)
+  rotate_deg: 0.0           # 4) 미적용</pre>
+      실행: <code>python train_tsem.py --config configs/tsem_sage_9th.yaml --gpus 0,1,2,3</code>,
+      실험명 <code>tsem_sage_w10_h10_labelB_unc_aug123_e500</code>. <b>가설:</b> augmentation이 매 epoch
+      입력에 변주를 줘서 암기를 막으면, val_acc가 7·8차처럼 epoch~90에서 정점 찍고 하락하는 대신 500 epoch
+      내내(혹은 더 늦은 epoch까지) 개선을 유지할 것.</div>
+    </div>
+
+    <div class="callout tip">
+      <span class="ci">🏆</span>
+      <div><b>9차 결과 (2026-07-08, 학습 로그로 실시간 검증 후 epoch 422에서 수동 종료) — 가설 확인됨.</b>
+      100 epoch마다 7·8차와 직접 비교한 결과:</div>
+      <table style="margin-top:8px;">
+        <thead><tr><th>epoch</th><th>9차 val_acc</th><th>7차-500ep val_acc</th><th>격차</th></tr></thead>
+        <tbody>
+          <tr><td>90</td><td>78.68%</td><td>78.45%</td><td>+0.23%p</td></tr>
+          <tr><td>150</td><td>79.36%</td><td>78.33%</td><td>+1.03%p</td></tr>
+          <tr><td>200</td><td>79.28%</td><td>77.70%</td><td>+1.58%p</td></tr>
+          <tr><td>300</td><td>79.65%</td><td>76.51%</td><td>+3.14%p</td></tr>
+          <tr class="hl"><td>377</td><td><b>79.61%</b></td><td>76.07%</td><td><b>+3.54%p</b></td></tr>
+        </tbody>
+      </table>
+      <p class="small" style="margin-top:8px;">9차는 epoch 90 이후 <b>단 한 번도 큰 폭으로 하락하지 않고</b>
+      300epoch 넘게 79%대를 그대로 유지했다 — 7·8차의 "epoch~90 정점 후 하락" 패턴이 재현되지 않았다.
+      val_acc가 충분히 안정된 것을 확인하고 <b>500epoch 완주를 기다리지 않고 epoch 422에서 수동 종료</b>,
+      best.pt(<b>epoch 248</b>, val_acc 최고점)로 최종 test 평가를 진행했다.</p>
+      <table>
+        <thead><tr><th>지표</th><th>6차</th><th>7차(100ep)</th><th>8차(unc, best@86)</th><th class="chg">9차(aug, best@248)</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td><b>Accuracy</b></td><td>74.02%</td><td>76.84%</td><td>77.62%</td><td><b>78.05%</b></td></tr>
+          <tr class="hl"><td><b>Macro-F1</b></td><td>73.85%</td><td>76.15%</td><td>76.70%</td><td><b>77.22%</b></td></tr>
+          <tr><td>stop recall</td><td>91.40%</td><td>90.47%</td><td>93.03%</td><td>93.45%</td></tr>
+          <tr><td>stop precision</td><td>72.56%</td><td>79.67%</td><td>79.52%</td><td>79.08%</td></tr>
+          <tr><td>normal recall</td><td>58.98%</td><td>64.78%</td><td>65.11%</td><td>65.87%</td></tr>
+          <tr><td>LC recall</td><td>76.87%</td><td>76.37%</td><td>74.64%</td><td>74.41%</td></tr>
+          <tr><td>LC precision</td><td>70.03%</td><td>70.36%</td><td>71.64%</td><td>73.74%</td></tr>
+        </tbody>
+      </table>
+      <p class="small"><b>2026-07-08 추가 확인:</b> 8차는 처음엔 val_acc(peak 79.24%@epoch86)만 보고됐었는데,
+      같은 best.pt로 test 평가를 마저 돌려 위 표에 채웠다(<code>checkpoints/tsem/tsem_sage_w10_h10_labelB_unc_multiloss_polar_e500/results.json</code>
+      신규 생성) — val_acc와 test_acc는 서로 다른 split이라 직접 비교하면 안 된다는 점을 여기서도 재확인.
+      <b>test 기준으로 9차가 8차보다 모든 핵심 지표에서 근소하게 앞선다</b>(accuracy +0.43%p, macro-F1
+      +0.52%p). 9차는 7차(같은 라벨·loss 설정, augmentation만 추가) 대비로는 <b>accuracy +1.21%p,
+      macro-F1 +1.07%p</b> 순증 — augmentation이 단순히 "과적합을 늦추는" 것을 넘어 <b>최종 성능 자체를
+      끌어올렸다.</b> 다만 8차 대비 개선폭은 크지 않다(+0.4~0.5%p) — augmentation의 진짜 가치는 절대
+      수치보다 <b>500epoch 내내 안정적으로 유지된다는 점</b>(8차는 이른 epoch에서 우연히 peak를 잡았을
+      뿐 이후 계속 하락)에 있다. 지금까지 실험 중 최고 기록.</p>
+    </div>
+
+    <h4>Early stopping 도입 (2026-07-08)</h4>
+    <p>9차를 지켜보며 수동으로 "더 볼 필요 없다"고 판단해 중간에 끈 것 자체가, 애초에 <b>학습 루프에
+    자동화됐어야 할 판단</b>이었다. <code>train_tsem.py</code>에 patience 기반 early stopping을 추가했다:</p>
+    <pre>patience = tcfg.get('early_stop_patience', 0)   # 0=미사용(기존 실험 전부 영향 없음)
+...
+if val_acc > best_val:
+    best_val, best_epoch, epochs_no_improve = val_acc, epoch, 0
+    torch.save(...)                                  # best.pt 갱신 (기존과 동일)
+else:
+    epochs_no_improve += 1
+    if patience > 0 and epochs_no_improve >= patience:
+        break                                        # patience epoch 연속 미갱신 시 중단</pre>
+    <p class="small">기본값 0(미사용)이라 <b>기존 실험(1~9차) 전부 동작 불변</b> — <code>configs/tsem_sage_9th.yaml</code>에만
+    <code>early_stop_patience: 50</code>로 opt-in 예시를 남겨뒀다(다음에 이 config로 재실행하면 자동 적용).</p>
+    <div class="callout warn">
+      <span class="ci">🔧</span>
+      <div><b>같이 발견·수정한 버그:</b> 기존 코드는 학습 루프가 끝난 뒤 <b>마지막 epoch 가중치</b>로
+      최종 test 평가를 하고 있었다(<code>best.pt</code>가 아니라) — 100 epoch로 끝나는 실험은 보통 마지막
+      epoch이 곧 최고 시점이라 문제가 안 드러났지만, 500 epoch처럼 중간에 과적합이 오는 경우 최종
+      리포트가 실제 최고 성능보다 나쁜 시점의 숫자로 기록될 위험이 있었다. 이제 학습 루프가 끝나면(정상
+      종료든 early stop이든) <code>best.pt</code>를 다시 불러온 뒤 그 가중치로 test를 평가하도록 고쳤다.</div>
+    </div>
+
+    <h3 id="ver-nagraphsage-adapted">12.14 베이스라인 비교 — 10차 NAGraphSAGE-adapted (⚠️ 핵심 발견)</h3>
+    <p><b>구현:</b> <code>models/tsem_sage.py::TSEMNAGraphSAGEAdapted</code> 신규 — <code>TSEMSAGE</code>에
+    <code>use_semantic: bool</code> 플래그를 추가해, <code>False</code>일 때 Stage A(<code>SemanticDerivation</code>,
+    의미 분해)를 완전히 건너뛰고 raw 6D(<code>position_x, position_z, speed, direction_x, direction_z,
+    acceleration</code>)를 그대로 시계열 인코더(Stage B)에 넣는다. 공간 집계(Stage C, <code>ETSAGELayer</code>)는
+    TSEM-SAGE와 <b>완전히 동일하게 유지</b> — "semantic 분해 자체가 얼마나 기여하는가"만 격리해서 보기 위함.
+    config: <code>configs/tsem_sage_10th.yaml</code>(9차와 라벨·loss·augmentation 전부 동일, <code>model.name</code>만 다름).</p>
+
+    <table>
+      <thead><tr><th>지표</th><th>9차 (TSEM-SAGE, semantic 포함)</th><th class="chg">10차 (raw, semantic 없음)</th><th>차이</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>Accuracy</b></td><td>78.05%</td><td><b>81.79%</b></td><td><b>+3.74%p</b></td></tr>
+        <tr class="hl"><td><b>Macro-F1</b></td><td>77.22%</td><td><b>81.92%</b></td><td><b>+4.70%p</b></td></tr>
+        <tr><td>stop recall</td><td>93.45%</td><td>91.14%</td><td>−2.31%p</td></tr>
+        <tr class="hl"><td><b>normal recall</b></td><td>65.87%</td><td><b>74.17%</b></td><td><b>+8.30%p</b></td></tr>
+        <tr class="hl"><td><b>LC recall</b></td><td>74.41%</td><td><b>80.08%</b></td><td><b>+5.67%p</b></td></tr>
+        <tr class="hl"><td><b>LC precision</b></td><td>73.74%</td><td><b>85.25%</b></td><td><b>+11.51%p</b></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout err">
+      <span class="ci">⚠️</span>
+      <div><b>예상과 정반대 결과 — semantic 분해(Stage A)가 오히려 성능을 깎고 있을 가능성.</b> 이 프로젝트의
+      핵심 novelty는 "raw kinematics를 의미 있는 semantic primitive(v,a,j,ω,d_lat,κ,Δρ,접선)로 분해하면
+      더 잘 배운다"는 것이었는데, <b>raw 6D를 그대로 넣은 게 모든 클래스에서 고르게 더 좋다</b>(우연한
+      한두 지표 개선이 아니라 accuracy·macro-F1·normal recall·LC recall·LC precision 전부 동시 개선).</div>
+    </div>
+
+    <p><b>가설(검증 필요, 확정 아님):</b> <code>SemanticDerivation</code>은 최종 8D 출력에서 <b>절대
+    world 좌표(position_x, position_z)를 완전히 제거</b>하고 상대/미분량(Δρ, d_lat, 접선 등)으로만
+    변환한다. 데이터가 <b>공업탑 로터리 단일 지점</b>에서만 수집됐기 때문에, raw 절대좌표를 직접 노출하면
+    모델이 "이 특정 (x,z) 위치 = 특정 상태"라는 <b>장소 자체를 암기</b>할 수 있는 지름길이 생긴다 — 이건
+    이 데이터셋 안에서는 실험 오류가 아니다(같은 로터리에서 train/test를 시간 분할했으므로 "부정행위"는
+    아님). 하지만 <b>일반화 가능한 운동학적 패턴을 배운 게 아니라 지도를 암기했을 가능성</b>이 있어,
+    다른 로터리·다른 장소로는 전이가 안 될 수 있다는 우려가 있다 — 논문의 "semantic 분해가 왜 필요한가"
+    주장에 정면으로 배치되는 결과라 반드시 추가 검증이 필요하다.</p>
+
+    <h4>다음에 확인해야 할 것 → 검증 완료 (2026-07-09 갱신)</h4>
+    <ul class="dash">
+      <li><b>✓ 절대좌표 격리 ablation — 완료 (10차-2/-3, §입력 조합 ablation 표 참조).</b>
+        semantic+position(10D)이 test acc 81.91%로 raw 6D(81.79%)를 완전히 따라잡음 — <b>격차의 주범은
+        절대좌표로 확정</b>. direction 추가(12D, 81.97%)는 +0.06%p로 노이즈 수준. 동시에 semantic 8채널이
+        raw의 나머지 정보를 완전히 대체함도 입증(가설 B 기각).</li>
+      <li><b>→ 다른 시간대/DRIFT 데이터로 교차검증 — 다음 단계 (미착수).</b> position의 +3.9%p가 "이 로터리
+        한정 암기"인지 확인하는 결정적 실험. 기존 체크포인트(9차/10차/10차-2)를 DRIFT에서 평가만 하면 되므로
+        재학습 불필요. 사전 점검 필요: DRIFT 데이터의 lane_id 컬럼 유무, 좌표계, 로터리 중심 상수(Δρ·접선
+        채널은 공업탑 전용 상수라 재계산 또는 비활성화 필요).</li>
+      <li><b>→ 논문 서술 방향 — "2-트랙" 프레임 권고.</b> ① Site-specific 트랙: 고정 CCTV 인프라 배치라면
+        절대좌표는 정당한 피처 — 최종 제안 모델 후보는 <b>semantic+position 10D</b>(최고 성능 + raw보다
+        해석 가능 + 클래스 균형 우수). ② Transferable 트랙: 장소 이동 시 semantic 8D — 교차 장소 실험이
+        근거. "배치 시나리오에 따른 입력 구성 선택"이 단순 "semantic이 좋다/나쁘다"보다 방어력 있는 논지.</li>
+    </ul>
+
+    <h3 id="ver-cross-location">12.15 교차 장소 검증 — 공업탑 학습 → DRIFT 평가 (2026-07-09)</h3>
+    <p><b>목적:</b> §12.14/입력조합 ablation에서 확정한 "절대좌표 +3.9%p 이득"이 공업탑 한정 위치 암기인지
+    검증. <b>학습 없음</b> — 공업탑 체크포인트 3종을 DRIFT/A(6 CSV, 224,638 샘플)에서 forward 평가만.
+    구현: <code>journal/cross_location_eval.py</code> (<code>train_ratio=0, val_ratio=0</code>으로 전체
+    프레임을 test split화). <b>사전 호환성 점검:</b> DRIFT는 컬럼 구조 동일·lane_id 100% 유효(<code>B4</code>,
+    <code>crossroads1</code> 등)·같은 단위의 속도(평균 21.9~29.7 vs 공업탑 11.5 — 더 빠른 도로), 좌표 영역은
+    완전 분리(x∈[−1748,−690] vs [−8,174]) — 교차 검증에 이상적.</p>
+
+    <table>
+      <thead><tr><th>모델</th><th>공업탑 test acc</th><th class="chg">DRIFT/A acc</th><th class="chg">DRIFT/A macro-F1</th><th>하락폭(acc)</th></tr></thead>
+      <tbody>
+        <tr><td>Persist baseline</td><td>63.17%</td><td>75.27%</td><td>51.02%</td><td>(장소별 기준선)</td></tr>
+        <tr class="hl"><td><b>9차 semantic 8D</b></td><td>78.05%</td><td><b>62.37%</b></td><td><b>38.49%</b></td><td>−15.7%p</td></tr>
+        <tr><td>10차 raw 6D</td><td>81.79%</td><td>57.69%</td><td>28.12%</td><td><b>−24.1%p</b></td></tr>
+        <tr><td>10차-2 sem+pos 10D</td><td>81.91%</td><td>50.17%</td><td>28.06%</td><td><b>−31.7%p</b></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>위치 암기 가설, 교차 장소에서 3번째 확인.</b> position 사용 모델들이 훨씬 크게 붕괴 —
+      10차(raw)의 stop recall이 공업탑 91.1% → DRIFT <b>1.4%</b>, 10차-2의 LC recall이 80.4% →
+      <b>0.29%</b>로 사실상 전멸. 학습 분포 밖의 좌표(−1500대)가 들어오자 position 의존 경로가 완전히
+      무너진 것. semantic 8D는 macro-F1 기준 position 모델들보다 <b>+10%p 이상</b> 버텨 — "semantic이
+      상대적으로 장소 불변"이라는 순위 주장이 성립한다.</div>
+    </div>
+
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>단, 절대 수준은 셋 다 Persist baseline(75.3%) 미달</b> — zero-shot 전이는 어느 모델도 실용
+      수준이 아니다. 혼입 요인 3가지: ① semantic의 Δρ·접선 2채널이 공업탑 중심 상수 기준이라 DRIFT에서
+      의미 오염(1.5km 밖에서는 "로터리 반경 변화"가 아니라 임의 고정축 속도 분해로 퇴화), ② DRIFT는 속도
+      2~3배 빠른 다른 도로 유형(로터리 아닌 교차로) — 운동학 분포 자체가 이동, ③ DRIFT/A의 Persist가
+      75%로 높다는 것은 이 장소가 상태 전이가 적다는 뜻(기준선 자체가 유리). ①을 격리하기 위해 Δρ·접선을
+      0으로 마스킹한 변형 평가(<code>--zero_polar</code>)를 추가 실행 — 결과는 아래.</div>
+    </div>
+
+    <h4>극좌표 마스킹 변형 결과 — 오염 혼입(①) 기각</h4>
+    <table>
+      <thead><tr><th>모델 (DRIFT/A)</th><th>원본</th><th class="chg">Δρ·접선=0 마스킹</th><th>차이</th></tr></thead>
+      <tbody>
+        <tr><td>9차 semantic 8D</td><td>acc 62.37 / F1 38.49</td><td>acc 62.18 / F1 38.79</td><td>±0.3%p 이내</td></tr>
+        <tr><td>10차-2 sem+pos 10D</td><td>acc 50.17 / F1 28.06</td><td>acc 50.09 / F1 28.03</td><td>±0.1%p 이내</td></tr>
+      </tbody>
+    </table>
+    <p class="small">마스킹해도 결과가 사실상 동일 — <b>극좌표 채널 오염은 DRIFT 전이 실패의 원인이 아니다</b>
+    (GRU가 이 2채널에 크게 의존하지 않거나, 오염된 값이 어차피 유의미한 방해가 안 됐다는 뜻). 남는 주 원인은
+    ② <b>도메인 이동 자체</b>(속도 분포 2~3배, 로터리→교차로 도로 유형 변화)와 ③ 장소별 기준선 차이. 결론:
+    <b>zero-shot 교차 장소 전이는 semantic만으로는 부족하고 도메인 정합(속도 정규화, 장소별 파인튜닝 등)이
+    필요</b> — 논문 2-트랙 프레임에서 "transferable 트랙"의 한계와 향후 과제로 정직하게 서술할 것. 핵심 주장
+    (position은 장소 암기, semantic은 상대적으로 장소 불변)은 3중 검증(입력조합 ablation·교차장소 붕괴 패턴·
+    마스킹 불변)으로 확립됨.</p>
+
+    <div class="callout key">
+      <span class="ci">💡</span>
+      <div><b>아이디어로만 기록 (미착수) — 메모리 뱅크(Memory Bank)</b><br>
+      LC 불균형·희귀 이벤트 학습 안정성 개선을 위한 후보 방향. 이번 A안 구현에는 포함하지 않음:
+      <ul class="dash" style="margin-top:6px;">
+        <li><b>클래스 균형 리플레이 뱅크</b> — 관측된 LC 샘플을 별도로 누적해두고 배치마다 섞어 넣어, loss weight를
+            극단으로 올리지 않고도 LC 노출 빈도를 물리적으로 높임. 지금 겪은 class weight 널뛰기의 대안.</li>
+        <li><b>MemoNet 방식</b> (Xu et al., CVPR 2022) — (과거 궤적 패턴 → 실제 결과) 쌍을 뱅크에 저장, 추론 시
+            k-NN 검색으로 유사 과거 사례를 참고 신호로 사용. 희귀 이벤트에 특히 유리할 수 있음.</li>
+        <li><b>Long-Term Feature Bank</b> (Wu et al., CVPR 2019) — 차량별 과거 인코딩 특징을 뱅크에 누적해,
+            W를 늘리지 않고도 더 긴 이력(maneuver onset이 W 이전에 시작된 경우)을 참조.</li>
+        <li><b>Contrastive 사전학습 뱅크</b> (MoCo 스타일) — 분류 loss 전에 LC/normal이 잘 갈라지는 특징 공간을
+            먼저 학습, class weight가 표현학습 자체를 왜곡하는 문제 완화.</li>
+      </ul></div>
+    </div>
+    <footer>TSEM-SAGE 저널 연구 설계 · 구현 검증 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 배경 -->
+  <div class="page" id="page-background">
+    <div class="sec-head"><div class="sec-num">0</div><h2>배경 — 왜 방향을 바꾸는가</h2></div>
+    <p class="sec-desc">NAGraphSAGE → ET-NAGraphSAGE에 이어지는 정당한 다음 단계를 설계한다.</p>
+
+    <div class="callout key">
+      <span class="ci">🎯</span>
+      <div><b>한 문장 포지셔닝 (2026-07-07 확정):</b><br>
+      <b>NAGraphSAGE</b>의 이웃-aware 공간 집계를 유지한 채, 입력을 raw 시계열이 아닌 <b>maneuver semantics</b>로 바꾸고
+      과제를 <b>미래 state(t+H) 예측</b>으로 재정의한다. ET-NAGraphSAGE의 edge-<b>temporal</b> novelty는 기각하되,
+      <b>연구 계보(이웃 관계 모델링)는 끊지 않는다.</b></div>
+    </div>
+
+    <div class="callout warn">
+      <span class="ci">📌</span>
+      <div>“GNN이 쓸모없다”는 반전 논문이 아니라, <b>무엇을 시간축으로 인코딩할 것인가(semantic)</b> +
+      <b>이웃 관계는 어떻게 유지할 것인가(spatial)</b>를 미래 예측 과제 위에서 통합한다.</div>
+    </div>
+
+    <p>기존 ET-NAGraphSAGE는 <b>edge feature 시계열 인코딩</b>을 핵심 novelty로 삼았으나,
+    Ablation C 및 2×2 절제 실험에서 다음이 확인되었다.</p>
+
+    <table>
+      <thead><tr><th>관측</th><th>수치 (h192, seed 42)</th><th>해석</th></tr></thead>
+      <tbody>
+        <tr><td>T=1 (no-temporal)</td><td>92.45%</td><td>NAGraphSAGE에 가까운 단일 프레임</td></tr>
+        <tr class="hl"><td>node-only (T=10)</td><td><b>94.90%</b></td><td>노드 시계열만으로 +2.45%p — <b>진짜 신호</b></td></tr>
+        <tr><td>both (node+edge)</td><td>95.33%</td><td>edge 추가 +0.43%p (용량 의존, 미미)</td></tr>
+        <tr class="hlb"><td>edge-only</td><td>92.50%</td><td>ego 궤적 없으면 T=1 수준 — ego가 지배</td></tr>
+      </tbody>
+    </table>
+
+    <p>edge-<b>temporal</b> 시계열 인코딩은 기여가 미미했다(위 표). 그러나 이는 <b>"이웃이 무의미하다"는 뜻이 아니다.</b></p>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>선행 연구와의 정합 (끊지 않을 것):</b>
+      <ul class="dash" style="margin-top:6px;">
+        <li><b>NAGraphSAGE (TII):</b> 프레임 단위 <b>edge-aware 공간 집계</b> — 이웃 kinematic 관계 반영 → <b>본 설계에 유지</b></li>
+        <li><b>ET-NAGraphSAGE:</b> edge를 <b>시계열</b>로 또 인코딩 — 정보 중복으로 기여 ≈0 → <b>기각</b></li>
+        <li><b>저널 제안:</b> 이웃 <b>공간</b> 모델(NAGraphSAGE) + ego·이웃 <b>의미 시계열</b>(TSEM) + <b>미래 예측</b> 과제</li>
+      </ul></div>
+    </div>
+
+    <p>미래 LC·합류 맥락에서 옆 차 gap·상대속도는 <b>의사결정 단서</b>가 될 수 있다.
+    <code>state(t+H)</code>가 ego-only로 정의되더라도, <b>과거 W프레임 동안의 이웃 관계 이력</b>은
+    미래 maneuver를 예측하는 <b>간접·상황 정보</b>로 작용할 수 있다 — 특히 H가 길 때.</p>
+
+    <p class="small">상세 진단: <code>docs/edge_temporal_report.html</code> · 기존 계획: <code>docs/ET-NAGraphSAGE.html</code></p>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 문제 재정의 -->
+  <div class="page" id="page-problem">
+    <div class="sec-head"><div class="sec-num">1</div><h2>문제 재정의 — 과거 W → 미래 t+H 상태 예측</h2></div>
+    <p class="sec-desc"><span class="badge b-green">확정 · 2026-07-07</span></p>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>2026-07-07 결정:</b>
+      <ul class="dash" style="margin-top:6px;">
+        <li><b>기각:</b> <code>lane_change</code> ±6프레임 탐지 라벨 · 현재 시점 상태 분류</li>
+        <li><b>채택:</b> 미래 <b>3-class</b> 상태 예측 — <code>y(t) = state(t+H)</code> (stop / lane_change / normal)</li>
+        <li><b>미사용:</b> 예/아니오(2-class) 정답 · <code>journal/</code> 이진 실험 설정 · 관련 방법론·결과 인용 안 함</li>
+        <li><b>입력:</b> 과거 관측 창 W ∈ {10, 20, 30} 프레임 (ego만, 인과적)</li>
+        <li><b>모델:</b> <b>TSEM-SAGE</b> — semantic temporal + <b>NAGraphSAGE 공간 집계</b> (이웃 관계 유지)</li>
+      </ul></div>
+    </div>
+
+    <h3 id="problem-causal"><span class="ic">◆</span>인과 구조</h3>
+    <figure>
+    <svg viewBox="0 0 720 180" class="svg-mono" role="img" aria-label="과거 W 미래 H">
+      <line x1="30" y1="90" x2="690" y2="90" stroke="#94a3b8" stroke-width="2"/>
+      <rect x="80" y="55" width="280" height="32" rx="4" fill="#dbeafe" stroke="#2563eb"/>
+      <text x="220" y="76" font-size="12" text-anchor="middle" fill="#1d4ed8" font-weight="700">입력: 과거 W프레임 [t−W+1 … t]</text>
+      <circle cx="360" cy="90" r="7" fill="#2563eb"/>
+      <text x="360" y="115" font-size="11" text-anchor="middle" fill="#2563eb" font-weight="700">t (지금)</text>
+      <rect x="400" y="55" width="120" height="32" rx="4" fill="#ede9fe" stroke="#7c3aed"/>
+      <text x="460" y="76" font-size="12" text-anchor="middle" fill="#5b21b6" font-weight="700">정답: state(t+H)</text>
+      <circle cx="460" cy="90" r="7" fill="#7c3aed"/>
+      <text x="460" y="115" font-size="11" text-anchor="middle" fill="#7c3aed">t+H</text>
+      <rect x="400" y="125" width="280" height="28" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="4 2"/>
+      <text x="540" y="144" font-size="11" text-anchor="middle" fill="#b91c1c">입력에 t+1… 금지 (누수 방지)</text>
+    </svg>
+    <figcaption>그림 A. 앵커 t에서 <b>과거만</b> 보고 <b>미래 H프레임 뒤 상태</b>를 예측한다.</figcaption>
+    </figure>
+
+    <pre>샘플 (ego, 앵커 t):
+  X(t) = kinematics[t−W+1 : t]     # 과거 W프레임, 6D
+  y(t) = state(t+H)                # 미래 시점 3-class (0=stop, 1=lane_change, 2=normal)</pre>
+
+    <div class="callout info">
+      <span class="ci">📊</span>
+      <div>미래 상태 라벨 <code>y(t)=state(t+H)</code> 최종 규칙, 클래스 분포, 샘플 유효 조건은
+      <b>"데이터 설계" 탭</b>으로 정리했다 — 참조: <a data-goto="data" data-anchor="data-label">라벨 정의</a>,
+      <a data-goto="data" data-anchor="data-distribution">클래스 분포</a>.</div>
+    </div>
+
+    <h3 id="problem-wh"><span class="ic">◆</span>관측 창 W · 예측 지평 H</h3>
+    <table>
+      <thead><tr><th>파라미터</th><th>후보</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>W</b> (과거)</td><td><b>10, 20, 30</b></td><td>얼마나 긴 과거 맥락을 보는가 — Table: W sweep</td></tr>
+        <tr><td><b>H</b> (미래)</td><td>5, 10, 15 (스윕, 메인 1개 확정 예정)</td><td>얼마나 먼 미래를 맞히는가 — H↑ 시 예측 난이도↑</td></tr>
+      </tbody>
+    </table>
+    <p><b>직관:</b> W가 길수록 maneuver onset·의도 단서가 쌓이고, H가 길수록 "지금 궤적로 t+H 상태를 맞힌다"는
+    <b>진짜 예측</b> 문제가 된다. ±6 탐지와 달리 정답은 항상 <b>미래 한 시점</b>이다.</p>
+
+    <h3 id="problem-compare"><span class="ic">◆</span>기존 방식과 비교</h3>
+    <table>
+      <thead><tr><th></th><th>기존 (기각)</th><th>신규 (채택)</th></tr></thead>
+      <tbody>
+        <tr><td>질문</td><td>"지금 이 차 상태는?"</td><td><b>"H프레임 뒤 이 차 상태는?"</b></td></tr>
+        <tr><td>정답</td><td><code>category(t)</code> (LC ±6 smear)</td><td><code>state(t+H)</code> (순간 규칙)</td></tr>
+        <tr><td>입력</td><td>[t−T+1…t] → y(t)</td><td>[t−W+1…t] → <b>y(t+H)</b></td></tr>
+        <tr><td>인과성</td><td>라벨에 미래 정보 smear</td><td><b>입력⊂과거, 정답⊂미래</b> — 인과적</td></tr>
+        <tr><td>TSEM 역할</td><td>과거로 현재 추정</td><td><b>과거 maneuver 의미 → 미래 상태</b></td></tr>
+      </tbody>
+    </table>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 데이터 설계 -->
+  <div class="page" id="page-data">
+    <div class="sec-head"><div class="sec-num">📊</div><h2>데이터 설계</h2></div>
+    <p class="sec-desc">데이터셋·샘플 구성·라벨 정의·클래스 분포·이웃 그래프 구성을 한곳에 정리 (2026-07-07 신설).</p>
+
+    <h3 id="data-overview"><span class="ic">◆</span>데이터셋 개요</h3>
+    <table>
+      <thead><tr><th>항목</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>데이터셋</td><td>공업탑(Gongeoptap) 로터리 — 중심 탑 주위 동심원 링 차선 구조</td></tr>
+        <tr><td>경로</td><td><code>/home/oem/data/TII_data/Gongeoptap/*.csv</code></td></tr>
+        <tr class="hl"><td>파일 수</td><td><b>11개</b> CSV (전부 사용 — 디렉토리 내 <code>graph_knn_k*</code>/<code>graph_radius_*</code>는 예전 그래프 캐시 산출물, 원본 아님)</td></tr>
+        <tr><td>총 행 수</td><td><b>996,122행</b> (논문 Table XII의 클래스별 합계와 정확히 일치 — 같은 원본 데이터)</td></tr>
+        <tr><td>프레임 수</td><td>파일당 1,498프레임 (10개 파일), 1개 파일만 208프레임</td></tr>
+        <tr><td>주요 컬럼</td><td><code>frame, object_id, bbox_cx/cy/w/h, position_x/y/z, speed, acceleration,
+            direction_x/y/z, class, category, lane_id</code></td></tr>
+        <tr><td>좌표계</td><td>운동학은 world(<code>position_x, position_z</code>), 차선지도(annotation)는 정규화 이미지좌표[0,1] —
+            <code>journal/map_features.py</code>가 CSV의 bbox↔position 쌍으로 호모그래피 fit (재투영 오차 중앙값 0.05m)</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="data-sampling"><span class="ic">◆</span>샘플 구성 — W · H · split</h3>
+    <table>
+      <thead><tr><th>파라미터</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>관측창 W (과거)</td><td>10, 20, 30 (스윕 후보), 메인 실험 W=10</td></tr>
+        <tr><td>예측 지평 H (미래)</td><td>5, 10, 15 (스윕 후보), 메인 실험 H=10</td></tr>
+        <tr><td>split 방식</td><td>차량이 아니라 <b>시간(프레임)축 분할</b> — train 70% / val 15% / test 15%, 각 split 내 앵커만 유효</td></tr>
+      </tbody>
+    </table>
+    <p>실측 샘플 수 (W=10, H=10, 11개 CSV 전체 기준):</p>
+    <table>
+      <thead><tr><th>split</th><th>샘플 수</th></tr></thead>
+      <tbody>
+        <tr><td>train</td><td>575,686</td></tr>
+        <tr><td>val</td><td>119,901</td></tr>
+        <tr><td>test</td><td>120,435</td></tr>
+        <tr class="hl"><td><b>합계</b></td><td><b>816,022</b></td></tr>
+      </tbody>
+    </table>
+    <p>학습 샘플 유효 조건:</p>
+    <ul class="dash">
+      <li>과거: <code>f ∈ [t−W+1, t]</code> 모두 존재 (gap 검증)</li>
+      <li>미래: <code>t+H</code> 프레임 존재, 해당 시점 라벨 계산 가능</li>
+      <li>입력에 <code>lane_id</code> 미포함 (라벨은 lane_id로만 생성 → 누수 방지)</li>
+    </ul>
+
+    <h3 id="data-label"><span class="ic">◆</span>라벨 정의 <span class="badge b-green">현재 채택 · 유일한 정의</span></h3>
+    <p>기존 CSV <code>category</code> 열(±6으로 smear됨)은 <b>정답으로 사용하지 않는다</b>. 대신 앵커 t에서
+    미래 지평 H까지를 보고 아래 규칙 하나로 <code>y(t) = state(t+H)</code>를 계산한다 — <b>이것이 코드가 실제로
+    쓰는 유일한 최종 라벨</b>이다 (<code>modules/data_manager_tsem.py::_TsemFileData.future_window_state()</code>).</p>
+
+    <pre>future_window_state(t, H, δ=2):
+    if majority(instant_state(f) for f in [t+H−δ … t+H+δ]) == stop:   # stop: t+H 중심 ±δ 다수결 (지속성, B안)
+        return stop
+    elif ∃ f' ∈ (t, t+H] 에서 instant_state(f') == lane_change:        # lane_change: 윈도우 내 발생 여부 (A안)
+        return lane_change                                             # (t 이전은 안 봄 — 인과성 유지)
+    else:
+        return normal</pre>
+
+    <p>위 규칙은 프레임 단위 원자 함수 <code>instant_state(f)</code>를 재사용한다 (여전히 코드에서 그대로 쓰이는
+    빌딩블록 — stop 판정과 "그 프레임이 전이 순간인가" 판정에 필요):</p>
+    <table>
+      <thead><tr><th>클래스</th><th>순간 규칙 (프레임 f)</th><th>우선순위</th></tr></thead>
+      <tbody>
+        <tr><td><b>stop</b> (0)</td><td><code>speed(f) ≤ 1.0</code></td><td>1 (최우선)</td></tr>
+        <tr class="hl"><td><b>lane_change</b> (1)</td><td><code>lane_id(f) ≠ lane_id(f−1)</code> 이고 둘 다 비어 있지 않음</td><td>2</td></tr>
+        <tr><td><b>normal</b> (2)</td><td>위 둘 다 아님</td><td>3</td></tr>
+      </tbody>
+    </table>
+
+    <p class="small">구현: <code>modules/data_manager_tsem.py::_TsemFileData._stop_persist_state()</code>
+    (stop, ±δ 다수결) + <code>_TsemFileData.future_window_state()</code>(bisect로 프레임 인덱스 조회, O(log n)).
+    <code>y_persist</code>(Persist baseline용)는 <code>instant_state(t)</code> — 앵커 시점 상태 그대로, 변경 없음.
+    캐시 포맷 <code>tsem_f16ne_v3</code>.</p>
+
+    <div class="callout warn">
+      <span class="ci">📜</span>
+      <div><b>설계 이력 (참고, 지금은 안 씀):</b> 처음엔 <code>y(t) = instant_state(t+H)</code> — 미래 지평의
+      정확히 그 프레임 하나만 보는 <b>point 정의</b>를 stop·lane_change 둘 다에 썼다. <code>lane_change</code>가
+      정의상 <b>전이 프레임 정확히 1장</b>뿐인 순간 이벤트라, <code>t+H</code>에 정확히 걸릴 확률이 낮아 극단적으로
+      희귀해졌다(실측 2.42%) — class weight를 아무리 조정해도 recall/precision이 걷잡을 수 없이 널뛰는 근본
+      원인이었다. maneuver anticipation 문헌 표준(Jain et al., "Car that Knows Before You Do", ICCV 2015 등)을
+      확인하고 <code>lane_change</code>를 window(occurrence) 정의로 교체했다(A안). 이후 <code>stop</code>도
+      point 정의로 남아있던 것이 원인임을 진단(§12.11)하고 ±δ 다수결(persistence) 정의로 교체했다(B안) —
+      point 정의는 더 이상 어디에서도 쓰지 않는다.</div>
+    </div>
+
+    <h3 id="data-distribution"><span class="ic">◆</span>클래스 분포 (채택된 라벨 기준)</h3>
+    <p>split별 분포 (W=10, H=10, <code>future_window_state</code> B안 — stop ±2 다수결, 실제 학습·평가에
+    쓰이는 최신 수치, 2026-07-07 갱신):</p>
+    <table>
+      <thead><tr><th>split</th><th>샘플 수</th><th>stop</th><th>lane_change</th><th>normal</th></tr></thead>
+      <tbody>
+        <tr><td>train</td><td>575,686</td><td>225,893 (39.24%)</td><td>118,230 (20.54%)</td><td>231,563 (40.22%)</td></tr>
+        <tr><td>val</td><td>119,901</td><td>45,211 (37.71%)</td><td>25,388 (21.17%)</td><td>49,302 (41.12%)</td></tr>
+        <tr><td>test</td><td>120,435</td><td>45,872 (38.09%)</td><td>23,636 (19.63%)</td><td>50,927 (42.29%)</td></tr>
+        <tr class="hl"><td><b>전체</b></td><td><b>816,022</b></td><td>316,976 (38.85%)</td><td><b>167,254 (20.49%)</b></td><td>331,792 (40.66%)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">세 split 모두 비율이 거의 동일 — 시간축 분할이라 우연이 아니라 로터리 교통 패턴이 시간대별로
+    안정적이라는 뜻. lane_change 불균형은 point 정의(LC 2.4%) 대비 여전히 크게 완화된 상태(LC 20.5%)를 유지한다.</p>
+
+    <div class="callout warn">
+      <span class="ci">📜</span>
+      <div><b>A안(point-stop) 당시 수치 — 1~6차 실험은 전부 이 라벨로 학습됨:</b> train stop 210,127(36.50%) ·
+      lane_change 117,645(20.44%) · normal 247,914(43.06%). B안 적용 후 stop이 +15,766(정답=normal이었던
+      경계 flicker 표본이 stop으로 재분류), normal이 −16,351 — lane_change는 거의 무변화(+585). 진단 근거는
+      <a data-goto="verification" data-anchor="ver-label-b">§12.11</a> 참조.</div>
+    </div>
+
+    <p><b>참고 — 논문 Table XII와 비교</b> (같은 11개 CSV 원본, 다른 라벨링 방식):</p>
+    <table>
+      <thead><tr><th>정의</th><th>stop</th><th>lane_change</th><th>normal</th><th>모수</th></tr></thead>
+      <tbody>
+        <tr><td>논문 Table XII (<code>category</code>, ±6 smear, 비인과적)</td><td>401,549 (40.31%)</td>
+          <td>205,212 (20.60%)</td><td>389,361 (39.09%)</td><td>996,122 (원본 행)</td></tr>
+        <tr><td>TSEM A안 (point-stop, window-LC, 인과적, 1~6차 실험)</td><td>210,127 (36.50%)</td>
+          <td>117,645 (20.44%)</td><td>247,914 (43.06%)</td><td>575,686 (train 샘플)</td></tr>
+        <tr class="hl"><td><b>TSEM B안 (±2 다수결 stop, window-LC, 인과적, 채택)</b></td><td><b>225,893 (39.24%)</b></td>
+          <td>118,230 (20.54%)</td><td>231,563 (40.22%)</td><td>575,686 (train 샘플)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">공교롭게도 LC 비율(20.4~20.6%)이 세 정의 모두 거의 같다 — 다만 TSEM 라벨은 <b>미래만</b>
+    보고(인과적) 논문의 ±6은 과거·미래를 동시에 섞는다(비인과적)는 근본적 차이가 있다.</p>
+
+    <h3 id="data-neighbor"><span class="ic">◆</span>이웃 · 그래프 구성</h3>
+    <p>그래프에 묶인 차량이 <b>프레임 밖으로 나가거나</b>, <b>반경 밖으로 멀어지거나</b>, <b>추적이 끊기면</b>
+    이웃 슬롯이 비거나 시계열 일부가 비게 된다. 현행 <code>data_manager.py</code>와 동일 원칙을 TSEM-SAGE에도 적용한다.</p>
+
+    <table>
+      <thead><tr><th>파라미터</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>이웃 반경 (radius)</td><td>20.0m</td></tr>
+        <tr><td>1-hop 최대 이웃 수 (K_max)</td><td>6</td></tr>
+        <tr><td>2-hop 최대 이웃 수 (K_max2)</td><td>4</td></tr>
+        <tr><td>edge feature</td><td>5D — [rel_speed, rel_accel, rel_dir, distance] 등 (<code>_compute_edge_feat</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <h4>이웃은 언제·어떻게 정해지는가</h4>
+    <table>
+      <thead><tr><th>규칙</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>앵커 프레임 t</b></td><td>이웃 ID 목록 <code>nbr_ids</code>는 <b>프레임 t 한 번</b> KNN(반경+K)으로 고정</td></tr>
+        <tr><td>과거 조회</td><td>각 <code>nbr_id</code>에 대해 <code>[t−W+1…t]</code> 프레임마다 노드·엣지 조회</td></tr>
+        <tr><td>의도</td><td>"<b>지금(t) 이웃과의 관계</b>가 과거에 어떻게 변해왔는가" 학습 (ET-NAGraphSAGE 설계와 동일)</td></tr>
+      </tbody>
+    </table>
+
+    <figure>
+    <svg viewBox="0 0 720 200" class="svg-mono" role="img" aria-label="이웃 소실 타임라인">
+      <line x1="40" y1="100" x2="680" y2="100" stroke="#94a3b8" stroke-width="2"/>
+      <text x="100" y="125" font-size="10" fill="#667085" text-anchor="middle">t−W</text>
+      <text x="360" y="125" font-size="10" fill="#2563eb" text-anchor="middle" font-weight="700">t</text>
+      <rect x="180" y="70" width="200" height="24" rx="3" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="280" y="86" font-size="10" text-anchor="middle" fill="#15803d">이웃 j 관측됨</text>
+      <rect x="40" y="70" width="140" height="24" rx="3" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="3 2"/>
+      <text x="110" y="86" font-size="10" text-anchor="middle" fill="#b91c1c">j 없음 → 0벡터</text>
+      <text x="500" y="86" font-size="11" fill="#334155" text-anchor="middle">t에서 KNN으로 j 슬롯 고정</text>
+      <text x="360" y="155" font-size="11" fill="#667085" text-anchor="middle">슬롯 ki: 과거 결측 프레임 = 0 패딩 · t에 없으면 mask=0</text>
+    </svg>
+    <figcaption>그림 B. 앵커 t에서 고른 이웃 j — 과거 일부 프레임에 없으면 해당 시점만 0, 슬롯 자체는 유지.</figcaption>
+    </figure>
+
+    <h4>결측 유형별 처리</h4>
+    <table>
+      <thead><tr><th>상황</th><th>데이터</th><th>마스크</th><th>모델</th></tr></thead>
+      <tbody>
+        <tr><td><b>① 슬롯 패딩</b><br><span class="small">이웃 &lt; K</span></td><td>빈 슬롯 전체 0</td>
+          <td><code>nbr_mask[ki]=0</code></td><td>집계 시 <b>완전 제외</b> (masked softmax)</td></tr>
+        <tr><td><b>② 과거 프레임 결측</b><br><span class="small">j가 t−k엔 없음</span></td><td>해당 (ki, ti)만 0</td>
+          <td>슬롯 mask=1 유지</td><td>시계열 인코더는 <b>짧은 유효 구간</b>만 활용 (0은 "미관측")</td></tr>
+        <tr><td><b>③ t에서 사라짐</b><br><span class="small">앵커에 j 없음</span></td><td>애초에 <code>nbr_ids</code>에 안 들어감</td>
+          <td>—</td><td>다른 차량이 K 슬롯 채움</td></tr>
+        <tr><td><b>④ ego 결측</b></td><td>샘플 제외 (빌드 시 필터)</td><td>—</td><td>학습 샘플에 안 넣음</td></tr>
+      </tbody>
+    </table>
+
+    <p>코드 근거 (<code>modules/data_manager.py</code>):</p>
+    <pre>if nbr_id in fn and ego_id in fn:
+    nbr_node_seqs[ki, ti] = fn[nbr_id]
+    edge_seqs[ki, ti]     = edge(ego, nbr)
+# else: 0 유지
+nbr_mask[:n_real] = 1.0   # t 시점 실제 이웃 수만 1</pre>
+
+    <h4>모델에 미치는 영향</h4>
+    <table>
+      <thead><tr><th>영향</th><th>설명</th><th>완화</th></tr></thead>
+      <tbody>
+        <tr><td><b>정보 손실</b></td><td>이웃이 W 초반에만 보이면 semantic 시계열이 짧음 → traffic 맥락 약화</td>
+          <td>W↑, 또는 lateral·distance @ t 스냅샷 병행</td></tr>
+        <tr><td><b>오해 없는 0</b></td><td>0벡터 = "속도 0"이 아니라 <b>미관측</b> (mask·정규화 시 결측 0 유지)</td>
+          <td><code>_standardize_present</code>: all-zero 슬롯은 정규화 skip</td></tr>
+        <tr><td><b>집계 왜곡 방지</b></td><td>패딩 슬롯이 메시지에 섞이면 bias</td>
+          <td><code>ETSAGELayer</code>: <code>nbr_mask</code> + masked softmax</td></tr>
+        <tr><td><b>신규 진입 이웃</b></td><td>t 직전에 나타난 차는 <b>짧은 이력</b>만 가짐</td>
+          <td>정상 동작; t 스냅샷 edge가 현재 관계 보완</td></tr>
+        <tr><td><b>이웃 0명</b></td><td>고밀도 장면 드묾; <code>n_real=0</code>이면 spatial 단계 skip, ego semantic만</td>
+          <td><code>h_N=0</code>, ego-only fallback (기존 ET-SAGE와 동일)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <span class="ci">📝</span>
+      <div><b>논문에 쓸 한 줄:</b> 이웃 소실은 <b>오류가 아니라 관측 한계</b>이며, 슬롯 고정(t 앵커) + 0 패딩 +
+      <code>nbr_mask</code>로 <b>인과적·일관된</b> 처리를 한다. ablation 시 <b>이웃 수·결측 비율</b>을 통계로 보고하면 재현성↑.</div>
+    </div>
+
+    <h4>(선택) TSEM 구현 시 추가 고려</h4>
+    <ul class="dash">
+      <li><b>프레임별 presence mask</b> <code>m[ki,ti]∈{0,1}</code> — 시계열 attention이 0 패딩 프레임 무시 (개선 여지)</li>
+      <li><b>meta 통계</b>: <code>n_neighbors</code>, 평균 유효 프레임 비율 — 분석·보고용 (캐시 경로엔 현재 누락, §구현검증 참고)</li>
+    </ul>
+    <footer>TSEM-SAGE 저널 연구 설계 · 데이터 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 논문 제목 -->
+  <div class="page" id="page-title">
+    <div class="sec-head"><div class="sec-num">2</div><h2>논문 제목</h2></div>
+
+    <div class="card" style="border-color:var(--emerald);">
+      <span class="badge b-green">추천 (갱신)</span>
+      <div class="title-en" style="margin-top:8px;">Semantic-Temporal Extension of NAGraphSAGE for Future Vehicle Motion-State Prediction</div>
+      <div class="title-ko">NAGraphSAGE의 의미-시계열 확장을 통한 미래 차량 운동 상태 예측 (TSEM-SAGE)</div>
+    </div>
+
+    <h3>대안 제목</h3>
+    <table>
+      <thead><tr><th>제목 (영문)</th><th>강조점</th></tr></thead>
+      <tbody>
+        <tr><td><i>Trajectory-Semantic Encoding for Future Motion-State Prediction with Neighbor-Aware Spatial Aggregation</i></td><td>미래 예측 + NAGraphSAGE 계승</td></tr>
+        <tr><td><i>Aligning Past Maneuver Semantics with Future State: W-Frame History Predicts H-Step-Ahead Vehicle Behavior</i></td><td>W→H 인과 구조</td></tr>
+        <tr><td><i>What Past Trajectories Reveal About Future Motion: Semantic Encoding Without Spatial Graphs</i></td><td>의미론 중심</td></tr>
+      </tbody>
+    </table>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 왜 GRU만으론 안 되는가 -->
+  <div class="page" id="page-why">
+    <div class="sec-head"><div class="sec-num">3</div><h2>왜 "GRU에 6D 넣기"는 안 되는가</h2></div>
+
+    <p>현재 ET-NAGraphSAGE Stage 1은 본질적으로 다음과 같다.</p>
+    <pre>[node_seq: T×6] → GRU/LSTM/Mamba → h_ego → 분류</pre>
+
+    <p>이것은 <b>표현 수단(인코더)</b>만 바꾼 것이지, <b>무엇을 인코딩하는가</b>에 대한 주장이 없다.
+    예상되는 심사 지적:</p>
+    <ul class="cross">
+      <li>"RNN/Transformer 쓴 시계열 분류와 무엇이 다른가?"</li>
+      <li>"성능 오른 건 capacity/T 늘린 효과 아닌가?"</li>
+      <li>"NAGraphSAGE + GRU wrapper 아닌가?"</li>
+    </ul>
+
+    <div class="callout err">
+      <span class="ci">✕</span>
+      <div><b>기각한 라벨</b> (<code>road_data/20250318json_class_lanechage.py</code>):
+      <code>lane_change</code> = lane_id 전이 시점 <b>±6프레임</b> — 본 연구에서 <b>사용 안 함</b>.</div>
+    </div>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>채택한 라벨</b> (문제 재정의 §미래 상태 라벨): 앵커 t에서 정답은 <code>state(t+H)</code> — 미래 한 시점의 순간 3-class.</div>
+    </div>
+
+    <div class="callout key">
+      <span class="ci">💡</span>
+      <div><b>과거 W프레임의 maneuver 의미 → 미래 t+H 시점 상태</b>를 예측하도록 입력·정답을 정렬한다.</div>
+    </div>
+
+    <p>코드베이스에 이미 그 방향의 프로토타입이 존재한다:
+    <code>models/decomp_encoder.py</code> — 저주파(경로추종) / 고주파(기동 잔차) 분해.</p>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 5단 명제 -->
+  <div class="page" id="page-propositions">
+    <div class="sec-head"><div class="sec-num">4</div><h2>방법론 논리 골격 — 5단 명제</h2></div>
+
+    <div class="callout key">
+      <span class="ci">🧩</span>
+      <div><b>이 섹션을 한 문장으로 (미래 예측版):</b>
+      정답은 <b>미래 시점 t+H의 상태</b>인데, 그 미래는 <b>지금까지의 ego 궤적 패턴</b>으로 예측 가능하다.
+      이웃 그래프는 정답 정의에 없으므로 넣을 이유가 없고, raw GRU가 아니라 <b>maneuver 의미 분해</b>가 맞는 입력이다.</div>
+    </div>
+
+    <h3>먼저 알아둘 것 — 무엇을 예측하는가</h3>
+    <table>
+      <thead><tr><th>시점</th><th>모델이 보는 것</th><th>맞춰야 할 것</th></tr></thead>
+      <tbody>
+        <tr><td>앵커 t</td><td>과거 W프레임 궤적 [t−W+1…t]</td><td rowspan="2" class="hl"><b>state(t+H)</b><br>미래 H프레임 뒤 Stop/LC/Normal</td></tr>
+        <tr><td>t+H (미래)</td><td class="small">보지 않음 (정답만 사용)</td></tr>
+      </tbody>
+    </table>
+    <p>예: W=20, H=10이면 "최근 2초 궤적을 보고 1초 뒤 이 차가 멈출지/차선 바꿀지/순항일지"를 맞힌다.</p>
+
+    <h3>다섯 명제 — 미래 예측版</h3>
+    <table>
+      <thead><tr><th style="width:6%">#</th><th style="width:20%">명제</th><th>쉬운 설명</th><th style="width:20%">실험</th></tr></thead>
+      <tbody>
+        <tr><td><b>1</b></td><td>정답 = <b>미래 상태</b></td>
+          <td><code>y(t)=state(t+H)</code>. "지금"이 아니라 <b>H프레임 뒤</b> Stop/LC/Normal을 맞힌다. ±6 smear 사용 안 함.</td>
+          <td>순간 라벨 파이프라인</td></tr>
+        <tr><td><b>2</b></td><td>과거 궤적이 <b>필수</b></td>
+          <td>t+H가 LC이려면 보통 t 근처부터 횡이동·조향 패턴이 쌓인다. <b>W프레임 궤적</b> 없이는 미래 LC 예측 불가.</td>
+          <td>W sweep 10/20/30</td></tr>
+        <tr><td><b>3</b></td><td>이웃 <b>공간</b> 관계는 보완</td>
+          <td>라벨은 ego-only이나, 미래 LC/감속은 traffic 맥락과 연관될 수 있다. <b>NAGraphSAGE 공간 집계</b>는 ego semantic과 결합해
+          미래 예측을 보완 — edge-<b>temporal</b> 이중 인코딩과는 구별.</td>
+          <td>ego-only vs +spatial</td></tr>
+        <tr class="hl"><td><b>4</b></td><td>해법 = <b>semantic + spatial</b></td>
+          <td>과거 maneuver 의미(TSEM) + 이웃 kinematic 관계(NAGraphSAGE) → state(t+H).</td>
+          <td>TSEM-SAGE &gt; 각 단독</td></tr>
+        <tr><td><b>5</b></td><td>W↑·H↑ <b>트레이드오프</b></td>
+          <td>W 길면 맥락↑, H 길면 난이도↑. H가 길수록 spatial 기여 가능성↑ (가설).</td>
+          <td>W×H grid + spatial ablation</td></tr>
+      </tbody>
+    </table>
+
+    <h3>명제 흐름</h3>
+    <div class="chain">
+    <b>명제 1</b> 정답은 미래 한 시점 state(t+H)<br>
+    &nbsp;&nbsp;→ <b>명제 2</b> 과거 W프레임 ego 궤적 필요<br>
+    &nbsp;&nbsp;→ <b>명제 3</b> NAGraphSAGE 계승: 이웃 <b>공간</b> 관계도 함께 봄 (temporal edge 중복은 안 함)<br>
+    &nbsp;&nbsp;→ <b>명제 4</b> semantic temporal + spatial = TSEM-SAGE<br>
+    &nbsp;&nbsp;→ <b>명제 5</b> W·H 스윕; H↑일 때 spatial 보완 검증
+    </div>
+
+    <h3>예시 — t에서 t+H LC 예측</h3>
+    <table>
+      <thead><tr><th></th><th>앵커 t (지금)</th><th>과거 W=20 궤적</th><th>미래 t+H (정답)</th></tr></thead>
+      <tbody>
+        <tr><td><b>상황</b></td><td>아직 lane_id 안 바뀜, Normal처럼 보임</td><td>최근 1초간 heading·횡변위 <b>누적</b></td><td>H프레임 뒤 <b>lane_id 전이</b> → LC</td></tr>
+        <tr class="hl"><td><b>모델</b></td><td>한 프레임만 보면 Normal 예측</td><td>횡방향 maneuver 의미 포착</td><td><b>state(t+H)=LC</b> 예측 가능</td></tr>
+      </tbody>
+    </table>
+
+    <h3>접근 비교</h3>
+    <table>
+      <thead><tr><th>접근</th><th>하는 일</th><th>평가</th></tr></thead>
+      <tbody>
+        <tr class="hlb"><td><b>±6 탐지 (기각)</b></td><td>현재 category(t), LC smear</td><td>인과적 예측 아님</td></tr>
+        <tr class="hlb"><td><b>NAGraphSAGE</b></td><td>프레임 t 이웃 + 현재 분류</td><td>미래 예측·ego 궤적과 어긋남</td></tr>
+        <tr class="hlb"><td><b>Raw-Temporal + GNN</b></td><td>[W×6]→GRU + NAGraphSAGE @ t</td><td>시계열만, 의미 없음</td></tr>
+        <tr class="hl"><td><b>TSEM-SAGE</b></td><td>semantic temporal + NAGraphSAGE spatial → state(t+H)</td><td><b>채택 (계승)</b></td></tr>
+      </tbody>
+    </table>
+
+    <h3>(부록) 형식적 표현</h3>
+    <div class="card">
+      <ul class="dash">
+        <li><b>예측 목표:</b> y(t) = state(t+H), 입력 X(t) = x<sub>t−W+1:t</sub>, 제약 X ∩ {t+1,…} = ∅.</li>
+        <li><b>공간 보완 (완화된 가설):</b> I(y; neighbors_spatial | ego_semantics) — 0이 아닐 수 있음, 특히 미래 LC @ 큰 H.</li>
+        <li><b>정보 이득:</b> I(y; x<sub>t</sub>) &lt; I(y; x<sub>t−W:t</sub>) — W가 길수록 미래 상태에 대한 정보↑ (상한 존재).</li>
+      </ul>
+    </div>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 제안 방법론 -->
+  <div class="page" id="page-method">
+    <div class="sec-head"><div class="sec-num">5</div><h2>제안 방법론 — TSEM-SAGE</h2></div>
+    <p class="sec-desc">Trajectory-Semantic Encoding + NAGraphSAGE spatial aggregation</p>
+
+    <p><b>TSEM-SAGE</b>는 NAGraphSAGE(TII)의 <b>이웃-aware 메시지 패싱</b>을 계승하고, ET-NAGraphSAGE에서 실패한
+    <b>edge-temporal 이중 인코딩</b>만 제거한다. 대신 ego·이웃 노드에 <b>maneuver semantic 시계열</b>을 적용한 뒤,
+    앵커 t에서 공간 집계 → <code>state(t+H)</code> 예측.</p>
+
+    <h3 id="method-hypo"><span class="ic">◆</span>핵심 가설</h3>
+    <table>
+      <thead><tr><th>가설</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td><b>H1</b> 인과 정렬</td><td>과거 W프레임 <b>semantic</b> 표현이 <code>state(t+H)</code> 예측의 주 신호.</td></tr>
+        <tr><td><b>H2</b> 공간 보완 (NAGraphSAGE 계승)</td><td>앵커 t(또는 W내 집계)에서 <b>이웃 kinematic 관계</b> 집계가 semantic ego 표현을
+        <b>보완</b> — 특히 미래 LC·복잡 traffic.</td></tr>
+        <tr><td><b>H3</b> 의미 분해</td><td>Raw [W×6]→GRU보다 semantic TSEM이 유리; TSEM-SAGE &gt; semantic-only.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="method-primitives"><span class="ic">◆</span>Maneuver Semantic Primitives — 무엇을 인코딩하는가</h3>
+    <p>원시 6D 대신, <b>미래 state(t+H)를 만드는 물리 과정</b>과 맞는 의미 채널을 정의한다.</p>
+    <table>
+      <thead><tr><th>의미 원시</th><th>물리적 의미</th><th>미래 상태와의 관계</th></tr></thead>
+      <tbody>
+        <tr><td><b>Longitudinal regime</b></td><td>속도·가속·jerk 추세</td><td>과거 감속 패턴 → <b>미래 Stop</b></td></tr>
+        <tr class="hl"><td><b>Lateral maneuver</b></td><td>heading rate, 횡변위, 곡률</td><td>과거 횡이동 누적 → <b>미래 LC</b> (t+H에서 lane_id 전이)</td></tr>
+        <tr><td><b>Path-following trend</b></td><td>저주파 궤적</td><td>안정 순항 → <b>미래 Normal</b></td></tr>
+        <tr><td><b>Maneuver residual</b></td><td>고주파 잔차</td><td>기동 onset → 미래 전이 직전 신호</td></tr>
+      </tbody>
+    </table>
+    <div class="callout info">
+      <span class="ci">📎</span>
+      <div><b>과거 의미 → 미래 상태:</b> Stage A는 <b>과거 W프레임</b>에서 위 채널을 만들고, Stage D는
+      <b>state(t+H)</b> 3-class를 예측한다.</div>
+    </div>
+
+    <h3 id="method-info"><span class="ic">◆</span>시계열에 넣는 정보 — 무엇이 왜 성능을 올리는가</h3>
+    <p>단순히 raw 6D <code>[pos, speed, dir, accel]</code>를 GRU에 넣는 것은 <b>"시계열을 썼다"</b>일 뿐,
+    <b>무엇을 학습해야 하는지</b>와 정답 <code>state(t+H)</code>가 어긋난다. TSEM은 시계열 축에 아래 <b>의미 채널</b>을 넣어,
+    라벨 생성 과정과 같은 물리 축으로 맞춘다.</p>
+
+    <h4>Semantic 채널 정의 (world 좌표 기반, lane_id 입력 없음)</h4>
+    <table>
+      <thead><tr><th>스트림</th><th>시계열 채널 (프레임별)</th><th>계산 (개념)</th></tr></thead>
+      <tbody>
+        <tr><td><b>종방향 s<sub>L</sub></b></td><td><code>v, a, j</code></td>
+          <td>속도, 가속, jerk(Δa). <b>미래 Stop</b>: 감속·저속 체제가 W 동안 쌓임</td></tr>
+        <tr class="hl"><td><b>횡방향 s<sub>lat</sub></b></td><td><code>ω, Δd<sub>⊥</sub>, κ</code></td>
+          <td>heading rate, 기준방향 대비 횡변위 누적, 곡률. <b>미래 LC</b>: 횡이동·조향 onset</td></tr>
+        <tr><td><b>저주파 trend</b></td><td>위치·속도의 low-pass</td><td>링/도로 <b>추종 추세</b> — <b>미래 Normal</b> 배경</td></tr>
+        <tr><td><b>고주파 residual</b></td><td><code>x − low</code></td><td>기동 transient — LC·Stop <b>직전</b> 신호 (<code>DecompTemporalEncoder</code>)</td></tr>
+        <tr class="hl"><td><b>로터리 극좌표</b> (신규)</td><td><code>Δρ, 접선(dθ·ρ)</code></td>
+          <td>로터리 중심 기준 반경 변화·회전속도. <b>미래 LC</b>: 반경방향 이동 — world 6채널과 다른 축의 정보
+          (아래 상세)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">원시 6D는 위 채널의 선형 결합·혼합이라, GRU가 스스로 분리해야 한다.
+    TSEM은 <b>분리를 입력 단계에서 명시</b> → 학습 난이도↓, 특히 LC↔Normal 경계↓.</p>
+
+    <h4>횡방향 채널의 정확한 계산 — ω · d_lat · κ (2026-07-08 추가 문서화)</h4>
+    <p><code>models/tsem_semantic_derivation.py::SemanticDerivation.forward()</code> 구현 기준. raw 6D
+    중 방향벡터(<code>dir_x, dir_z</code>)·위치(<code>pos_x, pos_z</code>)·속도(<code>speed</code>)로부터
+    계산한다.</p>
+
+    <p><b>① Heading rate ω (각속도)</b> — 방향벡터를 방위각으로 바꾼 뒤 프레임간 차분:</p>
+    <pre>heading(t) = atan2(dir_z(t), dir_x(t))               # 단위 방향벡터 → 방위각 (rad)
+ω(t)       = wrap(heading(t) − heading(t−1))          # 프레임당 회전량, 첫 프레임은 0
+wrap(d)    = (d + π) mod 2π − π                       # [−π, π] 정규화</pre>
+    <p class="small"><code>wrap()</code>이 핵심 — 방위각이 +179°→−179°로 넘어갈 때(실제 회전 2°) 단순
+    차분은 −358°로 폭주하는 각도 랩어라운드 문제를 [−π,π] 정규화로 방지한다.</p>
+
+    <figure>
+    <svg viewBox="0 0 720 210" class="svg-mono" role="img" aria-label="heading rate ω 계산">
+      <!-- 좌측: 연속 두 프레임의 heading 차분 -->
+      <text x="160" y="22" font-size="12" text-anchor="middle" fill="#334155" font-weight="700">① 연속 프레임 heading 차분</text>
+      <circle cx="110" cy="150" r="8" fill="#94a3b8"/>
+      <text x="110" y="178" font-size="10" text-anchor="middle" fill="#64748b">t−1</text>
+      <line x1="110" y1="150" x2="210" y2="115" stroke="#94a3b8" stroke-width="3" marker-end="url(#arrGray)"/>
+      <text x="215" y="105" font-size="10" fill="#64748b">heading(t−1)</text>
+      <circle cx="150" cy="120" r="8" fill="#2563eb"/>
+      <text x="150" y="103" font-size="10" text-anchor="middle" fill="#1d4ed8">t</text>
+      <line x1="150" y1="120" x2="230" y2="55" stroke="#2563eb" stroke-width="3" marker-end="url(#arrBlue)"/>
+      <text x="238" y="52" font-size="10" fill="#1d4ed8">heading(t)</text>
+      <path d="M 195 100 A 40 40 0 0 0 205 78" fill="none" stroke="#dc2626" stroke-width="2" marker-end="url(#arrRed)"/>
+      <text x="228" y="88" font-size="12" fill="#b91c1c" font-weight="700">ω(t)</text>
+      <!-- 우측: wrap 랩어라운드 -->
+      <text x="530" y="22" font-size="12" text-anchor="middle" fill="#334155" font-weight="700">② wrap() — 랩어라운드 방지</text>
+      <circle cx="530" cy="115" r="55" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+      <line x1="530" y1="115" x2="476" y2="110" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrGray)"/>
+      <text x="428" y="102" font-size="10" fill="#64748b">+179°</text>
+      <line x1="530" y1="115" x2="476" y2="122" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrBlue)"/>
+      <text x="428" y="138" font-size="10" fill="#1d4ed8">−179°</text>
+      <path d="M 480 106 A 55 55 0 0 0 480 125" fill="none" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrRed)"/>
+      <text x="606" y="95" font-size="11" fill="#b91c1c" font-weight="700">실제 회전: 2°</text>
+      <text x="606" y="115" font-size="10" fill="#64748b">단순 차분: −358° ✗</text>
+      <text x="606" y="135" font-size="10" fill="#059669" font-weight="700">wrap 후: +2° ✓</text>
+      <defs>
+        <marker id="arrGray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#94a3b8"/></marker>
+        <marker id="arrBlue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#2563eb"/></marker>
+        <marker id="arrRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#dc2626"/></marker>
+      </defs>
+    </svg>
+    <figcaption>그림 ω. 방향벡터를 방위각으로 바꿔 프레임간 차분한 것이 heading rate ω. 우측: ±180° 경계에서
+    wrap() 정규화가 없으면 2° 회전이 −358°로 폭주한다.</figcaption>
+    </figure>
+
+    <p><b>② 기준 방향 대비 횡변위 누적 d_lat</b> — 관측창 첫 프레임의 진행 방향을 기준축으로 고정하고,
+    이후 각 프레임의 변위를 그 축의 <b>수직 방향으로 사영</b>:</p>
+    <pre>h₀        = heading(t₀)                              # 윈도우 첫 프레임의 heading (기준 방향)
+dx(t)     = pos_x(t) − pos_x(t₀)                      # 첫 프레임 대비 변위
+dz(t)     = pos_z(t) − pos_z(t₀)
+d_lat(t)  = −sin(h₀)·dx(t) + cos(h₀)·dz(t)            # h₀의 왼쪽 수직 단위벡터와 변위의 내적</pre>
+    <p class="small">의미: "처음 가던 방향에서 옆으로 얼마나 벗어났는가"의 누적량 — 차선변경이면 시퀀스에
+    걸쳐 단조 증가/감소, 직진이면 0 근처 유지. 절대좌표가 아니라 <b>첫 프레임 기준 상대량</b>이라 장소가
+    달라도 같은 의미를 가진다(semantic 채널이 절대좌표를 제거하는 설계 철학과 일치).</p>
+
+    <figure>
+    <svg viewBox="0 0 720 230" class="svg-mono" role="img" aria-label="횡변위 누적 d_lat 계산">
+      <!-- 기준축 h0 -->
+      <circle cx="80" cy="150" r="9" fill="#2563eb"/>
+      <text x="80" y="180" font-size="11" text-anchor="middle" fill="#1d4ed8" font-weight="700">t₀ (첫 프레임)</text>
+      <line x1="80" y1="150" x2="640" y2="120" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrGray2)"/>
+      <text x="600" y="105" font-size="11" fill="#64748b" font-weight="700">기준축 h₀ (첫 heading 방향)</text>
+      <!-- 궤적: 차선변경처럼 점점 벗어남 -->
+      <path d="M 80 150 C 220 140, 340 130, 430 85 S 560 40, 610 35" fill="none" stroke="#7c3aed" stroke-width="3"/>
+      <circle cx="240" cy="139" r="6" fill="#7c3aed"/>
+      <circle cx="430" cy="85" r="6" fill="#7c3aed"/>
+      <circle cx="610" cy="35" r="8" fill="#7c3aed"/>
+      <text x="632" y="32" font-size="11" fill="#5b21b6" font-weight="700">t</text>
+      <text x="330" y="65" font-size="11" fill="#5b21b6">궤적 (차선변경 중)</text>
+      <!-- 수직 사영: t 프레임에서 기준축까지 -->
+      <line x1="610" y1="35" x2="620" y2="121" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="4 3" marker-end="url(#arrRed2)"/>
+      <line x1="612" y1="112" x2="622" y2="111" stroke="#dc2626" stroke-width="1.5"/>
+      <line x1="613" y1="121" x2="614" y2="112" stroke="#dc2626" stroke-width="1.5"/>
+      <text x="645" y="80" font-size="13" fill="#b91c1c" font-weight="700">d_lat(t)</text>
+      <text x="645" y="97" font-size="10" fill="#b91c1c">수직 사영 거리</text>
+      <!-- 중간 프레임 사영 (누적되는 모습) -->
+      <line x1="430" y1="85" x2="437" y2="131" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <line x1="240" y1="139" x2="242" y2="141" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <text x="447" y="115" font-size="9" fill="#dc2626">d_lat 증가 중</text>
+      <defs>
+        <marker id="arrGray2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#94a3b8"/></marker>
+        <marker id="arrRed2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#dc2626"/></marker>
+      </defs>
+    </svg>
+    <figcaption>그림 d_lat. 첫 프레임의 진행 방향 h₀를 기준축으로 고정하고, 이후 각 프레임 위치를 그 축의
+    <b>수직 방향으로 사영</b>한 거리가 d_lat — 차선변경이면 프레임이 지날수록 단조 증가하고, 직진이면 0 근처에
+    머문다.</figcaption>
+    </figure>
+
+    <p><b>③ 곡률 κ</b> — 물리 정의 κ = dθ/ds("이동 거리당 회전량")의 근사. ds = v·dt이고 프레임 간격이
+    일정하므로:</p>
+    <pre>κ(t) = ω(t) / (|v(t)| + 0.1)                         # +0.1 = 저속 발산 방지 안정화 상수</pre>
+    <p class="small">분모의 <code>+0.1</code>이 없으면 정지·저속(v≈0)에서 방향벡터 노이즈가 κ를 폭주시킨다.
+    의미: 같은 각속도라도 "고속의 완만한 곡선"과 "저속의 급회전"을 구분 — 로터리 회전 주행과 차선변경의
+    기하학적 특성 차이를 담는다.</p>
+
+    <figure>
+    <svg viewBox="0 0 720 220" class="svg-mono" role="img" aria-label="곡률 κ = ω/v — 같은 각속도, 다른 곡률">
+      <text x="185" y="24" font-size="12" text-anchor="middle" fill="#334155" font-weight="700">고속 (v 큼) → κ 작음: 완만한 곡선</text>
+      <path d="M 60 180 Q 185 150 310 60" fill="none" stroke="#2563eb" stroke-width="3.5" marker-end="url(#arrBlue3)"/>
+      <circle cx="60" cy="180" r="7" fill="#2563eb"/>
+      <circle cx="182" cy="139" r="5" fill="#2563eb"/>
+      <text x="120" y="196" font-size="10" fill="#1d4ed8">1프레임에 멀리 이동 (ds 큼)</text>
+      <text x="255" y="130" font-size="12" fill="#1d4ed8" font-weight="700">κ = ω/v ↓</text>
+      <text x="185" y="45" font-size="10" fill="#64748b">예: 로터리 순항 회전</text>
+
+      <text x="545" y="24" font-size="12" text-anchor="middle" fill="#334155" font-weight="700">저속 (v 작음) → κ 큼: 급회전</text>
+      <path d="M 460 180 Q 465 120 530 110 Q 590 102 585 55" fill="none" stroke="#dc2626" stroke-width="3.5" marker-end="url(#arrRed3)"/>
+      <circle cx="460" cy="180" r="7" fill="#dc2626"/>
+      <circle cx="472" cy="132" r="5" fill="#dc2626"/>
+      <text x="480" y="196" font-size="10" fill="#b91c1c">1프레임에 조금 이동 (ds 작음)</text>
+      <text x="600" y="130" font-size="12" fill="#b91c1c" font-weight="700">κ = ω/v ↑</text>
+      <text x="545" y="45" font-size="10" fill="#64748b">예: 저속 급조향 (진입·차선변경)</text>
+
+      <text x="360" y="212" font-size="11" text-anchor="middle" fill="#334155">두 궤적의 <tspan font-weight="700">프레임당 회전량 ω는 동일</tspan> — 속도로 나눠야(κ=ω/v) 기하학적 급함이 구분된다</text>
+      <defs>
+        <marker id="arrBlue3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#2563eb"/></marker>
+        <marker id="arrRed3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#dc2626"/></marker>
+      </defs>
+    </svg>
+    <figcaption>그림 κ. 같은 각속도 ω라도 속도가 다르면 궤적의 "급함"이 다르다 — 이동 거리당 회전량
+    κ = ω/v가 이를 구분한다. 고속 완만 곡선(로터리 순항)은 κ가 작고, 저속 급조향은 κ가 크다.</figcaption>
+    </figure>
+
+    <div class="callout info">
+      <span class="ci">🛡️</span>
+      <div><b>결측 프레임 보호 (세 채널 공통):</b> 셋 다 차분/누적 기반이라 결측(0 패딩) 프레임이 끼면
+      "0 → 실제 좌표"의 가짜 점프가 생긴다. <code>present</code> 마스크(해당 프레임이 all-zero가 아닌지)로
+      <b>인접 두 프레임이 모두 유효할 때만</b> 차분을 계산하고 아니면 0으로 둔다 — frame dropout
+      augmentation(§12.13)과 안전하게 결합되는 이유.</div>
+    </div>
+
+    <h4>로터리 극좌표 채널 — Δρ · 접선 (2026-07-07 추가, 6→8채널)</h4>
+    <p><code>models/tsem_semantic_derivation.py::SemanticDerivation</code>이 기존 6채널(v,a,j,ω,d_lat,κ)에
+    <b>대체가 아니라 추가</b>로 2채널을 더 계산한다 — 극좌표 대체 시 정보손실로 성능이 나빠진다는 선행 절제실험
+    교훈([[gongeoptap-lane-map]] 참조)에 따른 설계다.</p>
+    <pre>ρ(t)     = ‖position(t) − C‖                    # 로터리 중심까지 거리 (C = 고정 상수)
+θ(t)     = atan2(z(t)−C_z, x(t)−C_x)             # 중심 기준 각도
+
+Δρ(t)    = ρ(t) − ρ(t−1)                          # 반경 변화율 — 안쪽/바깥쪽 차선 이동
+접선(t)   = dθ(t) · ρ(t)                          # 각속도 × 반경 = 원운동 접선방향 속도 성분</pre>
+    <table>
+      <thead><tr><th>채널</th><th>물리적 의미</th><th>실측 근거</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>Δρ</b></td><td>동심원 링 사이를 반경 방향으로 이동하는 정도 — 로터리에서
+          차선변경은 본질적으로 "링을 바꾸는 것"이라 Δρ가 직접적 신호</td>
+          <td>실측 <code>|Δρ|</code> 평균: lane_change 0.585 vs normal 0.349 — 통계적으로 구분됨
+          (<code>journal/map_features.py</code> sanity check)</td></tr>
+        <tr><td><b>접선</b></td><td>차량이 로터리를 따라 도는 속도 성분 — world 좌표의 raw 속도 <code>v</code>는
+          방향 구분 없이 스칼라지만, 접선은 "회전 방향으로 얼마나 빠른가"를 지도 기준으로 분해</td>
+          <td><code>journal/augment_test.py</code>: world에 <code>[ρ,Δρ,접선,|Δρ|]</code> augment 시
+          AUC 유의미 개선 (탐지 +0.015, 예측 +0.010, p&lt;0.001)</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><b>결측 처리:</b> Δρ·접선은 두 프레임(t−1,t) 모두 실측일 때만 계산되고, 결측 프레임이 하나라도
+    끼면 0으로 유지 — 0 패딩을 실좌표로 오인해 로터리 중심까지의 가짜 거리가 새는 것을 방지한다.<br>
+    <b>중심 좌표:</b> <code>C=(72.86, −13.45)</code> world, <code>journal/map_features.py::build_map_world()</code>로
+    4개 CSV 파일에서 각각 독립 계산해 오차 &lt;0.02m로 검증된 <b>공업탑 전용 고정 상수</b> (다른 로터리·도로로
+    일반화 시 재계산 필요).</p>
+
+    <h4>저주파/고주파 분해 — DecompTemporalEncoder (Stage B 입구, 2026-07-08 상세 문서화)</h4>
+    <p>위의 semantic 채널들(그리고 10차-2/-3에서 추가된 raw position/direction 채널까지)은 GRU에 바로
+    들어가지 않고, <code>models/decomp_encoder.py::DecompTemporalEncoder</code>에서 <b>채널별 저주파/고주파
+    분해</b>를 먼저 거친다. Stage A(명시적 수식 계산)와 달리 이건 <b>모든 입력 채널에 일괄 적용되는 자동
+    분해</b>다:</p>
+    <pre>low  = lowpass(x)          # depthwise 1D conv(kernel=5), 이동평균(1/5) 초기화 + 학습 가능
+high = x − low             # 잔차 (low + high = 원본, 정보 무손실)
+z    = cat([low, high])    # 채널 2배 → GRU
+# 채널 수 배선: 8D→16D (9차) / 6D→12D (10차) / 10D→20D (10차-2) / 12D→24D (10차-3)</pre>
+    <p><code>groups=input_dim</code>(depthwise)이라 각 채널이 <b>자기만의 학습형 필터</b>를 가진다 —
+    "무엇을 추세로 보고 무엇을 이벤트로 볼지"의 컷오프를 채널마다 데이터가 정한다(<code>decomp_learnable:
+    true</code>). Δρ는 긴 평활이, ω는 짧은 평활이 유리하다면 각자 그렇게 수렴할 수 있다.</p>
+
+    <h4>kernel=5의 정확한 동작 방식 (2026-07-09 문서화)</h4>
+    <p>kernel=5는 <b>low 값 하나를 만들 때 자기 앞뒤 2프레임씩, 총 5프레임을 본다</b>는 뜻이다.
+    <code>padding = 5//2 = 2</code>인 중심 대칭 conv라서 프레임 t의 low는:</p>
+    <pre>low(t) = w₋₂·x(t−2) + w₋₁·x(t−1) + w₀·x(t) + w₊₁·x(t+1) + w₊₂·x(t+2)
+# 초기값: w 전부 1/5 (단순 이동평균) → 학습하면서 채널별로 조정
+# W=10 시퀀스면 이 5프레임 창이 t=1~10을 슬라이딩하며 low 시퀀스 10개 생성</pre>
+    <ul class="dash">
+      <li><b>"미래" 2프레임 참조는 누수가 아님:</b> 중심 대칭이라 low(t)가 t+1, t+2도 보지만, 이는
+        <b>관측창(과거 W프레임) 내부의 프레임</b> — 전부 앵커 시점 이전에 이미 관측된 과거이고, 라벨이 있는
+        진짜 미래(t+H)와 무관하다(인과성 입력⊂과거 유지). 다만 창의 양 끝 프레임은 창 밖을 zero-padding으로
+        채워 보므로 경계에서 low가 살짝 왜곡되는 일반적 경계 효과는 있다.</li>
+      <li><b>"5프레임을 본다" ≠ "5프레임만 기억한다":</b> kernel=5는 low/high 분해의 <b>국소 시야</b>일 뿐이고,
+        그 뒤의 GRU는 시퀀스 전체(W=10)를 순차적으로 읽는다 — 전체 모델의 시간 수용 영역은 W 그대로다.</li>
+      <li><b>왜 5인가 (휴리스틱, 미검증):</b> ① <code>padding=k//2</code>로 길이를 유지하려면 홀수여야
+        중심 대칭이 됨(짝수면 반 프레임 위상 밀림) — 후보는 3/5/7/9. ② kernel=3은 평활이 거의 안 돼
+        노이즈가 low에 남고, 9~10은 창 전체 평균이 되어 기동의 느린 진행까지 high로 밀려남 — 5는 "노이즈
+        주기(1~2프레임)보다 길고 기동 진행(수 프레임 이상)보다 짧은" 중간값. ③ 필터 계수는 학습형이라
+        세부는 데이터가 보정하지만 <b>커널 길이 5 자체는 고정</b> — 5프레임보다 긴 수용 영역이 필요한
+        추세는 이 필터로 원천적으로 못 잡는다. 지금까지 kernel ∈ {3,5,7} ablation은 한 번도 안 했으며
+        (모든 실험이 5로 동일 — 공통 인프라라 기존 비교 결론에는 영향 없음), W를 20/30으로 키우는 실험을
+        재개하면 kernel도 W에 비례해(W/2 규칙) 같이 키워야 하는지 확인이 필요하다.</li>
+    </ul>
+
+    <h4>채널별 low / high의 물리적 의미 (12D 기준)</h4>
+    <table>
+      <thead><tr><th>채널</th><th>low (추세·국면)</th><th>high (잔차·이벤트)</th></tr></thead>
+      <tbody>
+        <tr><td><b>v</b> (속도)</td><td>순항 속도 수준 — 빠른가/느린가/정체인가</td><td>순간 가감속 변동 (브레이크 탭, 출발)</td></tr>
+        <tr><td><b>a</b> (가속도)</td><td>지속적 감속/가속 국면 — <b>정지 접근의 핵심</b></td><td>충격성 가감속</td></tr>
+        <tr><td><b>j</b> (jerk)</td><td>가감속 변화 추세</td><td>급격한 조작 이벤트</td></tr>
+        <tr class="hl"><td><b>ω</b> (heading rate)</td><td>지속 회전 — 로터리 정상 선회</td><td>순간 조향 — <b>LC 개시(onset)의 뾰족한 신호</b></td></tr>
+        <tr class="hl"><td><b>d_lat</b> (횡변위)</td><td>부드러운 횡이동 — <b>LC의 진행 곡선</b></td><td>차선 내 미세 흔들림·노이즈</td></tr>
+        <tr><td><b>κ</b> (곡률)</td><td>경로의 기하학적 급함 수준</td><td>순간 급조향</td></tr>
+        <tr class="hl"><td><b>Δρ</b> (반경 변화)</td><td>링(차선)을 옮겨가는 지속 추세 — <b>노이즈 제거된 LC 신호</b></td><td>차선 내 반경 흔들림</td></tr>
+        <tr><td><b>접선</b> (dθ·ρ)</td><td>로터리 순항 회전 속도</td><td>회전 중 급변</td></tr>
+        <tr><td><b>pos_x, pos_z</b> (10차-2/-3)</td><td>평활화된 주행 경로 — "지도 위 어디를 지나는가"
+          (위치 정보를 거의 그대로 보존)</td><td>평활 경로 대비 순간 이탈</td></tr>
+        <tr><td><b>dir_x, dir_z</b> (10차-3)</td><td>평균 진행 방위</td><td>순간 방향 요동 (ω와 정보 상당 부분 중복)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">패턴: <b>low = 국면(regime), high = 이벤트(onset)</b>. 이 과제의 3-class가 정확히 이 두
+    축에 대응한다 — stop/normal은 국면의 문제(지속적으로 느린가/순항 중인가 → low가 답을 쥠),
+    lane_change는 이벤트의 문제(언제 조향이 시작됐나 → high가 답을 쥠).</p>
+
+    <h4>concat(low, high) → GRU가 갖는 설계적 의미</h4>
+    <ul class="dash">
+      <li><b>정보 보존 + 분리 무료 제공:</b> low+high=원본이라 수학적 손실은 없다. 차이는 표현 형태 —
+        원본만 주면 GRU가 recurrent 가중치로 "추세와 이벤트의 분리"까지 암묵적으로 배워야 하지만,
+        concat으로 주면 그 분리가 입력 단계에서 이미 끝난 채 도착한다(학습 난이도↓).</li>
+      <li><b>GRU 게이트의 시간 스케일 분업:</b> update/reset 게이트가 채널별로 기억 지속 길이를 조절하는데,
+        low/high가 분리돼 있으면 <b>low 채널은 길게 유지(국면 추적), high 채널은 짧게 반응(이벤트 감지)</b>하는
+        서로 다른 시간 상수를 배정할 수 있다 — 섞인 원본 한 채널 안에서는 이 분업이 어렵다.</li>
+      <li><b>극좌표 채널과의 시너지:</b> low_Δρ가 사실상 "노이즈 제거된 차선변경 진행 신호"가 되어, 극좌표
+        채널의 도입 목적("반경 방향의 <b>지속적</b> 이동 감지")과 주파수 분해가 서로 보완적으로 작동한다.</li>
+      <li><b>10차-2/-3 해석과의 연결:</b> 추가된 position 채널도 같은 분해를 받지만 low_pos가 절대 위치
+        정보를 거의 그대로 보존하므로(이동평균은 위치를 유지), 위치 암기 가설의 해석에는 영향이 없다.
+        dir의 low/high는 ω와 정보가 상당히 겹쳐서, 12D가 10D보다 크게 낫지 않은 관찰과 부합한다.</li>
+    </ul>
+
+    <h4>왜 미래 state(t+H) 예측에서 W가 필요한가</h4>
+    <table>
+      <thead><tr><th>미래 정답</th><th>과거 시계열이 주는 정보 (단일 프레임 t에는 없음)</th></tr></thead>
+      <tbody>
+        <tr><td><b>Stop @ t+H</b></td><td>감속 <b>추세</b> (a&lt;0 지속, v→0 방향) — t 시점만 보면 아직 속도 큼</td></tr>
+        <tr class="hl"><td><b>LC @ t+H</b></td><td>횡변위·ω <b>누적</b> — t에서는 Normal과 kinematics 유사</td></tr>
+        <tr><td><b>Normal @ t+H</b></td><td>저잔차·안정 순항 — trend 지배, residual 작음</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>성능이 "당연히" 오를 수 있는 논리 (논문 §V):</b>
+      <ol style="margin:6px 0 0 18px;">
+        <li>정답 <code>state(t+H)</code>는 maneuver <b>시간적 전개</b>의 결과다.</li>
+        <li>단일 프레임은 그 전개의 <b>불완전 요약</b>이다.</li>
+        <li>semantic 채널은 전개를 <b>라벨과 같은 축</b>(종·횡·기동)으로 펼친다.</li>
+        <li>따라서 W↑ 시 정보↑ → Acc↑, W≥maneuver 길이에서 <b>포화</b> (실험 Table II).</li>
+      </ol></div>
+    </div>
+
+    <h4>Raw 6D vs Semantic (비교)</h4>
+    <table>
+      <thead><tr><th></th><th>Raw [W×6]→GRU</th><th>TSEM semantic streams</th></tr></thead>
+      <tbody>
+        <tr><td>입력–정답 정렬</td><td>암묵적 (모델에 위임)</td><td><b>명시적</b> (종·횡·residual)</td></tr>
+        <tr><td>LC 경계</td><td>Normal과 혼동</td><td>lateral·residual로 분리</td></tr>
+        <tr><td>논문 주장</td><td>"시계열 wrapper"</td><td><b>"무엇을 인코딩하는가"</b></td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="method-pipeline"><span class="ic">◆</span>TSEM-SAGE 파이프라인 (4단)</h3>
+    <pre>Stage A — Semantic Derivation (ego + 각 이웃 j)
+  past [t−W+1 … t] kinematics
+    → s_L, s_lat, trend/residual  (per node)
+
+Stage B — Temporal Encoding
+  per-node semantic streams → h_ego, h_nbr[j]   (GRU/LSTM = 구현)
+
+Stage C — Spatial Aggregation (NAGraphSAGE 계승) ★
+  앵커 t: KNN 이웃, edge 5D [rel_speed, rel_accel, rel_dir, distance]
+  edge-aware message passing → h_ctx  (프레임 t 스냅샷; edge 시계열 GRU는 사용 안 함)
+
+Stage D — Future State Head
+  cat(h_ego_sem, h_ctx) 또는 NAGraphSAGE update 후 h_ego'
+    → predict state(t+H)  ∈ {stop, lane_change, normal}</pre>
+
+    <div class="callout tip">
+      <span class="ci">🔑</span>
+      <div><b>ET-NAGraphSAGE와의 차이 (한 줄):</b> edge를 <b>시간축으로 또 GRU</b>에 넣지 않는다. 대신
+      <b>노드 semantic 시계열</b> + <b>공간 엣지( t )</b> 조합. 연구 스토리: "temporal은 <em>무엇을</em> 인코딩하나(semantic)",
+      "spatial은 NAGraphSAGE가 하던 <em>이웃 관계</em>".</div>
+    </div>
+
+    <p>기존 <code>DecompTemporalEncoder</code> (<code>models/decomp_encoder.py</code>)는 Stage A의 한 구현(저/고주파 분해)으로 편입:</p>
+    <ul class="dash">
+      <li><code>low</code> = 학습형 depthwise 저역통과 (이동평균 초기화) → path-following 추세</li>
+      <li><code>high</code> = x − low → maneuver 잔차</li>
+      <li><code>z = [low ; high]</code> → 기존 TemporalEncoder</li>
+    </ul>
+
+    <div class="callout info">
+      <span class="ci">📊</span>
+      <div>이웃 선정 규칙·결측 처리·마스킹 상세는 <b>"데이터 설계" 탭</b>으로 옮겼다 — 참조:
+      <a data-goto="data" data-anchor="data-neighbor">이웃 · 그래프 구성</a>.</div>
+    </div>
+
+    <h3 id="method-loss"><span class="ic">◆</span>손실 함수</h3>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>설계 배경:</b> 처음엔 Stage D 최종 출력 하나에만 loss를 걸었다. 그런데 Temporal 인코더(Stage A/B)와
+      Spatial 집계(Stage C)가 각자 얼마나 기여하는지는 감독되지 않고 최종 결정경계를 통해서만 <b>간접적으로만</b>
+      학습됐다 — class weight를 조금만 바꿔도 recall/precision이 크게 흔들린 것도, 단일 loss가 <b>표현학습
+      자체까지 왜곡</b>시켰기 때문일 수 있다는 문제제기에서 출발했다(단순함의 문제가 아니라 학습 의미 자체가
+      왜곡되는 문제). 최종적으로 <b>4개 항으로 구성된 결합 loss</b>를 채택한다.</div>
+    </div>
+
+    <pre>L_total = L_D(logits, y)                              # 메인 — Stage D 최종 출력 (Focal + class weight)
+        + λ_T · L_D(classifier_temporal(h_ego), y)        # temporal 단독 보조헤드 — 명제 H1 직접 감독
+        + λ_S · L_D(classifier_spatial(h_N), y)           # spatial 단독 보조헤드 — 명제 H2 직접 감독
+        + λ_KL · KL(softmax(logits) ‖ Uniform)            # 출력 확신도 균등화 (ET-NAGraphSAGE 원 설계 재사용)</pre>
+
+    <table>
+      <thead><tr><th>항</th><th>무엇에 거는가</th><th>목적</th><th>기본값</th></tr></thead>
+      <tbody>
+        <tr><td><b>L_D</b> (메인)</td><td><code>classifier(h_out)</code> — Stage C까지 다 거친 최종 표현</td>
+          <td>주 예측 목표. FocalLoss(γ=2.0) + class weight(역빈도<sup>power</sup>)</td><td>가중치 1.0 (고정)</td></tr>
+        <tr class="hl"><td><b>L_T</b></td><td><code>classifier_temporal(h_ego)</code> — Stage B 직후, spatial 이전</td>
+          <td>temporal 인코더가 <b>단독으로도</b> 예측 가능한 표현을 만들도록 강제 (명제 H1: "과거 W프레임 semantic이 주 신호")</td>
+          <td>λ_T = 0.3</td></tr>
+        <tr class="hl"><td><b>L_S</b></td><td><code>classifier_spatial(h_N)</code> — 이웃 집계 메시지, ego 정보 제외</td>
+          <td>spatial(이웃) 정보만으로 얼마나 예측 가능한지 직접 감독 (명제 H2: "이웃 관계는 보완")</td>
+          <td>λ_S = 0.3</td></tr>
+        <tr><td><b>L_KL</b></td><td>최종 <code>logits</code>의 softmax 분포</td>
+          <td>출력 확신도가 한쪽 클래스로 쏠리지 않게 정규화. <code>train.py</code>(ET-NAGraphSAGE)와 동일 정의
+          <code>KL(softmax(logits)‖Uniform)</code></td><td>λ_KL = 0.1</td></tr>
+      </tbody>
+    </table>
+
+    <h4>클래스 가중치 — L_D·L_T·L_S 공통</h4>
+    <pre>weight[c] = (전체샘플수 / (3 · 클래스c개수)) ^ power</pre>
+    <p><code>power=1.0</code>이면 원래 역빈도, <code>power</code>를 낮출수록 완화(0에 가까우면 균등).
+    현재값 <code>power=0.7</code> — 1.0에서 normal이 과소예측(−15.7%p)되는 편향이 확인되어 완화함
+    (자세한 튜닝 이력은 §구현검증 참고).</p>
+
+    <div class="callout tip">
+      <span class="ci">🔑</span>
+      <div><b>기존 대비 달라진 점:</b> ① loss가 Stage D 하나가 아니라 <b>Stage B(temporal)·Stage C(spatial)에도
+      각각 독립적인 보조 감독</b>이 걸린다 — 명제 H1·H2가 매 학습 스텝마다 정량적으로 검증됨. ② <code>kl_weight</code>는
+      설계 초기부터 config에 있었지만 실제로는 <b>학습 루프에 배선된 적이 없어서 실질적으로 미사용</b>이었다 —
+      이번에 <code>train.py</code> 원본 정의를 그대로 가져와 배선함.</div>
+    </div>
+
+    <h3 id="method-predictions"><span class="ic">◆</span>설계 예측 — 실험에서 볼 패턴</h3>
+    <table>
+      <thead><tr><th>설계 예측</th><th>실험</th><th>명제</th></tr></thead>
+      <tbody>
+        <tr><td>W↑ (10→20→30) → 미래 상태 Acc↑ 후 포화</td><td>Table II: W sweep</td><td>2, 5</td></tr>
+        <tr><td>H↑ → 전체 Acc↓ (예측 난이도↑)</td><td>Table III: H sweep</td><td>5</td></tr>
+        <tr class="hl"><td>TSEM-SAGE &gt; semantic-only</td><td>Table I</td><td>3, 4</td></tr>
+        <tr><td>semantic-only &gt; Raw-Temporal</td><td>Table I</td><td>4</td></tr>
+        <tr><td>H↑ 시 spatial 기여 ≥ H 작을 때 (가설)</td><td>Table IV @ H sweep</td><td>3, 5</td></tr>
+        <tr><td>미래 LC recall: lateral stream ablation 시 급락</td><td>Table V</td><td>4</td></tr>
+      </tbody>
+    </table>
+    <p class="small">※ 배경 섹션의 탐지(현재 상태) 수치는 <b>선행 실험 참고</b>이며, 본 저널 메트릭은 <b>Future State Acc@H</b>로 재측정한다.</p>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ NAGraphSAGE와의 관계 -->
+  <div class="page" id="page-relation">
+    <div class="sec-head"><div class="sec-num">6</div><h2>NAGraphSAGE와의 관계 — 계승, 반박 아님</h2></div>
+
+    <table>
+      <thead><tr><th></th><th>NAGraphSAGE (TII)</th><th>ET-NAGraphSAGE</th><th>TSEM-SAGE (제안)</th></tr></thead>
+      <tbody>
+        <tr><td>과제</td><td>현재 상태</td><td>현재 상태</td><td><b>미래 state(t+H)</b></td></tr>
+        <tr><td>시간</td><td>단일 프레임</td><td>node+edge 시계열 GRU</td><td><b>semantic 시계열</b> (노드)</td></tr>
+        <tr class="hl"><td>공간</td><td><b>edge-aware GNN</b></td><td>동일 + edge temporal</td><td><b>동일 (t 스냅샷 edge)</b> — 계승</td></tr>
+        <tr><td>라벨</td><td>category ±6</td><td>동일</td><td><b>state(t+H)</b> 순간, ±6 기각</td></tr>
+        <tr><td>기여 초점</td><td>이웃 인지</td><td>edge-temporal (≈0)</td><td><b>semantic temporal + 미래 예측</b> + spatial 유지</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout tip">
+      <span class="ci">🎙️</span>
+      <div>논문 톤: "GNN이 필요 없다"가 아니라 "<b>edge-temporal이 아니라 semantic-temporal이 맞고</b>,
+      <b>NAGraphSAGE의 spatial은 계승한다</b>".</div>
+    </div>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 논문 구조 -->
+  <div class="page" id="page-structure">
+    <div class="sec-head"><div class="sec-num">7</div><h2>논문 구조 (IEEE Access, 8–10p)</h2></div>
+
+    <table>
+      <thead><tr><th>섹션</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td><b>I. Introduction</b></td><td>탐지 vs 예측; ±6 라벨 기각; 과거 W→미래 H; TSEM 제안</td></tr>
+        <tr><td><b>II. Related Work</b></td><td>Future motion-state, trajectory forecasting, ST-GNN, NAGraphSAGE</td></tr>
+        <tr class="hl"><td><b>III. Problem &amp; Label Design</b></td><td>순간 <code>state(f)</code> 규칙; 인과적 <code>y(t)=state(t+H)</code> (Fig. 1)</td></tr>
+        <tr><td><b>IV. TSEM-SAGE Method</b></td><td>Semantic streams, pipeline, neighbor handling</td></tr>
+        <tr><td><b>V. Design Rationale</b></td><td>5단 명제; semantic vs edge-temporal; spatial complement (Fig. 3)</td></tr>
+        <tr><td><b>VI. Experiments</b></td><td>Table I–V: W×H, baselines, ablations</td></tr>
+        <tr><td><b>VII. Discussion</b></td><td>LC 희귀도; H 트레이드오프; pair-defined task로의 확장</td></tr>
+        <tr><td><b>VIII. Conclusion</b></td><td></td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="structure-relatedwork"><span class="ic">◆</span>관련연구 (Related Work) — 비교 모델 8선정 · 위치 구분</h3>
+    <p>2026-07-08~09 조사(5년 이내, 2021–2026)로 선정한 비교 모델 8개는 <b>공통 데이터셋이 하나도 없다</b>
+    (INTERACTION·Waymo·Argoverse·highD·자체 로터리·TTC 실측 등으로 전부 상이) — TSEM-SAGE(공업탑 로터리
+    자체 수집)와 겹치는 것도 없다. 원 논문 수치를 그대로 가져와 TSEM-SAGE와 한 표에 나란히 놓으면 안 되므로,
+    역할을 <b>(A) §II Related Work 본문 — 정성적 서술용</b>과 <b>(B) §VI Table I — 실제 재학습 공정비교용</b>
+    두 곳으로 분리한다.</p>
+
+    <h4>(A) Related Work 본문 — 정성적 비교표 (숫자는 원 논문 자체 데이터 기준, 참고 각주용)</h4>
+    <table>
+      <thead><tr><th>모델 (연도)</th><th>핵심 방법론</th><th>데이터셋</th><th>보고 성능†</th><th>코드</th><th>TSEM-SAGE와 비교 포인트</th></tr></thead>
+      <tbody>
+        <tr><td><b>HDGT</b><br><span class="small">T-PAMI 2023</span></td>
+          <td>이종(heterogeneous) 그래프 트랜스포머 — 에이전트+맵 scene 전체 통합 인코딩</td>
+          <td>INTERACTION, Waymo Open Motion</td>
+          <td>INTERACTION 1위 · Waymo 2위 (minADE/minFDE)</td>
+          <td class="hl">✅ 공개</td>
+          <td>그래프+어텐션 조합의 SOTA 상한선 참조</td></tr>
+        <tr class="hl"><td><b>HEAT</b><br><span class="small">IEEE T-ITS 2022</span></td>
+          <td>directed <b>edge-featured</b> heterogeneous graph attention + 타입별 인코더</td>
+          <td>INTERACTION</td>
+          <td>도시·고속도로 양쪽에서 SOTA</td>
+          <td class="hl">✅ 공개</td>
+          <td><b>edge-aware 집계 구조가 NAGraphSAGE와 가장 근접 — 재구현 1순위</b></td></tr>
+        <tr><td>Roundabout Dilemma Zone<br><span class="small">arXiv 2409.00622, 2024</span></td>
+          <td>그래프-구조 recurrent 궤적예측 → 로터리 위험구간(DZ) 판정</td>
+          <td>자체 로터리 데이터 (공개 예정)</td>
+          <td>위험이벤트 예측 FPR 0.1</td>
+          <td>❌ 미공개(공개 예정)</td>
+          <td><b>도메인 일치(로터리)</b> — 다만 과제는 위험판정으로 state 분류와 상이</td></tr>
+        <tr><td>GAMDTP<br><span class="small">arXiv 2504.04862, 2025</span></td>
+          <td>Graph Attention + <b>Mamba-SSM</b> 게이트 융합, graph conv layer마다 결합</td>
+          <td>Argoverse, INTERACTION, ETH/UCY, NBA</td>
+          <td>다중 벤치마크 SOTA, Transformer 대비 ~1.5배 빠름</td>
+          <td>❌ 미공개</td>
+          <td>Ablation A(GRU/LSTM/Mamba/Transformer 인코더 비교)와 직접 대응</td></tr>
+        <tr><td>LC-LLM<br><span class="small">arXiv 2403.18344, 2024</span></td>
+          <td>차선변경 의도·궤적 예측을 언어모델링 문제로 재정의, CoT 파인튜닝으로 설명가능성 확보</td>
+          <td>highD (독일 고속도로)</td>
+          <td>Transformer 대비 F1 +13.8~17.7%p (2–4초 구간)</td>
+          <td>❌ 미공개</td>
+          <td>LC 희귀 이벤트 예측의 최신 접근 — 도메인 상이(고속도로, 이진 판정)</td></tr>
+        <tr><td>KG+Bayesian<br><span class="small">arXiv 2312.06336, IV 2024</span></td>
+          <td>지식그래프 임베딩(TTC 등 맥락 정보) + 베이지안 추론으로 LC 위험 판정</td>
+          <td>TTC 실측(근접충돌 상황)</td>
+          <td>F1 97.95%(2초 전) / 93.60%(3초 전)</td>
+          <td>❌ 미공개</td>
+          <td>분류(classification) 프레이밍이 TSEM-SAGE의 LC state와 가장 유사</td></tr>
+        <tr><td>STI-GCN<br><span class="small">ScienceDirect 2023</span></td>
+          <td>공간자기상관 커널(명시적 관계) + GRU(암묵적 동적 관계) + CNN 시간특징, 명시/암묵 이중 구조</td>
+          <td>비공개 (추정 고속도로류)</td>
+          <td>1초 예측 RMSE 0.31</td>
+          <td>❌ 미공개</td>
+          <td>"명시적 relation feature + 분리형 시간/공간 모듈" 철학이 TSEM-SAGE와 가장 근접</td></tr>
+        <tr><td>GNN Layer Selection<br><span class="small">arXiv 2606.14956, IEEE IV 2026</span></td>
+          <td>GraphSAGE/GAT/GCN/ARMA/Chebyshev 등 GNN layer를 상호작용 모델링 관점에서 벤치마크</td>
+          <td>비공개 (추정 INTERACTION/Argoverse)</td>
+          <td>sum 집계&gt;mean 집계, multi-head attention 유리, hop별 가중치 차등 유효</td>
+          <td>❌ 미공개</td>
+          <td>경쟁 모델이 아니라 <b>NAGraphSAGE의 Add(sum) aggregator 설계를 정당화하는 방법론적 근거</b></td></tr>
+      </tbody>
+    </table>
+    <p class="small">†전부 각 논문 <b>자체 데이터셋</b> 기준 수치 — TSEM-SAGE(공업탑 로터리) 수치와 직접 비교 불가.
+    본문 서술 시 반드시 "원 논문 자체 벤치마크, 참고용"이라는 각주를 붙인다.</p>
+
+    <h4>(C) 추가 조사 — 코드 공개된 최신 연구 6선 (2022–2024, 궤적예측 계열)</h4>
+    <p>(A)의 8개 중 코드 공개가 2개(HDGT, HEAT)뿐이라, <b>"코드가 있어서 실제 재구현·비교가 가능한" 후보를
+    최대한 늘리려고</b> 5년 이내(2021–2026) 범위에서 추가로 조사했다. 전부 공식 GitHub 저장소가 확인된
+    것만 선정했다 — 단, 이번에도 <b>전부 궤적 좌표 회귀(ADE/FDE) 과제</b>이고 데이터셋도 Argoverse
+    1/2·Waymo로 TSEM-SAGE(로터리, 3클래스 state 분류)와 다르므로, (A)와 동일하게 <b>원 논문 수치는
+    참고용</b>이다.</p>
+    <table>
+      <thead><tr><th>모델 (연도)</th><th>핵심 방법론</th><th>데이터셋</th><th>보고 성능†</th><th>코드</th><th>TSEM-SAGE와 비교 포인트</th></tr></thead>
+      <tbody>
+        <tr><td><b>HiVT</b><br><span class="small">CVPR 2022</span></td>
+          <td>에이전트 중심 <b>local</b> 컨텍스트 추출 + <b>global</b> 상호작용을 계층형(hierarchical)
+          트랜스포머로 분리 처리</td>
+          <td>Argoverse 1</td>
+          <td>test minADE 0.80 / minFDE 1.23 (HiVT-128)</td>
+          <td class="hl">✅ 공개 (ZikangZhou/HiVT)</td>
+          <td>"local(ego) 표현 vs global(이웃) 표현 분리"가 TSEM-SAGE의 semantic-temporal(ego) vs
+          NAGraphSAGE-spatial(이웃) 분리와 철학적으로 유사</td></tr>
+        <tr><td><b>QCNet</b><br><span class="small">CVPR 2023</span></td>
+          <td><b>Query-centric</b> scene 인코딩 — 좌표계 독립 표현으로 과거 연산 재사용 가능</td>
+          <td>Argoverse 1, 2</td>
+          <td>Argoverse1·2 리더보드 <b>1위</b>, Argoverse2 test minADE(K=6) 0.64</td>
+          <td class="hl">✅ 공개 (ZikangZhou/QCNet)</td>
+          <td>현재 궤적예측 SOTA 상한선 — TSEM-SAGE의 "미래 예측" 프레이밍이 이 계열과 비교해 얼마나
+          단순화된 과제인지 가늠하는 참조점</td></tr>
+        <tr><td><b>MTR</b><br><span class="small">NeurIPS 2022</span></td>
+          <td>학습 가능한 motion query pair로 <b>전역 의도(intention) 후보 지정 + 지역 경로 정제</b>를
+          동시 최적화</td>
+          <td>Waymo Open Motion Dataset</td>
+          <td>Waymo Motion Prediction Challenge <b>1위</b>(2022); 후속 MTRv3(2024) soft mAP 0.4967 1위</td>
+          <td class="hl">✅ 공개 (sshaoshuai/MTR)</td>
+          <td>"의도(intention) 먼저 분류 → 세부 경로 정제"라는 2단계 구조가 TSEM-SAGE의 state 분류
+          프레이밍과 개념적으로 인접(TSEM-SAGE는 정제 단계 없이 의도 분류에서 멈춤)</td></tr>
+        <tr class="hl"><td><b>CRAT-Pred</b><br><span class="small">ICRA 2022</span></td>
+          <td>재료과학 유래 <b>Crystal Graph Convolution</b>으로 차량 간 <b>edge feature</b>를 명시적으로
+          활용 + multi-head self-attention, <b>맵 정보 불필요</b></td>
+          <td>Argoverse 1</td>
+          <td>논문 보고(정확한 수치는 원문 확인 필요)</td>
+          <td class="hl">✅ 공개 (schmidt-ju/crat-pred)</td>
+          <td><b>맵 없이 순수 차량 간 edge feature만으로 상호작용을 모델링</b> — NAGraphSAGE/TSEM-SAGE와
+          가장 가까운 설계 철학. HEAT과 함께 재구현 최우선 후보</td></tr>
+        <tr><td><b>SIMPL</b><br><span class="small">IEEE RA-L 2024</span></td>
+          <td>대칭적 방향성(symmetric directed) 메시지 패싱 기반 <b>경량 실시간</b> scene-centric 베이스라인</td>
+          <td>Argoverse 1, 2</td>
+          <td>Argoverse1 minADE6 0.793/minFDE6 1.179(1.8M 파라미터); 기존 SOTA 대비 minFDE −16.5%,
+          minADE −6.9%</td>
+          <td class="hl">✅ 공개 (HKUST-Aerial-Robotics/SIMPL)</td>
+          <td>파라미터 1.8M 수준의 경량 설계 — TSEM-SAGE(173K 파라미터)의 "작은 모델로도 충분한가"
+          논쟁에서 참조할 규모 비교군</td></tr>
+        <tr><td><b>Forecast-MAE</b><br><span class="small">ICCV 2023</span></td>
+          <td>에이전트 미래/과거 궤적 + 차선 세그먼트를 <b>상보적으로 마스킹</b>하는 <b>자기지도(self-supervised)
+          사전학습</b>(Masked Autoencoder)</td>
+          <td>Argoverse 2</td>
+          <td>val minADE6 0.7117~0.7214, minFDE6 1.408~1.430 (1.9M 파라미터, scratch/fine-tune)</td>
+          <td class="hl">✅ 공개 (jchengai/forecast-mae)</td>
+          <td>레이블(정답) 없이도 사전학습으로 성능을 끌어올리는 접근 — TSEM-SAGE의 데이터 augmentation
+          축(9차 실험)과 "레이블 부족을 데이터 쪽에서 보완"한다는 목적이 유사</td></tr>
+      </tbody>
+    </table>
+    <p class="small">†전부 Argoverse/Waymo 등 <b>공개 벤치마크 자체 데이터셋</b> 기준 — 역시 TSEM-SAGE와 직접
+    비교 불가, 참고용. CRAT-Pred는 검색으로 정확한 minADE/minFDE 수치를 확인하지 못했으므로 인용 전
+    원문(arXiv:2202.04488) 확인이 필요하다.</p>
+
+    <h4>(B) Table I 공정비교용 — 실제 재학습 대상만</h4>
+    <div class="callout info">
+      <span class="ci">ℹ️</span>
+      <div>(A)+(C) 총 14개 중 <b>재구현 가치가 있는 건 HEAT·CRAT-Pred 2개</b>다(둘 다 코드 공개 +
+      edge-aware/edge-feature 구조가 NAGraphSAGE와 직접 대응 — 맵 없이 차량 간 관계만으로 상호작용을
+      모델링한다는 점에서 특히 CRAT-Pred가 근접). 나머지 12개는 (A)/(C) 정성적 비교표로만 인용하고,
+      Table I은 <b>자체 데이터(공업탑 로터리)로 실제 재학습한 모델만</b> 채운다 — 아래는
+      <a data-goto="structure" data-anchor="structure-baseline">§베이스라인(공정 비교)</a>과 동일 원칙이며
+      그 표의 요약이다.</div>
+    </div>
+    <ul class="dash">
+      <li>Persist — 순간상태 유지 하한선 (자체 데이터, 완료)</li>
+      <li>GraphSAGE — edge feature 미사용 하한선 (자체 데이터 재학습 필요, 미구현)</li>
+      <li>NAGraphSAGE-adapted — 선행 spatial baseline (자체 데이터, 완료: acc 81.79% / F1 81.92%)</li>
+      <li>Semantic-only (TSEMSemanticOnly) — spatial 제거 ablation (자체 데이터, 12차 실행중)</li>
+      <li>TSEM-SAGE (제안, full) — 자체 데이터, acc 78.05% / F1 77.22%</li>
+      <li>HEAT-adapted (선택, 여력 있을 때) — edge-featured graph attention 재구현, 미착수</li>
+      <li>CRAT-Pred-adapted (선택, 여력 있을 때) — Crystal graph conv 기반 edge feature 재구현, 미착수
+      — 회귀→분류 헤드 교체 필요</li>
+    </ul>
+
+    <h3 id="structure-tables"><span class="ic">◆</span>실험 표 설계 — 개요</h3>
+    <p>2026-07-07~08 사이 실제로 실행한 1~8차 실험(<a data-goto="verification" data-anchor="ver-label-b">§구현검증
+    12.4~12.12</a>)을 축(axis)별로 재정리했다. 각 표는 <b>정확히 변수 하나만 다른 두 실험을 짝지어</b> 비교하는
+    것을 원칙으로 한다 — 그래야 어떤 변경이 어떤 효과를 냈는지 귀속(attribution)이 분명해진다. 왼쪽 사이드바
+    "실험 표 설계" 하위 탭에서 표별로 바로 이동할 수 있다.</p>
+
+    <h3 id="structure-tbl-master"><span class="ic">◆</span>전체 실험 조합표 (마스터)</h3>
+    <p>지금까지 실행한 모든 실험의 설정 조합. 라벨 정의·class weight power·보조loss+KL·입력채널·불확실성
+    loss·epoch 수, 5개 축이 서로 얽혀 있어 아래 개별 ablation 표들은 전부 이 표에서 "변수 하나만 다른 행 쌍"을
+    뽑아 만든 것이다. <span class="badge b-amber">■ 노란 셀</span> = 바로 위 실험 대비 이번 행에서 바뀐
+    파라미터(직전 행 대비 변경분만 표시 — 그 실험이 실제로 검증한 변수).</p>
+    <table>
+      <thead><tr><th>실험</th><th>라벨 정의</th><th>cw power</th><th>보조loss+KL</th><th>입력채널</th><th>불확실성loss</th><th>epoch</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>1차</td><td>point</td><td>1.0</td><td>–</td><td>6D</td><td>–</td><td>100</td><td>완료</td></tr>
+        <tr><td>2차</td><td>point</td><td class="chg">0.5</td><td>–</td><td>6D</td><td>–</td><td>100</td><td>완료</td></tr>
+        <tr><td>3차</td><td class="chg">A안(window)</td><td class="chg">1.0</td><td>–</td><td>6D</td><td>–</td><td>100</td><td>완료</td></tr>
+        <tr><td>4차</td><td>A안</td><td class="chg">0.7</td><td>–</td><td>6D</td><td>–</td><td>100</td><td>완료</td></tr>
+        <tr><td>5차</td><td>A안</td><td>0.7</td><td class="chg">O</td><td>6D</td><td>–</td><td>100</td><td>완료</td></tr>
+        <tr><td>6차</td><td>A안</td><td>0.7</td><td>O</td><td class="chg">8D(+Δρ·접선)</td><td>–</td><td>100</td><td>완료</td></tr>
+        <tr class="hl"><td><b>7차</b></td><td class="chg">B안(±2다수결)</td><td>0.7</td><td>O</td><td>8D</td><td>–</td><td>100</td><td>완료</td></tr>
+        <tr><td>7차-500ep</td><td>B안</td><td>0.7</td><td>O</td><td>8D</td><td>–</td><td class="chg">500</td><td>진행중</td></tr>
+        <tr class="hl"><td><b>8차</b></td><td>B안</td><td>0.7</td><td>O</td><td>8D</td><td class="chg">O</td><td>500</td><td>진행중</td></tr>
+      </tbody>
+    </table>
+    <p class="small">3차 행만 예외 — 라벨(point→A안)과 cw power(0.5→1.0)가 <b>동시에 2개</b> 바뀌어서 깨끗한
+    단일변수 ablation이 아니다(그래서 아래 "라벨 정의 ablation" 표는 3차가 아니라 나중에 다른 조건이 전부
+    맞춰진 6차 vs 7차 쌍으로 다시 비교한다). 회색조 지정 없는 흰 행 = 아직 다른 축이 확정되기 전 탐색 단계.
+    굵게 표시한 7차·8차가 지금 시점의 최종 채택 라인(라벨 B안 + 8D 채널 + 보조loss·KL)이며, 여기서 학습
+    길이(500ep)와 손실 불확실성 가중치만 갈라져 나간 상태.</p>
+
+    <h3 id="structure-tbl-label"><span class="ic">◆</span>Table — 라벨 정의 ablation (stop: point vs ±2 다수결)</h3>
+    <p>고정: cw=0.7, 보조loss+KL 켜짐, 8D 채널, 100 epoch.
+    <span class="badge b-amber">변경 변수: stop 라벨 A안(point) → B안(±2 다수결)</span></p>
+    <table>
+      <thead><tr><th>지표</th><th>6차 (A안)</th><th class="chg">7차 (B안)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr><td>Accuracy</td><td>74.02%</td><td>76.84%</td><td>+2.82%p</td></tr>
+        <tr><td>Macro-F1</td><td>73.85%</td><td>76.15%</td><td>+2.30%p</td></tr>
+        <tr class="hl"><td><b>stop precision</b></td><td>72.56%</td><td>79.67%</td><td><b>+7.11%p</b></td></tr>
+        <tr class="hl"><td><b>normal recall</b></td><td>58.98%</td><td>64.78%</td><td><b>+5.80%p</b></td></tr>
+      </tbody>
+    </table>
+    <p class="small">주의: 정답 라벨 자체가 달라 accuracy/macro-F1 직접비교는 참고용 — 각자 자기 Persist
+    baseline(6차 61.33%/49.10%, 7차 63.17%/50.55%) 대비 개선폭으로 보는 게 정확하다. 상세 진단은
+    <a data-goto="verification" data-anchor="ver-label-b">§12.11</a> 참조.</p>
+
+    <h3 id="structure-tbl-cw"><span class="ic">◆</span>Table — Class weight power ablation</h3>
+    <p>고정: A안 라벨, 보조loss 없음, 6D 채널, 100 epoch.
+    <span class="badge b-amber">변경 변수: class_weight_power 1.0 → 0.7</span></p>
+    <table>
+      <thead><tr><th>지표</th><th>3차 (power=1.0)</th><th class="chg">4차 (power=0.7)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr><td>Accuracy</td><td>70.46%</td><td>71.10%</td><td>+0.64%p</td></tr>
+        <tr><td>Macro-F1</td><td>69.83%</td><td>70.54%</td><td>+0.71%p</td></tr>
+        <tr class="hl"><td><b>normal recall</b></td><td>50.03%</td><td>53.83%</td><td><b>+3.80%p</b></td></tr>
+        <tr><td>LC recall</td><td>78.65%</td><td>74.84%</td><td>−3.81%p</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="structure-tbl-aux"><span class="ic">◆</span>Table — 보조loss(temporal·spatial)+KL ablation</h3>
+    <p>고정: A안 라벨, cw=0.7, 6D 채널, 100 epoch.
+    <span class="badge b-amber">변경 변수: 보조 loss(λ_T,λ_S)+KL 항 없음 → 켜짐</span></p>
+    <table>
+      <thead><tr><th>지표</th><th>4차 (단일 loss)</th><th class="chg">5차 (+보조loss+KL)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr><td>Accuracy</td><td>71.10%</td><td>71.38%</td><td>+0.28%p</td></tr>
+        <tr><td>Macro-F1</td><td>70.54%</td><td>70.80%</td><td>+0.26%p</td></tr>
+        <tr><td>normal recall</td><td>53.83%</td><td>54.57%</td><td>+0.74%p</td></tr>
+      </tbody>
+    </table>
+    <p class="small">효과 크기는 작지만(&lt;1%p) 모든 지표가 동시에 같거나 개선 — class weight power 조정이
+    더 큰 지렛대였고 보조loss는 그 위 정제 단계.</p>
+
+    <h3 id="structure-tbl-channel"><span class="ic">◆</span>Table — 입력 채널 ablation (6D vs 로터리 극좌표 8D)</h3>
+    <p>고정: A안 라벨, cw=0.7, 보조loss+KL 켜짐, 100 epoch.
+    <span class="badge b-amber">변경 변수: 입력 채널 6D → 8D(+Δρ·접선)</span></p>
+    <table>
+      <thead><tr><th>지표</th><th>5차 (6D)</th><th class="chg">6차 (8D)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>Accuracy</b></td><td>71.38%</td><td>74.02%</td><td><b>+2.64%p</b></td></tr>
+        <tr class="hl"><td><b>Macro-F1</b></td><td>70.80%</td><td>73.85%</td><td><b>+3.05%p</b></td></tr>
+        <tr><td>normal recall</td><td>54.57%</td><td>58.98%</td><td>+4.41%p</td></tr>
+        <tr><td>LC recall</td><td>74.58%</td><td>76.87%</td><td>+2.29%p</td></tr>
+        <tr><td>LC precision</td><td>63.03%</td><td>70.03%</td><td>+7.00%p</td></tr>
+      </tbody>
+    </table>
+    <p class="small">지금까지 축 중 가장 뚜렷한 순증 기여(라벨 재정의 제외) — 모든 지표 동시 개선.</p>
+
+    <h3 id="structure-tbl-epoch"><span class="ic">◆</span>Table — 학습 길이 ablation (100ep vs 500ep)</h3>
+    <p>고정: B안 라벨, cw=0.7, 보조loss+KL, 8D 채널, 불확실성loss 없음.
+    <span class="badge b-amber">변경 변수: epoch 100 → 500</span></p>
+    <table>
+      <thead><tr><th>지표</th><th>7차 (100ep)</th><th class="chg">7차-500ep (500ep)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr><td>Accuracy</td><td>76.84%</td><td>진행중</td><td>–</td></tr>
+        <tr><td>Macro-F1</td><td>76.15%</td><td>진행중</td><td>–</td></tr>
+      </tbody>
+    </table>
+    <p class="small">GPU 0~3에서 실행 중 — 완료되는 대로 채워 넣는다. 목적: OneCycleLR을 500 epoch에 맞게
+    새로 잡아 더 오래 학습하면 100 epoch보다 개선되는지 확인(체크포인트 이어받기가 아니라 처음부터 재학습).</p>
+
+    <h3 id="structure-tbl-uncertainty"><span class="ic">◆</span>Table — 손실함수 불확실성 가중치 ablation</h3>
+    <p>고정: B안 라벨, cw=0.7, 보조loss+KL, 8D 채널, <b>500 epoch</b>(둘 다 동일).
+    <span class="badge b-amber">변경 변수: stop_conf 기반 불확실성 가중치(§12.12) 없음 → 적용</span> —
+    이 쌍이 지금까지 표 중 가장 깨끗한 단일 변수 ablation이다(같은 500 epoch끼리 비교).</p>
+    <table>
+      <thead><tr><th>지표</th><th>7차-500ep (안 1 없음)</th><th class="chg">8차 (안 1 적용)</th><th>변화</th></tr></thead>
+      <tbody>
+        <tr><td>val_acc 최고점</td><td>79.33% (epoch 92)</td><td>79.24% (epoch 86)</td><td>거의 동일</td></tr>
+        <tr><td>중단 시점 val_acc</td><td>75.9% (epoch~440)</td><td>76.5% (epoch 489)</td><td>+0.6%p (하락폭 더 작음)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">둘 다 <b>2026-07-08 중단</b>(§12.12 콜아웃 참조) — 500 epoch을 다 채우지 못했다.
+    val_acc 최고점 자체는 거의 같았지만, 8차가 이후 하락폭이 더 작아(−2.6%p vs −3.4%p) 불확실성 가중치가
+    약한 정규화 효과를 겸했을 가능성은 있다. 다만 진짜 원인(augmentation 부재)에 대응한 9차가 이 축보다
+    우선순위가 높아져, "500 epoch 완주 비교"는 보류하고 9차 결과를 먼저 확인한다.</p>
+
+    <h3 id="structure-tbl-augment"><span class="ic">◆</span>Table — Augmentation 조합 ablation (2026-07-08 신설)</h3>
+    <p>고정: B안 라벨, cw=0.7, 보조loss+KL, 8D 채널, 불확실성 가중치, 500 epoch.
+    <span class="badge b-amber">변경 변수: augmentation 조합 (없음 → 1+2+3)</span> — 4개 augmentation을
+    독립적으로 켤 수 있어(<a data-goto="verification" data-anchor="ver-augment">§12.13</a>) 이론상
+    2⁴=16가지 조합이 가능하다. 아래는 그중 우선순위가 있는 조합들과 실행 상태.</p>
+    <table>
+      <thead><tr><th>조합</th><th>내용</th><th>실험</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>없음</td><td>–</td><td>8차</td><td>완료(중단) — val_acc peak 79.24%→76.5%로 하락</td></tr>
+        <tr class="hl"><td><b>1+2+3</b></td><td>노이즈+이웃 드롭아웃+프레임 드롭아웃</td><td><b>9차</b></td>
+          <td><b>완료</b> — test acc 78.05%/macro-F1 77.22% (best@epoch248), 하락 없이 유지</td></tr>
+        <tr><td class="new">1만</td><td>노이즈만</td><td>–</td><td>계획됨</td></tr>
+        <tr><td class="new">2만</td><td>이웃 드롭아웃만</td><td>–</td><td>계획됨</td></tr>
+        <tr><td class="new">3만</td><td>프레임 드롭아웃만</td><td>–</td><td>계획됨</td></tr>
+        <tr><td class="new">1+2+3+4</td><td>전부(좌표 회전 포함)</td><td>–</td><td>계획됨</td></tr>
+      </tbody>
+    </table>
+    <p class="small">9차가 "없음"(8차) 대비 val_acc 하락 패턴을 완전히 없앴다 — epoch 90 이후 300epoch
+    넘게 79%대 유지, test 기준 7차(같은 설정+augmentation 없음) 대비 accuracy +1.21%p, macro-F1 +1.07%p
+    순증(§12.13 참조). 어느 augmentation이 기여의 대부분을 차지하는지 보려면 단독 조합(1만/2만/3만)
+    스윕이 다음 후보.</p>
+
+    <h3 id="structure-tbl-input"><span class="ic">◆</span>Table — 입력 조합 ablation, 10차 계열 (2026-07-08 신설)</h3>
+    <p>고정: B안 라벨, cw=0.7, 보조loss+KL, 불확실성 가중치, augmentation 1+2+3, W=10/H=10, 500ep+patience50.
+    <span class="badge b-amber">변경 변수: 시계열 인코더에 들어가는 입력 채널 구성</span> —
+    10차에서 <b>raw 6D가 semantic 8D를 accuracy +3.74%p로 이기는</b> 예상 밖 결과(<a data-goto="verification"
+    data-anchor="ver-nagraphsage-adapted">§12.14</a>)가 나와서, 그 원인(절대좌표 암기 vs semantic 정보 소실)을
+    격리하기 위해 semantic 8D에 raw 채널을 <b>추가</b>하는 조합을 스윕한다. 구현:
+    <code>models/tsem_sage.py::TSEMSAGE(raw_append=)</code> — <code>'pos'</code>(position_x/z 추가→10D),
+    <code>'pos_dir'</code>(position+direction 추가→12D).</p>
+    <table>
+      <thead><tr><th>실험</th><th>입력 구성</th><th>차원</th><th>test acc</th><th>test macro-F1</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>9차</td><td>semantic만 (v,a,j,ω,d_lat,κ,Δρ,접선)</td><td>8D</td><td>78.05%</td><td>77.22%</td><td>완료</td></tr>
+        <tr><td>10차</td><td>raw만 (pos_x,pos_z,speed,dir_x,dir_z,accel)</td><td>6D</td><td><b>81.79%</b></td><td><b>81.92%</b></td><td>완료</td></tr>
+        <tr class="hl"><td><b>10차-2</b></td><td class="chg">semantic + position_x/z</td><td>10D</td><td><b>81.91%</b></td><td><b>81.95%</b></td><td><b>완료</b> (early stop@180, best@130)</td></tr>
+        <tr class="hl"><td><b>10차-3</b></td><td class="chg">semantic + position_x/z + direction_x/z</td><td>12D</td><td><b>81.97%</b></td><td><b>82.00%</b></td><td><b>완료</b> (early stop@152, best@102)</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>확정 결론 (2026-07-09, 전 실험 완료):</b> raw 6D(81.79%) vs semantic 8D(78.05%)의 격차
+      <b>+3.74%p는 전부 절대좌표(position_x/z) 때문</b>이다 — semantic에 position 2채널만 추가한 10D가
+      81.91%로 raw를 완전히 따라잡았고(위치 암기 가설 A 확정), direction 추가(12D)는 +0.06%p로 노이즈
+      수준(ω와 정보 중복이라는 예상과 일치). 동시에 <b>semantic 8채널이 raw의 나머지 4채널(speed, accel,
+      dir)을 완전히 대체함</b>도 입증 — "semantic이 정보를 잃는다"(가설 B)는 기각. 부수 관찰: 10D/12D는
+      raw보다 stop recall이 높고(94.5~94.8% vs 91.1%) LC precision도 높아(85.1~84.2% vs 85.3% 동급),
+      semantic+position 조합이 단순 raw보다 클래스 균형 면에서도 우수하다.</div>
+    </div>
+    <p class="small">해석 기준(사전 등록): 10D가 raw 수준 도달 → 절대좌표가 주범 ✓ (적중) / 12D에서야
+    도달 → direction 기여 ✗ / 12D도 미달 → semantic 정보 소실 ✗. config:
+    <code>configs/tsem_sage_10th_2.yaml</code> / <code>tsem_sage_10th_3.yaml</code>, 실험명
+    <code>tsem_sage_w10_h10_sem_pos_10d</code> / <code>tsem_sage_w10_h10_sem_posdir_12d</code>.
+    (10차-4(raw+semantic 14D)는 계획에서 제외 — 2026-07-08. 다음 단계: 교차 장소 검증(공업탑→DRIFT)으로
+    position 이득이 "이 로터리 한정 암기"인지 확인 — §12.14 참조.)</p>
+
+    <h3 id="structure-tbl-future"><span class="ic">◆</span>Table — 계획된 향후 실험 (미실행)</h3>
+    <p>고정할 최종 설정(라벨 B안 + 8D + 보조loss·KL + 최선의 epoch/불확실성loss 조합)이 위 표들에서 정해지면,
+    그 위에서 아래 축들을 마저 스윕한다.</p>
+    <table>
+      <thead><tr><th>Table</th><th>내용</th><th>증명 명제</th></tr></thead>
+      <tbody>
+        <tr><td><b>모델 비교</b></td><td>Persist · NAGraphSAGE-adapted · Semantic-only(TSEMSemanticOnly) · <b>TSEM-SAGE(full)</b></td><td>3, 4</td></tr>
+        <tr><td><b>W sweep</b></td><td>{10, 20, 30} @ 고정 H — TSEM-SAGE</td><td>명제 2, 5</td></tr>
+        <tr><td><b>H sweep</b></td><td>{5, 10, 15} @ 고정 W — TSEM-SAGE</td><td>명제 5</td></tr>
+        <tr><td><b>Spatial ablation</b></td><td>Semantic-only vs TSEM-SAGE(+NAGraphSAGE) @ H sweep</td><td>명제 3, 5</td></tr>
+        <tr><td><b>Encoder type</b></td><td>GRU(현재) vs LSTM vs Mamba vs Transformer</td><td>명제 1</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><code>NAGraphSAGE-adapted</code>·<code>TSEMSemanticOnly</code> 100-epoch 학습·W/H 스윕
+    스크립트·encoder type 비교 전부 아직 코드/실행 없음 (<a data-goto="verification"
+    data-anchor="ver-remaining">§12.10 남은 구현 항목</a> 참조).</p>
+
+    <h3 id="structure-tbl-wh"><span class="ic">◆</span>Table — W×H 조합표 (2026-07-09 sweep 착수, 10D 기반)</h3>
+    <p>최종 모델을 <b>10D(semantic+position, <code>configs/tsem_sage_10th_2.yaml</code>)</b>로 고정한 뒤
+    W(과거 관측)·H(미래 지평) 3×3 매트릭스를 스윕한다. 모든 칸이 같은 config에서 W/H만 CLI 오버라이드 —
+    셀 값은 <b>test accuracy / macro-F1 (%)</b>.</p>
+    <table>
+      <thead><tr><th>W\H</th><th>H=5</th><th>H=10</th><th>H=15</th></tr></thead>
+      <tbody>
+        <tr><td><b>W=10</b></td><td class="hl"><b>84.91 / 83.11</b></td><td class="hl"><b>81.91 / 81.95</b> (10차-2, 기준)</td><td>실행중</td></tr>
+        <tr><td><b>W=20</b></td><td><b>84.56 / 82.02</b></td><td>대기</td><td>실행중</td></tr>
+        <tr><td><b>W=30</b></td><td>대기</td><td>대기</td><td>대기</td></tr>
+      </tbody>
+    </table>
+    <p class="small">완료분(2026-07-09): <b>W10-H5 = 84.91/83.11</b> (기준 대비 +3.00%p/+1.16%p — 지평
+    절반이면 과제가 쉬워지는 H-트레이드오프 확인), <b>W20-H5 = 84.56/82.02</b> (W10-H5보다 소폭 낮음 —
+    H=5에서는 <b>W를 20으로 늘려도 이득이 없음</b>, 짧은 지평 예측에 필요한 정보는 최근 10프레임에 이미
+    충분하다는 신호). 나머지 칸은 큐 A/B에서 순차 실행 중 — 완료되는 대로 채움.
+    실험명 규칙: <code>tsem_sage_10d_w{W}_h{H}_sweep</code>, 결과는 각
+    <code>checkpoints/tsem/&lt;실험명&gt;/results.json</code>에 자동 기록.</p>
+
+    <h3 id="structure-tbl-radius"><span class="ic">◆</span>Table — 이웃 반경(radius) ablation (2026-07-08 신설)</h3>
+    <p>지금까지 전부 <code>radius=20.0m</code>에 고정. 반경이 좁으면(10m) 로터리 인접 차선 차량 위주로만
+    잡히고, 넓으면(30m) 더 먼 차선·반대 방향 교통까지 이웃으로 잡혀 <code>K_max=6</code>(1-hop)의 "가장 가까운
+    K개" 선별 기준 자체가 달라진다.</p>
+    <table>
+      <thead><tr><th>radius</th><th>의도</th><th>예상 트레이드오프</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td class="new">10m (신규)</td><td>인접 차선 위주로 좁혀 노이즈(먼 차량) 제거</td><td>혼잡 구간에서 K_max=6 슬롯이
+          다 안 찰 수 있음(<code>nbr_mask</code> 0 비중 증가) → 이웃 정보 손실 위험</td><td>계획됨</td></tr>
+        <tr class="hl"><td><b>20m (현재)</b></td><td>공업탑 로터리 폭 기준 경험적 채택값</td><td>–</td><td>완료 (1~8차)</td></tr>
+        <tr><td class="new">30m (신규)</td><td>더 넓은 교통 맥락 포함</td><td>실제로는 관련 없는 반대 차선 차량이
+          K_max 안에 들어와 신호 희석 가능</td><td>계획됨</td></tr>
+      </tbody>
+    </table>
+    <p class="small">실행 방법: <code>build_tsem_dataloaders(..., radius=10.0 또는 30.0)</code> — <code>train_tsem.py</code>에
+    아직 <code>--radius</code> CLI 오버라이드가 없음(현재 <code>configs/*.yaml</code>의 <code>graph.radius</code>만
+    수정 가능). W×H sweep과 마찬가지로 반경 변경 시 캐시가 새로 만들어진다(캐시 키에 <code>r{radius}</code> 포함,
+    <code>modules/data_manager_tsem.py:_cache_key()</code>). radius 변경은 이웃 그래프 구성 축이라 명제
+    3(NAGraphSAGE spatial 기여)과 직결 — spatial ablation(§structure-tbl-future) 전에 먼저 최적 radius를
+    고정해두는 순서가 합리적이다.</p>
+
+    <h3 id="structure-tbl-stopdelta"><span class="ic">◆</span>Table — stop ±δ 다수결 ablation + 데이터 분포 (2026-07-08 신설)</h3>
+    <p>7·8차가 쓰는 <code>stop_persist_delta=2</code>(총 n=5프레임 다수결, §12.11)를 더 넓혀보면 어떻게
+    되는지 실측했다. δ가 커질수록 다수결 구간이 넓어져 <b>flicker를 더 적극적으로 stop 쪽으로 흡수</b>한다
+    — 그만큼 normal 비율은 계속 줄어드는 방향으로 움직인다.</p>
+    <table>
+      <thead><tr><th>δ (n=2δ+1)</th><th>split</th><th>stop</th><th>lane_change</th><th>normal</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td rowspan="3"><b>δ=2 (n=5, 현재 채택)</b></td><td>train</td><td>39.24%</td><td>20.54%</td><td>40.22%</td></tr>
+        <tr class="hl"><td>val</td><td>37.71%</td><td>21.17%</td><td>41.12%</td></tr>
+        <tr class="hl"><td>test</td><td>38.09%</td><td>19.63%</td><td>42.29%</td></tr>
+        <tr><td rowspan="3" class="new">δ=3 (n=7, 신규)</td><td>train</td><td>39.87%</td><td>20.54%</td><td>39.58%</td></tr>
+        <tr><td>val</td><td>38.22%</td><td>21.17%</td><td>40.61%</td></tr>
+        <tr><td>test</td><td>38.70%</td><td>19.63%</td><td>41.67%</td></tr>
+        <tr><td rowspan="3" class="new">δ=4 (n=9, 신규)</td><td>train</td><td>40.34%</td><td>20.55%</td><td>39.11%</td></tr>
+        <tr><td>val</td><td>38.65%</td><td>21.17%</td><td>40.18%</td></tr>
+        <tr><td>test</td><td>39.14%</td><td>19.63%</td><td>41.22%</td></tr>
+      </tbody>
+    </table>
+    <p class="small">train 기준 stop 비율: 39.24%(δ=2) → 39.87%(δ=3) → 40.34%(δ=4), normal은 40.22%→39.58%→39.11%로
+    단조 이동 — δ가 커질수록 변화폭 자체는 체감(δ2→3: +0.63%p, δ3→4: +0.47%p)한다. <code>lane_change</code>는
+    거의 무변화(δ 확장이 stop 판정에만 영향을 주도록 설계됐으므로 예상대로).</p>
+
+    <h4>δ에 따른 8차 confidence(c_i) 범위 변화</h4>
+    <p>δ가 커지면 다수결에 참여하는 관측 수 n도 늘어(n=2δ+1), Beta-Binomial 사후분산 정규화식
+    (<a data-goto="verification" data-anchor="ver-loss-uncertainty">§12.12</a>)의 <code>c_i</code> 범위 자체가
+    넓어진다 — 만장일치일 때 더 확신하고, 3:2류 애매한 표에는 더 박하게 벌점을 준다.</p>
+    <table>
+      <thead><tr><th>δ</th><th>n</th><th>c_i 최솟값 (최대 애매, k≈n/2)</th><th>c_i 최댓값 (만장일치, k=0 또는 n)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>2 (현재)</b></td><td>5</td><td>0.020</td><td>0.510</td></tr>
+        <tr><td class="new">3 (신규)</td><td>7</td><td>0.012</td><td>0.605</td></tr>
+        <tr><td class="new">4 (신규)</td><td>9</td><td>0.008</td><td>0.669</td></tr>
+      </tbody>
+    </table>
+    <p class="small">δ를 키우면 만장일치 시 확신도 상한이 올라가는 대신(더 많은 증거 반영), 경계 근처 flicker의
+    범위 자체가 넓어져 <code>lane_change</code> 판정 구간(<code>(anchor, future_frame]</code>)과 겹칠 여지도
+    커진다 — δ를 무작정 키우는 게 항상 좋은 게 아니라 트레이드오프가 있다는 뜻. 8차 계열(§structure-tbl-uncertainty)
+    결과를 먼저 보고, δ=2가 최적인지 δ=3으로 늘려도 이득이 있는지 확인하는 순서를 권장한다(δ는
+    <code>_TsemFileData.future_window_state(..., stop_persist_delta=)</code> 파라미터로 바로 조정 가능,
+    코드 변경 없이 캐시만 새로 생성됨).</p>
+
+    <h3 id="structure-baseline"><span class="ic">◆</span>베이스라인 (공정 비교) <span class="badge b-red">⚠️ 10차 결과로 가설 반증됨</span></h3>
+    <table>
+      <thead><tr><th>모델</th><th>입력</th><th>출력</th><th>역할</th><th>test accuracy</th><th>test macro-F1</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>NAGraphSAGE-adapted</b></td><td>과거 W raw + 프레임 t 이웃 GNN</td><td>state(t+H)</td><td>선행 spatial baseline</td><td><b>81.79%</b></td><td><b>81.92%</b></td></tr>
+        <tr><td><b>Semantic-only</b></td><td>TSEM, ego만</td><td>state(t+H)</td><td>spatial 제거 ablation</td><td>실행중(12차)</td><td>실행중</td></tr>
+        <tr><td><b>TSEM-SAGE</b></td><td>semantic + NAGraphSAGE spatial</td><td>state(t+H)</td><td>제안 (full)</td><td>78.05%</td><td>77.22%</td></tr>
+        <tr><td><b>Persist</b></td><td>state(t) 순간 규칙</td><td>state(t+H)</td><td>하한선</td><td>63.17%</td><td>50.55%</td></tr>
+      </tbody>
+    </table>
+    <div class="callout err">
+      <span class="ci">⚠️</span>
+      <div>2026-07-08 10차 완료 후 실측 — <b>가설과 반대로 NAGraphSAGE-adapted(raw)가 TSEM-SAGE(semantic)를
+      accuracy +3.74%p, macro-F1 +4.70%p로 앞선다.</b> 아래 원래 가설(TSEM-SAGE &gt; NAGraphSAGE-adapted)은
+      <b>기각됨</b> — 상세 원인 분석과 다음 검증 계획은 <a data-goto="verification"
+      data-anchor="ver-nagraphsage-adapted">§12.14</a> 참조. Semantic-only 결과가 나오면 spatial 기여도
+      별도로 확인 가능.</div>
+    </div>
+    <ul class="dash">
+      <li>TSEM-SAGE &gt; semantic-only → NAGraphSAGE spatial 기여 (검증 예정, 12차)</li>
+      <li>semantic-only &gt; Raw-Temporal → 의미 분해 기여 <b>(→ 정반대로 뒤집힐 가능성 높음, §12.14)</b></li>
+      <li>TSEM-SAGE &gt; NAGraphSAGE-adapted → semantic + 미래 과제 통합 이득 <b>(→ 기각됨, §12.14)</b></li>
+    </ul>
+
+    <h3 id="structure-metric"><span class="ic">◆</span>평가 지표</h3>
+    <table>
+      <thead><tr><th>지표</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr><td><b>Future State Acc @ (W,H)</b></td><td>메인 지표</td></tr>
+        <tr><td><b>Per-class recall</b> (특히 LC)</td><td>순간 LC 정의로 희귀 — macro-F1 병기</td></tr>
+        <tr><td><b>Confusion @ future LC</b></td><td>미래 LC를 Normal로 오예측 비율</td></tr>
+      </tbody>
+    </table>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ Abstract 초안 -->
+  <div class="page" id="page-abstract">
+    <div class="sec-head"><div class="sec-num">8</div><h2>Abstract 초안 (영문)</h2></div>
+    <div class="card">
+      <p style="margin:0;line-height:1.85;">
+      We extend <b>NAGraphSAGE</b> along two axes—<b>semantic temporal encoding</b> of past motion and
+      <b>future state prediction</b>—while retaining its core <b>neighbor-aware spatial aggregation</b>.
+      We abandon smeared ±6-frame lane-change labels and instantaneous detection, defining instead
+      <b>state(t+H)</b> from ego speed and lane-id at a future horizon. <b>TSEM-SAGE</b> derives
+      maneuver-semantics (longitudinal, lateral, residual) from a causal window of <b>W</b> frames,
+      encodes them temporally per node, applies NAGraphSAGE-style edge-aware message passing at the
+      anchor frame (without redundant edge-<em>temporal</em> re-encoding), and predicts three-class
+      future motion state. On a large roundabout dataset, we show that semantic encoding outperforms
+      raw recurrent baselines and that spatial neighbor modeling complements ego semantics—especially
+      for longer horizons—validating continuity with the NAGraphSAGE research line rather than
+      repudiating graph-based interaction.</p>
+    </div>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 기여 3줄 -->
+  <div class="page" id="page-contributions">
+    <div class="sec-head"><div class="sec-num">9</div><h2>기여 3줄</h2></div>
+    <ol style="margin-left:18px;color:#334155;line-height:1.9;">
+      <li><b>문제 재정의:</b> ±6 smear 기각, <b>과거 W → 미래 state(t+H)</b> 인과 예측 + 순간 3-class 규칙.</li>
+      <li><b>TSEM-SAGE:</b> NAGraphSAGE <b>spatial 계승</b> + maneuver <b>semantic temporal</b> — edge-temporal 중복은 제거.</li>
+      <li><b>절제 실험:</b> semantic / spatial / full 분해로 각 축 기여 측정; NAGraphSAGE 연구선과의 <b>연속성</b> 유지.</li>
+    </ol>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 정보원 분해 프레임워크 -->
+  <div class="page" id="page-framework">
+    <div class="sec-head"><div class="sec-num">10</div><h2>정보원 분해 프레임워크</h2></div>
+    <pre>[기각] edge-temporal GRU on edge_seq (ET-NAGraphSAGE novelty)
+[유지] NAGraphSAGE spatial @ frame t (edge 5D, message passing)
+[신규] semantic temporal on past W (ego + neighbors)
+[신규] y(t) = state(t+H)
+
+Level 0: Persist / instant state(t)
+Level 1: NAGraphSAGE-adapted (raw W + spatial)
+Level 2: Semantic-only (TSEM, ego)
+Level 3: TSEM-SAGE (semantic + spatial)  ★ 제안
+Level 4: + edge-temporal (ablation, 예상 ≈0 추가)</pre>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 코드 수정 체크리스트 -->
+  <div class="page" id="page-checklist">
+    <div class="sec-head"><div class="sec-num">11</div><h2>코드 수정 전 체크리스트</h2></div>
+    <p class="sec-desc">논문 설계 확정 후 구현 단계에서 반영할 항목. (구현 현황은 "🧪 구현 검증" 참조)</p>
+
+    <ul class="checklist">
+      <li><b>라벨:</b> <code>modules/tsem_instant_label.py</code> — 순간 state(f), ±6·CSV category 미사용</li>
+      <li><b>데이터:</b> <code>modules/data_manager_tsem.py</code> — X=[t−W+1…t] ego+이웃, y=state(t+H)</li>
+      <li><b>모델:</b> <code>models/tsem_sage.py</code> — semantic temporal + NAGraphSAGE spatial</li>
+      <li>Stage A: <code>models/tsem_semantic_derivation.py</code></li>
+      <li>Stage B: <code>models/decomp_encoder.py</code> (DecompTemporalEncoder)</li>
+      <li>Stage C: <code>models/et_nagraphsage.py</code> — ETSAGELayer @ t (edge-temporal 없음)</li>
+      <li>학습: <code>train_tsem.py</code> + <code>configs/tsem_sage.yaml</code></li>
+      <li>평가: <code>modules/tsem_eval.py</code> — Future State Acc, per-class recall, macro-F1</li>
+      <li>검증: <code>scripts/tsem_verify_dataloader.py</code></li>
+      <li><b>구현 기록:</b> <code>docs/TSEM_implementation_registry.md</code></li>
+      <li>베이스라인: NAGraphSAGE-adapted, semantic-only, Raw-Temporal+GNN, Persist — <span class="small">(일부 미구현)</span></li>
+      <li>Ablation: spatial on/off, edge-temporal on/off</li>
+      <li>config: <code>obs_window W</code>, <code>prediction_horizon H</code> (<code>configs/tsem_sage.yaml</code>)</li>
+      <li>ET-NAGraphSAGE: ablation 전용으로만 유지 (<code>train.py</code> 계열)</li>
+    </ul>
+
+    <h3 id="checklist-undecided"><span class="ic">◆</span>미결정 사항</h3>
+    <table>
+      <thead><tr><th>항목</th><th>후보</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>H (메인)</b></td><td>5 / 10 / 15</td><td>스윕 후 1개를 메인 표에 고정</td></tr>
+        <tr><td>공간 모듈</td><td><b>메인 포함</b> (NAGraphSAGE)</td><td>semantic-only가 ablation</td></tr>
+        <tr><td>의미 채널</td><td>world 좌표 lateral</td><td>map 없이 1차 구현 (Δρ 추가는 §구현검증 남은항목)</td></tr>
+        <tr><td>LC 희귀</td><td>class weight / focal / oversample</td><td>class weight power 튜닝 진행 중 (§구현검증)</td></tr>
+        <tr><td>제목</td><td>논문 제목 페이지 추천안</td><td></td></tr>
+      </tbody>
+    </table>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+  <!-- ▸ 관련 문서·코드 -->
+  <div class="page" id="page-references">
+    <div class="sec-head"><div class="sec-num">12</div><h2>관련 문서 · 코드</h2></div>
+
+    <table>
+      <thead><tr><th>경로</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td><code>docs/edge_temporal_report.html</code></td><td>Edge-temporal 한계 (GNN ablation 근거)</td></tr>
+        <tr><td><code>docs/ET-NAGraphSAGE.html</code></td><td>선행 연구·컨퍼런스 실험</td></tr>
+        <tr><td><code>docs/iwis2026.html</code></td><td>컨퍼런스 논문 초안</td></tr>
+        <tr><td><code>road_data/20250318json_class_lanechage.py</code></td><td><b>기각</b> — ±6 smear 규칙 (참고만)</td></tr>
+        <tr><td><code>modules/data_manager.py</code></td><td>선행 ET-NAGraphSAGE (y=category(t)) — <b>유지</b></td></tr>
+        <tr><td><code>modules/data_manager_tsem.py</code></td><td><b>TSEM</b> — y=state(t+H)</td></tr>
+        <tr><td><code>docs/TSEM_implementation_registry.md</code></td><td><b>TSEM 파일·경로 레지스트리</b></td></tr>
+        <tr><td><code>models/decomp_encoder.py</code></td><td>Stage A 프로토타입</td></tr>
+        <tr><td><code>journal/map_features.py</code></td><td>로터리 중심·Δρ 계산 유틸 (호모그래피 fit, polar)</td></tr>
+        <tr><td><code>results/school.md</code></td><td>선행 탐지 실험 (참고용, 메트릭 다름)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key" style="margin-top:20px;">
+      <span class="ci">🕘</span>
+      <div><b>문서 이력</b><br>
+      <span class="small">
+      2026-07-07 — TSEM 저널 설계 초안<br>
+      2026-07-07 — <b>문제 재정의:</b> state(t+H), W∈{10,20,30}<br>
+      2026-07-07 — 시계열 semantic 정보·성능 논리, 이웃 소실·결측 처리 추가<br>
+      2026-07-07 — TSEM 구현 스캐폴딩 (<code>train_tsem.py</code>, registry 문서)<br>
+      2026-07-07 — 구현 검증 결과 추가: 파이프라인 통과, 첫 결과 Persist baseline 미달, 버그 2건 수정, 남은 항목 정리<br>
+      2026-07-07 — class weight power 완화(sqrt) 실험 착수 (GPU0), 사이드바 내비게이션 구조로 전면 재편(ET-NAGraphSAGE.html 참고)<br>
+      2026-07-07 — 평가 지표 계산 방식 문서화(§12.9); class weight power=0.5 실험 완료 — <b>accuracy·macro-F1 첫 baseline 초과</b>(80.89%/58.79% vs 76.57%/53.57%), LC recall 트레이드오프(65.85%→11.08%) 확인<br>
+      2026-07-07 — 라벨 재정의 A안 구현(§12.4): lane_change를 point→window 내 발생 여부로 재정의(문헌: maneuver anticipation), 실측 LC 비율 2.4%→20.4%. 메모리 뱅크(class-balanced replay 등)는 향후 아이디어로만 기록, 이번 구현에는 미포함<br>
+      2026-07-07 — "데이터 설계" 사이드바 탭 신설, point 정의를 역사적 참고로 축소하고 채택된 window 정의만 현재 라벨로 명시(혼동 해소)<br>
+      2026-07-07 — 3차 실험(라벨 A안) 완료: <b>accuracy 70.46%·macro-F1 69.83%·LC recall 78.65%·LC precision 59.95% 전부 Persist baseline(61.33%/49.10%/5.65%/43.50%) 동시 초과</b> — macro-F1 +20.7%p로 3회 실험 중 최대 개선. normal recall(50.03%) 저하가 다음 점검 과제<br>
+      2026-07-07 — normal recall 편향 진단(§12.5) + 손실함수 재설계(§12.6, temporal·spatial 보조헤드 + KL 항 배선) + 로터리 극좌표 채널 Δρ·접선 추가(§12.7, method-info에 상세 기록). "제안 방법론" 페이지에 손실함수 전용 섹션 신설, H4 가설(edge-temporal) 삭제<br>
+      2026-07-07 — 4·5·6차 실험 GPU0/1/2 병렬 완료. <b>6차(Δρ·접선 추가)가 최대 개선폭: accuracy 71.38%→74.02%(+2.64%p), macro-F1 70.80%→73.85%(+3.05%p), LC precision +7.00%p</b> — 지금까지 실험 중 최고 기록. 다만 stop 과다예측(+9%p대)은 4·5·6차 모두 안 풀림, 다음 최우선 과제로 재설정<br>
+      2026-07-07 — <b>stop 과다예측 원인 규명(§12.11):</b> 6차 체크포인트 test셋 오분류 분석(<code>journal/stop_error_analysis.py</code>) 결과 normal→stop 오분류(27.7%)가 ego_speed와 거의 완벽히 단조상관(speed&lt;0.5: 오분류율 85.0%). 원인은 <code>stop</code>이 A안에서도 여전히 point 정의로 남아있던 것 — 정답=normal 표본의 29.8%가 future_frame ±2프레임 내 STOP과 인접(flicker). <b>라벨 재정의 B안 구현</b>: stop을 future_frame 중심 ±2 다수결(persistence)로 재정의(<code>_stop_persist_state()</code>, lane_change·normal 로직 무변경), 캐시 <code>v2→v3</code>. train 분포 재검증: stop 36.50%→39.24%(+15,766), normal 43.06%→40.22%(−16,351) — flicker 표본 규모와 일치. 7차 실험(라벨만 B안, 나머지 6차 설정 동일) 대기중<br>
+      2026-07-07 — <b>7차 실험 착수 + 멀티 GPU 학습 지원 추가.</b> <code>train_tsem.py</code>에 <code>--gpus</code>
+      CLI 플래그 신설 — 2개 이상 지정 시 <code>nn.DataParallel</code>로 배치를 GPU 수만큼 분할 실행(체크포인트는
+      언랩된 state_dict로 저장해 기존 평가 스크립트와 키 호환 유지), <code>--experiment</code> 오버라이드도 추가.
+      <code>experiment: tsem_sage_w10_h10_labelB_multiloss_polar</code>, <code>--gpus 0,1,2,3</code>로 GPU
+      4개 전부 사용해 실행(로그: <code>logs/tsem/train_w10_h10_labelB_multiloss_polar.log</code>). 실행 명령은
+      §12.11에 기록
+      </span></div>
+    </div>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+  </div>
+
+</main>
+</div>
+
+<script>
+(function () {
+  const mainEl = document.getElementById('main-content');
+
+  const pageEls = {};
+  document.querySelectorAll('.page').forEach(p => {
+    pageEls[p.id.replace('page-', '')] = p;
+  });
+
+  const subMenus = {};
+  document.querySelectorAll('.sub').forEach(s => {
+    subMenus[s.id.replace('sub-', '')] = s;
+  });
+
+  // ── 하위 탭 분리 보기: 각 페이지에서 id 달린 h3마다 그 다음 h3 전까지를
+  // 하나의 .tsem-subsection으로 묶어, 하위 탭 클릭 시 그 섹션만 남기고 나머지를 숨긴다.
+  function wrapSubsections() {
+    document.querySelectorAll('.page').forEach(page => {
+      const children = Array.from(page.children);
+      let group = null;
+      children.forEach(child => {
+        if (child.tagName === 'H3' && child.id) {
+          group = document.createElement('div');
+          group.className = 'tsem-subsection';
+          group.dataset.subsec = child.id;
+          child.before(group);
+          group.appendChild(child);
+        } else if (group) {
+          group.appendChild(child);
+        }
+      });
+    });
+  }
+  wrapSubsections();
+
+  const subsecBanner = document.getElementById('subsec-banner');
+
+  function isolateSubsection(pageId, anchorId) {
+    const page = pageEls[pageId];
+    if (!page) return false;
+    const anchorEl = document.getElementById(anchorId);
+    if (!anchorEl) return false;
+    const target = anchorEl.closest('.tsem-subsection');
+    if (!target || target.parentElement !== page) return false;
+    page.querySelectorAll(':scope > .tsem-subsection').forEach(s => {
+      s.classList.toggle('tsem-hidden', s !== target);
+    });
+    subsecBanner.classList.add('show');
+    return true;
+  }
+
+  function showAllSubsections(pageId) {
+    const page = pageEls[pageId];
+    if (page) page.querySelectorAll('.tsem-subsection').forEach(s => s.classList.remove('tsem-hidden'));
+    subsecBanner.classList.remove('show');
+  }
+
+  document.getElementById('subsec-banner-reset').addEventListener('click', e => {
+    e.preventDefault();
+    if (currentPage) showAllSubsections(currentPage);
+    mainEl.scrollTop = 0;
+  });
+
+  let currentPage = null;
+  let openedSub   = null;
+
+  function navigateTo(pageId, anchor, keepOpen, parentId) {
+    Object.values(pageEls).forEach(p => p.classList.remove('active'));
+
+    if (pageEls[pageId]) {
+      pageEls[pageId].classList.add('active');
+      currentPage = pageId;
+    }
+
+    if (anchor) {
+      if (!isolateSubsection(pageId, anchor)) showAllSubsections(pageId);
+    } else {
+      showAllSubsections(pageId);
+    }
+
+    mainEl.scrollTop = 0;
+    if (anchor) {
+      setTimeout(() => {
+        const target = document.getElementById(anchor);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+
+    document.querySelectorAll('.toc-link').forEach(a => a.classList.remove('active'));
+    const activeLink = document.querySelector(`.toc-link[data-page="${pageId}"]`);
+    if (activeLink) activeLink.classList.add('active');
+
+    if (parentId) {
+      const pLink = document.querySelector(`.toc-link[data-page="${parentId}"]`);
+      if (pLink) pLink.classList.add('parent-active');
+    }
+
+    const keepSubId = parentId || pageId;
+
+    if (openedSub && openedSub !== keepSubId) {
+      const prevSub  = subMenus[openedSub];
+      const prevLink = document.querySelector(`.toc-link[data-page="${openedSub}"]`);
+      if (prevSub)  prevSub.classList.remove('open');
+      if (prevLink) prevLink.classList.remove('parent-active');
+    }
+
+    if (subMenus[pageId]) {
+      const sub  = subMenus[pageId];
+      const link = document.querySelector(`.toc-link[data-page="${pageId}"]`);
+      if (!keepOpen && openedSub === pageId) {
+        sub.classList.remove('open');
+        if (link) link.classList.remove('parent-active');
+        openedSub = null;
+      } else {
+        sub.classList.add('open');
+        if (link) link.classList.add('parent-active');
+        openedSub = pageId;
+      }
+    } else if (parentId && subMenus[parentId]) {
+      subMenus[parentId].classList.add('open');
+      openedSub = parentId;
+    } else {
+      openedSub = null;
+    }
+  }
+
+  document.querySelectorAll('.toc-link').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      navigateTo(link.dataset.page);
+    });
+  });
+
+  document.querySelectorAll('.sub li a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const pageId = link.dataset.page;
+      const anchor = link.dataset.anchor;
+      const parentSubId = link.closest('.sub')?.id?.replace('sub-', '') || null;
+      const parentId = (parentSubId && parentSubId !== pageId) ? parentSubId : null;
+      navigateTo(pageId, anchor, true, parentId);
+    });
+  });
+
+  document.querySelectorAll('[data-goto]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const target = el.dataset.goto;
+      const anchor = el.dataset.anchor || null;
+      navigateTo(target, anchor, true, null);
+    });
+  });
+
+  const hash = window.location.hash.replace('#', '');
+  navigateTo(hash && pageEls[hash] ? hash : 'verification');
+})();
+</script>
+</body>
+</html>

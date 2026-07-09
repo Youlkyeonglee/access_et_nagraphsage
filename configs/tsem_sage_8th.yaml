@@ -1,0 +1,54 @@
+# TSEM-SAGE 8차 전용 설정 (2026-07-08)
+# 7차(tsem_sage.yaml, 라벨 B안 + multiloss + polar)와 동일 + loss 불확실성 가중치(안 1, docs §12.12) + 500 epoch
+# 실행: python train_tsem.py --config configs/tsem_sage_8th.yaml --gpus 0,1,2,3
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+# W=과거 관측, H=미래 지평 (ego 궤적상 H스텝 뒤 instant state)
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage          # tsem_sage | tsem_semantic_only
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 500          # 2026-07-08: 7차와 동일 설정으로 더 오래 학습 시 개선되는지 함께 확인
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true    # future_window_state(t+H) 분포 기반 (B안: stop은 ±2 다수결, LC는 window 내 발생 여부)
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true  # 8차 안 1 — stop_conf(Beta-Binomial 사후분산 기반) 배치 재정규화 가중치를 FocalLoss에 곱함
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_w10_h10_labelB_unc_multiloss_polar_e500

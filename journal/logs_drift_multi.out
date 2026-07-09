@@ -1,0 +1,3 @@
+도로종류별 파일: {'A': 5, 'B': 5, 'C': 5, 'D': 5, 'E': 5, 'I': 5}
+저장 /home/oem/TNA_research/journal/drift_data.npz  표본 1,048,332  ego (1048332, 10, 6) edge (1048332, 10, 8)
+클래스 분포: {'stop': 35952, 'LC': 75669, 'normal': 936711}

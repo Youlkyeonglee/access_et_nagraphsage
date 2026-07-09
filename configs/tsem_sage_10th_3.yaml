@@ -1,0 +1,63 @@
+# TSEM-SAGE 10차-3 전용 설정 (2026-07-08) — 입력 조합 ablation: semantic 8D + position_x/z + direction_x/z = 12D
+# 10차에서 raw 6D(NAGraphSAGE-adapted)가 semantic 8D(9차)보다 accuracy +3.74%p 높게 나온 원인을
+# 격리하기 위한 실험 — semantic은 절대 world 좌표를 제거하는데, raw 절대좌표가 '위치 암기' 지름길일
+# 가설을 검증한다. 9차와 라벨/loss/augmentation 전부 동일, model.raw_append만 'pos_dir'.
+# 실행: python train_tsem.py --config configs/tsem_sage_10th_3.yaml --gpus 0,1,2,3
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  raw_append: pos_dir          # 10차-3: semantic 8D + raw pos_dir → 12D 입력
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 500
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_w10_h10_sem_posdir_12d
