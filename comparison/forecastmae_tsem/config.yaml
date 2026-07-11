@@ -1,0 +1,69 @@
+# Forecast-MAE-adapted 비교 실험 설정 — 다른 세 어댑터와 data/graph/train/loss/augment 항목을
+# 동일하게 맞춰 공정 비교되도록 함. model 항목만 Forecast-MAE 고유 하이퍼파라미터로 교체.
+#
+# 2단계 프로토콜(model.py 상단 docstring 참조):
+#   1) 사전학습: train_forecastmae_tsem.py --mode pretrain  (레이블 미사용, 마스킹 복원 loss만)
+#   2) 미세조정: train_forecastmae_tsem.py --mode finetune --pretrained_ckpt <1단계 결과>
+#      (사전학습 인코더 가중치 로드 후 지도학습 — 이때는 TSEM-SAGE와 동일 augment/loss 적용)
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # Forecast-MAE 모델 자체는 2-hop 미사용(원본도 lane/agent 1-hop 수준만 사용)
+
+model:
+  embed_dim: 64
+  encoder_depth: 4   # 원 논문 encoder_depth=4 그대로
+  decoder_depth: 2   # 원 논문 decoder_depth=4 — 우리 그래프가 작아 축소
+  num_heads: 8
+  dropout: 0.1
+  mask_ratio: 0.5     # 원 논문 actor_mask_ratio=0.5 그대로
+  num_classes: 3
+
+pretrain:
+  batch_size: 512
+  num_epochs: 50       # 사전학습은 지도 신호가 없어 100epoch까지는 불필요 — 우선 50으로 시작
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  grad_clip_norm: 5.0
+  use_amp: true
+
+finetune:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: forecastmae_tsem_w10_h10

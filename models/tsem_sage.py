@@ -34,6 +34,7 @@ class TSEMSAGE(nn.Module):
       dropout: float = 0.3,
       decomp_kernel: int = 5,
       decomp_learnable: bool = True,
+      use_speed_head: bool = False,
   ):
     super().__init__()
     self.hidden_dim = hidden_dim
@@ -89,6 +90,11 @@ class TSEMSAGE(nn.Module):
     # 왜곡하는 문제 완화).
     self.classifier_temporal = nn.Linear(hidden_dim, num_classes)
     self.classifier_spatial = nn.Linear(hidden_dim, num_classes)
+    # 미래 속도 회귀 보조헤드 (2026-07-09, 제안1): v(t+H)/10 을 회귀 — "출발 임박 normal"
+    # (v(t)≈0에서 1초 뒤 출발, recall 19.5%) 경계에 연속 신호로 gradient를 공급하기 위함.
+    # opt-in(config model.use_speed_head) — False면 모듈 자체가 없어서 기존 체크포인트
+    # strict load에 영향 없음.
+    self.head_speed = nn.Linear(hidden_dim, 1) if use_speed_head else None
 
   def _encode_nodes(self, raw_seq: torch.Tensor) -> torch.Tensor:
     """raw [..., T, 6] → hidden [..., d]"""
@@ -131,10 +137,13 @@ class TSEMSAGE(nn.Module):
     if not self.use_spatial:
       logits = self.classifier(h_ego)
       if return_aux:
-        return {
+        out = {
             'logits': logits, 'logits_temporal': logits,
             'logits_spatial': None, 'beta_1hop': None, 'nbr_mask': nbr_mask,
         }
+        if self.head_speed is not None:
+          out['v_pred'] = self.head_speed(h_ego)
+        return out
       return logits
 
     e1 = self.edge_proj(edge_seqs[:, :, -1, :])
@@ -162,13 +171,16 @@ class TSEMSAGE(nn.Module):
       return self.classifier(h_out)
 
     h_out, h_N, beta = self.layer_1hop(h_ego, h_nbr_updated, e1, nbr_mask, return_extra=True)
-    return {
+    out = {
         'logits': self.classifier(h_out),
         'logits_temporal': self.classifier_temporal(h_ego),
         'logits_spatial': self.classifier_spatial(h_N),
         'beta_1hop': beta,
         'nbr_mask': nbr_mask,
     }
+    if self.head_speed is not None:
+      out['v_pred'] = self.head_speed(h_out)
+    return out
 
   def count_parameters(self) -> int:
     return sum(p.numel() for p in self.parameters() if p.requires_grad)

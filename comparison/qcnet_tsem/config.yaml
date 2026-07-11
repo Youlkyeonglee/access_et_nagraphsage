@@ -1,0 +1,56 @@
+# QCNet-adapted 비교 실험 설정 — comparison/hivt_tsem/config.yaml과 data/graph/train/loss/augment
+# 항목을 동일하게 맞춰 공정 비교되도록 함. model 항목만 QCNet 고유 하이퍼파라미터로 교체.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # QCNet 모델 자체는 2-hop 미사용(HiVT-adapted와 동일 이유) — 데이터로더 호환용으로만 유지
+
+model:
+  hidden_dim: 64
+  num_heads: 8
+  head_dim: 8
+  num_layers: 3
+  num_freq_bands: 32
+  time_span: null      # null이면 W-1(무제한, 원 논문 기본값과 동일한 의미)
+  a2a_radius: 20.0      # graph.radius와 동일 — 이미 KNN으로 걸러진 이웃이라 사실상 항상 통과
+  dropout: 0.1
+  num_classes: 3
+
+train:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: qcnet_tsem_w10_h10

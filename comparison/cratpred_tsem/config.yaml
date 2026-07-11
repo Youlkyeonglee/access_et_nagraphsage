@@ -1,0 +1,51 @@
+# CRAT-Pred-adapted 비교 실험 설정 — comparison/hivt_tsem, qcnet_tsem/config.yaml과
+# data/graph/train/loss/augment 항목을 동일하게 맞춰 공정 비교되도록 함.
+# model 항목만 CRAT-Pred 고유 하이퍼파라미터로 교체.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # CRAT-Pred 모델 자체는 2-hop 미사용(원 논문도 1-hop 전체 관측 에이전트만 사용)
+
+model:
+  latent_size: 64   # 원 논문 기본값 128 — 우리 그래프가 훨씬 작아(agents<=7 vs Argoverse 다수) 축소
+  num_heads: 4       # 원 논문 MultiheadSelfAttention 기본값 그대로
+  num_classes: 3
+
+train:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: cratpred_tsem_w10_h10

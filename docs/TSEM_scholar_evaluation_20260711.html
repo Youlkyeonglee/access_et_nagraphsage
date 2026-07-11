@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scholar Evaluation — TSEM-SAGE 저널 연구 (2026-07-11)</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a2e; --muted: #5a5a72; --border: #d8d8e4;
+    --accent: #2b4c8c; --card: #f5f6fa; --warn-bg: #fdf3f2; --warn-border: #c0392b;
+    --good-bg: #f0f7f1; --good-border: #2e7d46; --note-bg: #fbf7ec; --note-border: #b8860b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #16161f; --fg: #e4e4ee; --muted: #9a9ab0; --border: #3a3a4c;
+      --accent: #7ea2e0; --card: #1f1f2c; --warn-bg: #2a1c1c; --warn-border: #d06050;
+      --good-bg: #1a2a1e; --good-border: #5fae72; --note-bg: #292416; --note-border: #d0a840; }
+  }
+  body { font-family: 'Segoe UI', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--fg);
+    max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.65; }
+  h1 { font-size: 1.6rem; border-bottom: 3px solid var(--accent); padding-bottom: .5rem; }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.5rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; vertical-align: top; }
+  th { background: var(--card); }
+  td.score { text-align: center; font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; }
+  .critical { background: var(--warn-bg); border-left: 4px solid var(--warn-border); padding: .8rem 1.1rem; margin: .8rem 0; border-radius: 0 6px 6px 0; }
+  .strength { background: var(--good-bg); border-left: 4px solid var(--good-border); padding: .8rem 1.1rem; margin: .8rem 0; border-radius: 0 6px 6px 0; }
+  .note { background: var(--note-bg); border-left: 4px solid var(--note-border); padding: .8rem 1.1rem; margin: .8rem 0; border-radius: 0 6px 6px 0; }
+  code { background: var(--card); padding: .1em .35em; border-radius: 4px; font-size: .88em; }
+  .overall { font-size: 1.15rem; }
+  .tablewrap { overflow-x: auto; }
+  ol li, ul li { margin-bottom: .4rem; }
+  .prio-high { color: var(--warn-border); font-weight: 700; }
+  .prio-med { color: var(--note-border); font-weight: 700; }
+  .prio-low { color: var(--muted); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Scholar Evaluation: TSEM-SAGE 저널 연구 (미래 상태 예측, IEEE Access 트랙)</h1>
+<p class="meta">
+평가일: 2026-07-11 · 평가 도구: scientific-thinking-scholar-evaluation 루브릭 (1–5점, 9개 차원) ·
+평가 대상 유형: <b>진행 중인 실증 연구</b> (제출 전 원고 준비 단계 — 설계·의사결정 로그 + 실험 결과 기반)<br>
+근거 자료: <code>docs/TSEM_journal_design.html</code> (§1–§12.15, 실험 현황 표),
+<code>docs/TSEM_implementation_registry.md</code>, <code>results/20260709school.md</code>,
+<code>results/school.md</code>, <code>RUN_QUEUE.md</code>, <code>results/summary.csv</code>
+</p>
+
+<h2>1. 종합 평가 (Overall Assessment)</h2>
+<div class="card overall">
+<b>종합 점수: 3.5 / 5</b> &nbsp;·&nbsp; 신뢰도: <b>중간</b> (원고 본문이 아닌 설계 로그·결과 파일 기반 평가; 인용 원문 대조는 미수행)
+</div>
+<p>
+과제 정의(과거 W프레임 → 인과적 미래 상태 <code>state(t+H)</code> 예측)가 명확하고, 라벨 설계·아키텍처·학습 프로토콜이
+재현 가능한 수준으로 문서화되어 있으며, 자기 가설을 스스로 반증(§12.14: semantic이 raw에 패배)하고
+그 원인(절대좌표 위치 암기)을 3중 교차 검증으로 규명한 지적 정직성은 게재 수준을 상회한다.
+"구조 참조 위치(structure-referenced position)" novelty는 polar 11D(81.82) ≈ raw 10D(81.91) 무손실 대체 실험으로 실증적 뒷받침을 확보했다.
+다만 현재 상태로 제출하면 심사에서 막힐 <b>구조적 약점 4가지</b>가 남아 있다:
+(1) 단일 장소 데이터 + 시간축 분할로 인한 외적 타당도 한계, (2) 라벨 B안 설계가 test-split 진단에서 유도된 test-set peeking,
+(3) 최종 모델 외 전 ablation이 단일 시드(42)인데 유의성 판정은 최종 모델의 std 0.14를 차용, (4) 동일 데이터에서 학습한 외부 비교 모델 부재
+(컨퍼런스 트랙은 STGCN/DCRNN/TGN 3종을 갖췄으나 저널 예측 과제는 Persist와 자기 계열 변형뿐).
+이들은 모두 수정 가능하며, 수정 시 4점대 초반까지 상승할 수 있는 연구다.
+</p>
+
+<h2>2. 차원별 점수 (Dimension Scores)</h2>
+<div class="tablewrap">
+<table>
+<tr><th>차원</th><th>점수</th><th>근거</th><th>수정 우선순위</th></tr>
+<tr>
+<td>1. 문제·연구 질문</td><td class="score">4</td>
+<td>±6 smear 탐지 라벨의 비인과성을 지적하고 causal anticipation으로 재정의한 것은 명확하고 의미 있는 기여.
+W=10/H=10 기준 설정, Persist 하한선, 3-클래스 규칙 모두 명시적. 감점: novelty가 로그 중반에 이동
+(semantic 우월 → 구조 참조 위치)했고, 초록 문구가 아직 반증된 옛 주장("semantic이 raw를 능가")을 담고 있음.</td>
+<td class="prio-med">중</td>
+</tr>
+<tr>
+<td>2. 문헌·맥락</td><td class="score">3</td>
+<td>14개 모델 조사(HDGT, HEAT, HiVT, QCNet, MTR, CRAT-Pred 등)와 Jain et al. ICCV 2015 기반 라벨 표준 채택은 적절.
+그러나 조사가 "데이터셋이 달라 비교 불가"라는 결론으로만 수렴하고, 비교 가능하다고 스스로 판정한
+HEAT·CRAT-Pred 재구현이 미착수. maneuver anticipation 분야(3-클래스 상태 예측)의 직접 선행 연구 종합이 얕음.</td>
+<td class="prio-high">상</td>
+</tr>
+<tr>
+<td>3. 방법론</td><td class="score">4</td>
+<td>4-Stage 아키텍처·손실 4항·학습 프로토콜이 수식 수준까지 문서화. 실험당 config 분리, 캐시 키 분리,
+구현 레지스트리 등 재현성 인프라는 모범적. 감점: train/val/test가 <b>파일 내 시간축 분할</b>이라
+동일 차량 궤적·동일 시공간 패턴이 분할 경계를 넘을 수 있고(차량 단위 held-out 아님),
+단일 장소 상수 C=(72.86,−13.45)에 의존.</td>
+<td class="prio-med">중</td>
+</tr>
+<tr>
+<td>4. 데이터·증거</td><td class="score">3</td>
+<td>575K train 샘플, 라벨 분포 사전 실측, 스모크 검증 스크립트 존재는 강점. 감점 3건:
+(a) 단일 로터리(공업탑) 데이터 — 위치 암기의 근본 원인이자 외적 타당도 한계;
+(b) CSV acceleration이 부호 없는 |a|임을 발견하고도 a:=Δv 수정 미실행;
+(c) stop 라벨이 speed≤1.0으로 정의되는데 speed(및 v,a,j)가 입력 채널 — 라벨-피처 부분 순환으로
+stop 고성능·출발임박(recall 19.5%) 실패가 구조적으로 연결됨. DRIFT 교차 평가로 (a)를 부분 보완한 점은 평가함.</td>
+<td class="prio-high">상</td>
+</tr>
+<tr>
+<td>5. 분석</td><td class="score">3</td>
+<td>모든 실험이 각자 라벨 기준 Persist와 비교되고, 최종 모델은 4-seed(81.97±0.14) + 유의성 기준 명문화.
+W×H 3×3 격자, 인코더 2×2, 입력조합 ablation 등 분해 설계는 체계적. 감점:
+(a) ablation 전부 단일 시드인데 ±0.14 std를 차용해 유의/노이즈 판정 — 조건이 다르면 분산도 다를 수 있음;
+(b) 라벨 B안을 유도한 오분류 진단이 test-split 통계에서 수행됨(test-set peeking);
+(c) 라벨이 다른 실험 간(A안 1–6차 vs B안 7차+) 수치가 한 표에 공존(문서가 "참고용"이라 명시하긴 함).</td>
+<td class="prio-high">상</td>
+</tr>
+<tr>
+<td>6. 결과·해석</td><td class="score">4</td>
+<td>주장이 증거 범위를 지키는 편: polar −0.09%p를 "노이즈", speed-reg +0.06%p를 "기여 승격 근거 부족"으로
+스스로 강등. 부정적 결과(Mamba fp16 발산 5회, 500ep 과적합, zero-shot 전이 실패 — 3모델 전부 DRIFT Persist 75.3% 미달)를
+숨기지 않고 기록. 위치 암기 3중 확증(입력 ablation·교차장소 붕괴·masking 불변)은 인과 추론의 좋은 예.
+감점: "2-트랙 서사"에서 site-specific 10D 수치(81.97)가 헤드라인인데, 이 수치 자체가 위치 암기 이득을 포함함을
+본문에서 얼마나 명시할지 미정.</td>
+<td class="prio-low">하</td>
+</tr>
+<tr>
+<td>7. 한계·타당도 위협</td><td class="score">4</td>
+<td>한계 기술이 구체적: 출발임박 anticipation(recall 19.5%)이 남은 난제임을 정량 진단, |a| 무부호 문제,
+normal의 잔여 클래스 성격(21.2%가 v≤3 crawling), zero-shot 실패 원인 분해(도메인 시프트+장소별 baseline).
+감점: 문서 스스로 인지하지 못한 위협 2건 — test-set 기반 라벨 설계, 시간축 분할의 잠재 누수 — 은 미기재.</td>
+<td class="prio-med">중</td>
+</tr>
+<tr>
+<td>8. 글쓰기·구조</td><td class="score">4</td>
+<td>설계 로그로서는 상급: 의사결정마다 근거·기각 대안·날짜가 남고, 실험 현황 탭이 마스터 표 역할.
+용어 일관성(B안, 10차-2, 구조 참조 위치) 유지. 단, 원고 본문은 미작성 상태라 논문으로서의 서사
+(특히 semantic 반증 이후의 2-트랙 재구성)는 아직 검증 불가 — 점수는 문서 체계에 대한 것.</td>
+<td class="prio-low">하</td>
+</tr>
+<tr>
+<td>9. 인용</td><td class="score">3</td>
+<td>핵심 라벨 결정(LC window)이 1차 문헌(Jain et al. ICCV 2015)에 근거하고, 조사 모델들의 venue가 명기됨.
+감점: 인용-주장 대응의 원문 대조가 본 평가에서 불가능했고, 일부 아이디어 인용(MemoNet, LFB, MoCo)은
+미구현 후보에 붙은 장식적 인용에 가까움. 원고 작성 시 각 인용이 실제 주장과 일치하는지 검증 필요.</td>
+<td class="prio-low">하</td>
+</tr>
+</table>
+</div>
+
+<h2>3. 강점 (게재 논거로 유지할 것)</h2>
+<div class="strength"><b>자기 반증과 원인 규명.</b> "semantic decomposition이 raw를 이긴다"는 원래 novelty가 §12.14에서 전 지표 반증되자,
+이를 은폐하지 않고 입력조합 ablation으로 격차 전체를 절대좌표에 귀속시켰고, polar 11D로 이식 가능한 대체재를 실증했다.
+이 서사 자체("단일 장소 벤치마크에서 위치 암기가 성능을 부풀리는 메커니즘과 그 무손실 이식 대체")가 논문의 가장 강한 자산이다.</div>
+<div class="strength"><b>재현성 인프라.</b> 실험당 config 분리, 캐시 키에 라벨 파라미터 반영(<code>_sd{δ}</code>), 구현 레지스트리,
+2-서버 분담 보드(RUN_QUEUE.md), results.json 자동 기록. 심사자 재현 요구에 대응 가능한 구조.</div>
+<div class="strength"><b>베이스라인 규율.</b> 라벨 정의가 바뀔 때마다 "각자 라벨 기준 Persist 대비"로만 비교한다는 원칙이 문서 전반에 일관 적용됨.</div>
+<div class="strength"><b>확정 라벨의 문헌 정합성.</b> LC window 정의를 Jain et al. ICCV 2015 표준에 정렬하고, stop persistence(B안)를
+정량 진단(FP군 중앙속도 0.000 vs 정답군 16.828)으로 정당화. δ=2/3/4 강건성 실험도 완료(δ4가 오히려 +1.3%p, LC 침식 없음).</div>
+
+<h2>4. 치명적 문제 (Critical Issues — 제출 전 반드시 해소)</h2>
+<div class="critical"><b>C1. Test-set peeking으로 유도된 라벨 설계.</b>
+stop persistence(B안)를 채택하게 한 normal→stop 오분류 진단(27.7% FP, ±2프레임 내 STOP 29.8%)이 test-split 통계에서 수행됐다.
+라벨 정의 자체가 test 관측에 적응된 셈이라 conclusion validity 위협.
+<b>해소:</b> 동일 진단을 <u>validation split</u>(또는 train)에서 재산출해 같은 결론이 나옴을 확인하고, 논문에는 val 기반 수치만 게재.
+재학습은 불필요 — 진단 재실행만으로 충분할 가능성이 높다.</div>
+<div class="critical"><b>C2. 단일 시드 ablation + 차용된 노이즈 기준.</b>
+유의성 기준 std 0.14는 최종 10D 모델 4-seed에서 나온 값인데, 이를 라벨·손실·W×H·인코더·augmentation 등
+전 ablation(모두 seed 42 단일)에 적용한다. 조건이 다르면 seed 분산도 다르다(예: Mamba는 fp16에서 5회 발산할 만큼 불안정).
+<b>해소:</b> 논문 본문 표에 오르는 핵심 비교 축(최소한 semantic 8D vs 10D vs polar 11D, spatial on/off, GRU vs LSTM)만이라도
+3–4 seed로 확장. 표당 3–4 실험 × 4시간이면 학교 서버에서 2–3일 내 가능.</div>
+<div class="critical"><b>C3. 저널 트랙 외부 비교 모델 부재.</b>
+컨퍼런스(탐지) 트랙은 STGCN/DCRNN/TGN 3종 공정 비교를 갖췄지만, 저널(예측) 과제의 Table I은 현재
+Persist + 자기 계열 변형(NAGraphSAGE-adapted, semantic-only)뿐이다. 문서 스스로 GraphSAGE 하한선·HEAT·CRAT-Pred 재구현을
+"필요"로 표기하고 미착수. IEEE Access라도 "제안 모델 vs 자기 변형만"은 약점 지적 1순위.
+<b>해소:</b> 탐지 트랙의 <code>models/baselines.py</code>(STGCN/DCRNN/TGN)를 <code>state(t+H)</code> 라벨로 돌리는 것이
+가장 저비용 — 입력 파이프라인이 이미 호환되므로 재구현 없이 Table I을 채울 수 있다.</div>
+<div class="critical"><b>C4. 초록·서사와 증거의 불일치.</b>
+현재 초록 문구는 "semantic encoding이 raw recurrent baseline을 능가"인데 §12.14가 이를 반증했다.
+확정된 2-트랙 서사(site-specific 10D / transferable polar 11D)로 초록·기여 목록을 재작성하지 않으면
+본문과 초록이 모순되는 원고가 된다.
+<b>해소:</b> 기여 3항을 "① 인과적 anticipation 과제 재정의 ② 구조 참조 위치(위치 암기의 이식 가능 대체) 실증
+③ 단일 장소 벤치마크의 위치 암기 진단 방법론(3중 확증)"으로 재구성.</div>
+
+<h2>5. 권고 수정 사항 (Recommended Revisions)</h2>
+<h3>우선순위 상 (제출 전 필수)</h3>
+<ol>
+<li><b>[C1]</b> B안 유도 진단을 val split에서 재산출, 논문 수치 교체.</li>
+<li><b>[C3]</b> STGCN/DCRNN/TGN을 anticipation 라벨로 재학습해 저널 Table I 구성 (기존 코드 재사용).</li>
+<li><b>[C2]</b> 본문 표 핵심 비교(8D/10D/11D, spatial, encoder)를 3–4 seed로 확장.</li>
+<li><b>stop 라벨-피처 순환 명시:</b> stop=speed≤1.0이고 speed가 입력임을 Limitations에 명시하고,
+출발임박 실패(recall 19.5%)가 이 구조의 필연적 결과임을 연결해 서술. 이는 약점 은폐가 아니라
+"과거 kinematics만으로는 출발 anticipation이 원리적으로 어렵다"는 Discussion 논거로 전환 가능.</li>
+</ol>
+<h3>우선순위 중 (게재 확률을 올리는 것)</h3>
+<ol start="5">
+<li><b>시간축 분할의 누수 검토:</b> train/test 경계에 걸친 동일 차량 궤적 수를 실측해 보고하거나,
+차량(트랙) 단위 held-out split을 1회 돌려 성능 차이를 부록에 제시.</li>
+<li><b>a:=Δv 재정의 ablation 1회 실행:</b> 이미 발견한 데이터 결함(|a| 무부호)을 "발견만 하고 방치"보다
+"수정 시 효과 측정"까지 닫는 편이 심사 대응에 유리. jerk 채널 의미 복원 여부도 함께.</li>
+<li><b>다중 장소 학습(공업탑+DRIFT A–D → 미학습 장소 평가):</b> RUN_QUEUE에 보류된 이 실험이
+transferable 트랙 주장을 zero-shot 실패에서 구제할 유일한 경로. 장소별 held-out split 구현이 선행 과제.</li>
+<li><b>진행 중 ablation 마감:</b> radius 10/30, augmentation 단독 분해, kernel 3/7 —
+<b>✅ 해소됨 (2026-07-10 학교서버 완료, 2026-07-11 문서 반영)</b>. 세 축 모두 기준값이 사후 정당화됨:
+radius 20m(acc·LC recall 균형점, r10=LC recall 83.1 / r30=acc 81.99 트레이드오프), kernel 5(영향 ±0.09%p 미미),
+augmentation은 nbr dropout이 지배 성분(+0.42%p)이고 rotate는 −1.77%p 해로움(위치 암기 신호 파괴 —
+C4의 위치 암기 서사를 독립적으로 재확인하는 부수 증거). 이로써 학교서버 실행 가능 실험 전체 종료
+(<code>results/20260709school.md</code>) — 남은 작업은 논문 게재 표 선별뿐.
+단, 이들 역시 <b>단일 seed(42)</b>라 C2의 적용 범위임에 유의.</li>
+</ol>
+<h3>우선순위 하 (원고 작성 단계)</h3>
+<ol start="9">
+<li>Related Work를 "비교 불가 목록"에서 "3-클래스 maneuver anticipation 직접 선행 연구 종합"으로 재구성 (Jain 계열 후속 연구 보강).</li>
+<li>δ ablation 결과(δ4가 +1.3%p 유리) 처리 방침 확정: δ=2 유지 근거(전 실험 비교성)를 본문에 한 줄 명시.</li>
+<li>인용-주장 대응 전수 점검 (특히 미구현 아이디어에 붙은 MemoNet/LFB/MoCo 인용은 삭제 또는 Future Work로 이동).</li>
+</ol>
+
+<h2>6. 추가 증거 확인 필요 (Evidence Checks Needed)</h2>
+<ul>
+<li>§12.11 진단 수치(FP 27.7%, ±2 내 STOP 29.8%)의 <b>val split 재산출값</b> — C1 해소의 직접 증거.</li>
+<li>polar 11D의 <b>다중 seed</b> 결과 — 현재 −0.09%p "노이즈" 판정이 단일 seed 기반. novelty의 핵심 수치이므로 4-seed 필수.</li>
+<li>train/test 경계에 걸친 <b>동일 차량 트랙 수</b> 실측치.</li>
+<li>DRIFT 교차 평가에서 semantic 8D의 "+10%p 상대 우위"가 <b>DRIFT Persist(75.3%) 미달</b>과 함께 제시되는지 — 원고에서 앞부분만 인용하면 과잉 주장이 됨.</li>
+<li>Jain et al. ICCV 2015의 window 정의가 실제로 "(t, t+H] 발생 여부"와 동형인지 원문 대조.</li>
+</ul>
+
+<h2>7. 평가 방법 고지</h2>
+<p class="meta">
+본 평가는 원고 본문이 아닌 설계·의사결정 로그(<code>TSEM_journal_design.html</code>)와 결과 파일을 근거로 수행했다.
+따라서 8번(글쓰기)·9번(인용) 차원은 신뢰도가 낮으며, 원고 초안 완성 후 재평가를 권한다.
+점수는 절대 척도(5=게재 준비 완료)이며, 진행 중 연구로서 3.5는 "핵심 발견은 견고하나
+타당도 보강 실험과 서사 재구성이 남은 상태"를 뜻한다. 루브릭 원칙에 따라 인용 수·venue 명성은 품질 근거로 사용하지 않았다.
+</p>
+
+</body>
+</html>

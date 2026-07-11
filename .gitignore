@@ -28,5 +28,15 @@ __pycache__/
 # 저작권 PDF, 공유 저장소 제외
 docs/IEEE_TII_25_9364_20260401_rev1_0_NAGraphSAGE.pdf
 
+# 논문용 정성적 결과 산출물 (76M, 로컬 산출물 — journal/qualitative_cases.py로 재생성 가능)
+journal/paper_figs/
+
+# comparison: baseline 원본 클론(각자 .git 보유, TSEM 미적용) — TSEM 적용판(*_tsem/)만 커밋
+comparison/SIMPL/
+comparison/forecast-mae/
+comparison/QCNet/
+comparison/HiVT/
+comparison/crat-pred/
+
 # OS
 .DS_Store

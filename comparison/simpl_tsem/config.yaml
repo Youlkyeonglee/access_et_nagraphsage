@@ -1,0 +1,56 @@
+# SIMPL-adapted 비교 실험 설정 — comparison/hivt_tsem, qcnet_tsem, cratpred_tsem/config.yaml과
+# data/graph/train/loss/augment 항목을 동일하게 맞춰 공정 비교되도록 함.
+# model 항목만 SIMPL 고유 하이퍼파라미터로 교체.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # SIMPL 모델 자체는 2-hop 미사용(원 논문도 관측된 모든 에이전트만 사용)
+
+model:
+  hidden_size: 64    # 원 논문 d_actor=128 — 우리 그래프가 훨씬 작아 축소(다른 어댑터와 동일 근거)
+  n_fpn_scale: 3      # 원본 4 — T=10(원 논문 T=20)에 맞춰 축소, model.py 상단 docstring 참조
+  d_rpe: 32            # 원 논문 d_rpe=128 — 축소
+  n_layer: 4            # 원 논문 n_scene_layer=4 그대로
+  n_head: 8              # 원 논문 n_scene_head=8 그대로
+  rpe_radius: 100.0       # 원 논문 기본값 그대로(거리 스케일링 상수, 우리 데이터 절대 스케일과 무관하게 동작)
+  dropout: 0.1
+  num_classes: 3
+
+train:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: simpl_tsem_w10_h10

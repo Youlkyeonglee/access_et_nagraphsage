@@ -244,6 +244,7 @@ class TSEMFutureStateDataset(Dataset):
         augment: 'TsemAugment' = None,
         augment_seed: int = 12345,
         stop_persist_delta: int = 2,
+        with_v_future: bool = False,
     ):
         self.W = W
         self.H = H
@@ -263,6 +264,10 @@ class TSEMFutureStateDataset(Dataset):
         self._augment_seed = augment_seed
         # 학교서버 실험 (2026-07-09): stop ±δ 다수결의 δ를 노출 — 기본 2(B안), 3/4 sweep용
         self.stop_persist_delta = stop_persist_delta
+        # 제안1 (2026-07-09): v(t+H) 회귀 보조헤드용 미래 속도 라벨. opt-in — 켜면 캐시 폴더에
+        # v_future.npy 사이드카를 생성/재사용(캐시 키는 안 바뀜). 첫 생성 시 CSV 파싱 필요.
+        self.with_v_future = with_v_future
+        self._v_future: np.ndarray = None
         self._aug_rng = None
 
         self.samples: List[Tuple[str, int, List[int], int]] = []
@@ -288,6 +293,8 @@ class TSEMFutureStateDataset(Dataset):
                 print(
                     f'[TSEM/{split}] 캐시 로드: {len(self.samples):,}개  ({cache_dir})'
                 )
+            if self.with_v_future:
+                self._v_future = self._load_or_build_v_future(cache_dir, verbose)
             self._setup_norm(cache_dir, verbose)
             return
 
@@ -310,6 +317,8 @@ class TSEMFutureStateDataset(Dataset):
 
         if cache_dir is not None:
             self._build_cache(cache_dir, verbose)
+        if self.with_v_future:
+            self._v_future = self._load_or_build_v_future(cache_dir, verbose)
         self._setup_norm(cache_dir, verbose)
 
     def _cache_key(self, csv_files: List[str]) -> str:
@@ -373,6 +382,27 @@ class TSEMFutureStateDataset(Dataset):
         if verbose:
             print(f'[TSEM/{self.split}] 캐시 저장: {cache_dir}')
 
+    def _load_or_build_v_future(self, cache_dir, verbose: bool) -> np.ndarray:
+        """샘플별 v(t+H) (raw speed, NODE_COLS[2]) — 캐시 폴더 사이드카로 저장/재사용.
+        기존 캐시 스키마·키는 건드리지 않음. 결측(미래 프레임에 ego 없음)은 0.0 —
+        라벨이 존재하는 샘플만 인덱스에 들어오므로 실제로는 거의 발생 안 함."""
+        path = os.path.join(cache_dir, 'v_future.npy') if cache_dir else None
+        if path and os.path.exists(path):
+            return np.load(path)
+        v = np.zeros(len(self.samples), dtype=np.float32)
+        it = (
+            tqdm(range(len(self.samples)), desc=f'[TSEM/{self.split}] v_future')
+            if verbose else range(len(self.samples))
+        )
+        for i in it:
+            csv_path, ego_id, _, future_frame = self.samples[i]
+            fd = _get_file_data(csv_path)
+            node = fd.frame_node.get(future_frame, {}).get(ego_id)
+            v[i] = float(node[2]) if node is not None else 0.0
+        if path:
+            np.save(path, v)
+        return v
+
     def _setup_norm(self, cache_dir, verbose: bool):
         if not self.ego_relative:
             self._norm = None
@@ -425,6 +455,8 @@ class TSEMFutureStateDataset(Dataset):
                 'y': torch.tensor(int(c['y'][idx]), dtype=torch.long),
                 'y_persist': torch.tensor(int(c['y_persist'][idx]), dtype=torch.long),
                 'stop_conf': torch.tensor(float(c['stop_conf'][idx]), dtype=torch.float32),
+                **({'v_future': torch.tensor(float(self._v_future[idx]), dtype=torch.float32)}
+                   if self._v_future is not None else {}),
                 'meta': {
                     'object_id': ego_id,
                     'frame': window_frames[-1],
@@ -455,6 +487,8 @@ class TSEMFutureStateDataset(Dataset):
         out['y'] = torch.tensor(int(s['y']), dtype=torch.long)
         out['y_persist'] = torch.tensor(int(s['y_persist']), dtype=torch.long)
         out['stop_conf'] = torch.tensor(float(s['stop_conf']), dtype=torch.float32)
+        if self._v_future is not None:
+            out['v_future'] = torch.tensor(float(self._v_future[idx]), dtype=torch.float32)
         out['meta'] = s['meta']
         return out
 
@@ -597,6 +631,8 @@ def _collate_fn(batch: list) -> dict:
         'nbr2_node_seqs', 'nbr2_edge_seqs', 'nbr2_mask', 'y', 'y_persist', 'stop_conf',
     ]
     out = {k: torch.stack([b[k] for b in batch]) for k in keys_tensor}
+    if 'v_future' in batch[0]:
+        out['v_future'] = torch.stack([b['v_future'] for b in batch])
     out['meta'] = [b['meta'] for b in batch]
     return out
 
@@ -618,13 +654,14 @@ def build_tsem_dataloaders(
     use_cache: bool = True,
     augment: 'TsemAugment' = None,
     stop_persist_delta: int = 2,
+    with_v_future: bool = False,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     kwargs = dict(
         W=W, H=H, radius=radius, K_max=K_max, K_max2=K_max2,
         train_ratio=train_ratio, val_ratio=val_ratio,
         neighbor_mode=neighbor_mode, ego_relative=ego_relative,
         verbose=verbose, use_cache=use_cache, augment=augment,
-        stop_persist_delta=stop_persist_delta,
+        stop_persist_delta=stop_persist_delta, with_v_future=with_v_future,
     )
     train_ds = TSEMFutureStateDataset(csv_files, split='train', **kwargs)
     val_ds = TSEMFutureStateDataset(csv_files, split='val', **kwargs)

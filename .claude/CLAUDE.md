@@ -1,83 +1,135 @@
 # 가상환경
 conda activate tna_research
 
+# 데이터 경로
+- 연구실(로컬) 서버: `/home/oem/data/TII_data/` (Gongeoptap, DRIFT)
+- 학교 서버: `/home/oem/yklee/data/`
+- ⚠️ `configs/*.yaml`의 `data_dir`는 서버마다 다름 — **커밋/pull 시 이 필드 충돌 주의** (b9be26d에서 실제 발생)
 
-# 데이터 경로: /home/oem/yklee/data
+openDD 데이터경로: `/media/lee/8tb_Data/1tb_백업/1tb_Data/opendd_dataset/`, 172.30.1.84 서버
 
 # userEmail
 yklee00815@gmail.com
 
 # currentDate
-2026-06-28
+2026-07-11
 
 ---
 
-# 연구 목표 — ET-NAGraphSAGE
+# 연구 목표 — TSEM-SAGE (저널 트랙, IEEE Access)
 
-## 핵심 목표: State_Acc 향상 (단일 최우선 지표)
-- **Baseline**: NAGraphSAGE 94.54% Acc (Gongeoptap, World 좌표, EdgeDim3)
-- **목표**: State_Acc 유의미한 향상 (NAGraphSAGE 대비 통계적으로 유의미한 개선)
-- **방향**: NAGraphSAGE의 per-frame 한계를 **Edge+Node 시계열 인코딩**으로 극복
+> 기존 ET-NAGraphSAGE(현재 상태 **탐지**)는 컨퍼런스(IWIS2026) 트랙으로 분리됨.
+> 저널 트랙은 **미래 상태 예측(anticipation)**: 입력 과거 W프레임 → 정답 `state(t+H)`.
 
-## 핵심 Novelty (2가지만)
-1. **Edge feature 시계열 인코딩** ← 진짜 novelty. 기존 시공간 GNN 어디에도 없음.
-   - 이웃 차량과의 kinematic 관계(상대 속도·가속도·방향·거리)의 T프레임 변화를 학습
-   - 기존 STGCN/DCRNN은 edge를 단순 거리 또는 고정 가중치로만 처리
-2. **Node feature 시계열 인코딩** + NAGraphSAGE 공간 집계 통합
-   - 과거 T프레임 운동학 시퀀스 → temporal encoder → edge-aware 메시지 패싱
-
-## 제거된 것들 (이유)
-- ~~Dual-Head (미래 K스텝 상태 예측)~~: State_Acc 목표와 직접 연관 없음. multi-task loss가 분류를 방해할 수 있음. 논문 주장 희석.
-- ~~Mamba = 핵심 contribution~~: T=10~15에서 GRU와 실질 차이 불명확. Ablation에서 이기는 인코더를 채택.
-- ~~고정 97% 목표~~: 논문은 "유의미한 향상"으로 주장. Gongeoptap은 구조적 난이도가 있음.
-
-## 아키텍처 (3단계)
+## 핵심 과제 정의
 ```
-STAGE 1: TEMPORAL ENCODER (신규)
-  Node: 차량 i의 T프레임 노드 피처 시퀀스 → temporal encoder → h_i^temp
-  Edge: 이웃 j와의 T프레임 엣지 피처 시퀀스 → temporal encoder → e_ij^temp
-  인코더 타입: GRU / LSTM / Mamba 비교 → ablation으로 결정
-
-STAGE 2: SPATIAL (NAGraphSAGE, 기존 구조 유지)
-  Edge-Aware Message Passing (edge 독립 MLP 인코딩 유지)
-  Add Aggregator + Node Update MLP
-
-STAGE 3: OUTPUT (단일 분류 헤드)
-  현재 상태 분류만: Stop / Lane Change / Normal Driving
+입력 X(t): kinematics[t-W+1 … t] + 이웃 (KNN @ t, lane_id는 입력에 없음)
+정답 y(t): instant_state(t+H)   — speed·lane_id로 오프라인 계산
+클래스:   0=stop, 1=lane_change, 2=normal
+Baseline: Persist (y_persist = state(t))
+기준설정: W=10, H=10 (1초 뒤 예측)
 ```
 
-## 손실 함수 (단순화)
+## 라벨 정의 (확정, 변경 금지 — 비교성 유지)
+- **lane_change**: window 정의 — "(t, t+H] 내 발생 여부" (Jain et al. ICCV 2015 표준). point 정의는 폐기됨.
+- **stop**: ±2 다수결 persistence (B안, `_TsemFileData._stop_persist_state()`). δ=2 유지, δ3/4는 "라벨 강건성" ablation으로만 게재.
+- 구현: `modules/tsem_instant_label.py`, `modules/data_manager_tsem.py`
+
+## 최종 모델 (확정)
+- **TSEMSAGE 10D** = semantic 8채널(v,a,j,ω,d_lat,κ,Δρ,접선) + raw position 2채널 (`raw_append='position'`)
+- Config: `configs/tsem_sage_10th_2.yaml`
+- **최종 수치: accuracy 81.97±0.14 / macro-F1 82.03±0.14 (4-seed 41-44)** — std 0.14가 ablation 유의성 기준
+- 인코더: **GRU 채택 확정** (성능·안정성·수렴속도 3축. LSTM 동급 −0.15%p, Mamba는 fp16 발산 5회·fp32 필수·−0.5%p)
+- **핵심 novelty 용어: "구조 참조 위치(structure-referenced position)"** — polar 11D([ρ,sinθ,cosθ] augment) 81.82가
+  raw 절대좌표(81.91)를 무손실 대체, 이식 가능. 논문 서사 = **2-트랙**: site-specific(10D) / transferable(semantic 8D 또는 polar 11D)
+
+## 아키텍처 (4 Stage)
 ```
-L_total = L_CE + λ_KL · L_KL
-L_CE  = CrossEntropy(ŷ_t, y_t)        ← 현재 상태 분류
-L_KL  = KL(p_attention ∥ Uniform)     ← attention 균등화 (기존 유지)
-λ_KL ∈ [0.1, 0.5]
+STAGE A: SemanticDerivation — raw 6D → semantic 8D (Δρ·접선은 forward 시점 계산, 캐시는 raw만)
+         로터리 중심 C=(72.86,-13.45) world 고정상수. + raw_append(position/polar) 채널
+STAGE B: Temporal encoder — DecompTemporalEncoder(GRU), W=10 프레임
+STAGE C: Spatial — ETSAGELayer (edge-aware message passing, NAGraphSAGE 계승. 기여 +1.25%p)
+STAGE D: 분류 헤드 + 보조헤드(classifier_temporal/classifier_spatial, opt-in)
 ```
 
-## Ablation 설계 (4그룹)
-- **A: temporal encoder 타입** — GRU / LSTM / Mamba / Transformer (T=10 고정)
-- **B: 시퀀스 길이 T** — 1(baseline) / 5 / 10 / 15 프레임
-- **C: 시계열 대상** — node only / edge only / **node+edge (제안)** ← 핵심 ablation
-- **D: NAGraphSAGE 층수 / KL λ** — 기존 논문 범위 유지
+## 손실 함수
+```
+L = FocalLoss(logits,y)·unc_weight + λ_T·L_aux_temporal + λ_S·L_aux_spatial + λ_KL·KL(softmax‖Uniform)
+λ_T=λ_S=0.3, λ_KL=0.1, class_weight_power=0.7, uncertainty weight=Beta-Binomial (§12.12)
+```
 
-## 베이스라인 수치 (논문 Table VI, XI)
-| 모델 | Acc (%) | Macro-F1 (%) |
-|---|---|---|
-| GraphSAGE | 92.74 | 90.69 |
-| NAGraphSAGE (World, EdgeDim3 avg) | **94.07±0.28** | **92.56±0.37** |
-| NAGraphSAGE (World, best, Table XI) | **94.54±1.03** | — |
+## 학습 필수 설정 (경험적 확정)
+- **Augmentation 1+2+3** (noise_std=1.0, neighbor/frame dropout 0.1) — 없으면 ep90 이후 과적합 붕괴. 회전(4)은 로터리 중심 기준 회전으로 수정됨, rotate_deg=0 미사용.
+- **early_stop_patience: 50**, 종료 후 `best.pt` 재로드해 test 평가 (마지막 epoch 평가 버그 수정됨)
+- Mamba 실험 시 **fp32 필수** (`--no_amp`) — AMP fp16에서 selective scan forward overflow
+- `nohup` 실행 시 `python -u` 필수 (stdout 버퍼링)
+
+## 확정된 핵심 발견 (재실험 불필요)
+1. **위치 암기 가설 3중 확증**: raw 절대좌표 +3.74%p는 로터리 단일 지점 암기. 교차 장소(DRIFT) 평가에서 position 모델 붕괴(LC recall 80%→0.3%). semantic은 상대적 장소 불변.
+2. **W×H 3×3 완전 단조**: W10>W20>W30(관측창 포화), H5>H10>H15(0.5초당 −2.8%p) → "W=10 충분, 성능은 H가 지배"
+3. **edge-temporal은 공업탑에서 구조적 무용** (정보중복·라벨 이웃무관·ego지배) — DRIFT에서만 성립(+3.6%p, p=0.0002). 장기지평/DRIFT에서만 edge 부활.
+4. **CSV acceleration은 부호 없는 |a|** — 감속 방향 정보 없음. a:=Δv 재정의는 미실행 ablation 후보.
+5. **남은 난제 = "1초 뒤 출발" anticipation** (출발임박 normal recall 19.5%). speed-reg 보조헤드는 방향 적중이나 효과 소폭(19.5→22%) → Discussion 소재. 남은 후보: soft label, 이웃 출발 전파.
+
+## 서버 분담
+- **로컬(이 컴퓨터)**: Mamba 계열 전부 + 문서/보드 관리
+- **학교 서버**: 비-Mamba (mamba_ssm 미설치). 분담 보드 = `RUN_QUEUE.md` (single source of truth)
+- 진행 중(학교): radius 10/30, aug 단독, noaug
+
+---
+
+# 하네스 엔지니어링 원칙 (에이전트 작업 규약)
+
+이 리포지터리는 에이전트-중심으로 운영한다. 핵심: **리포지터리 밖 지식은 존재하지 않는 것과 같다.**
+
+## 1. 기록 시스템 (System of Record)
+모든 의사결정·실험 결과·설계 변경은 버전 관리되는 파일에 기록 후 작업 종료:
+- **설계·의사결정 로그**: `docs/TSEM_journal_design.html` — §12.x에 실험별 상세 기록, "실험 현황" 탭(page-experiments)이 전체 실험 축별 상태 마스터 표. **코드 변경 시 반드시 함께 갱신** (Doc-Gardening).
+- **구현 레지스트리**: `docs/TSEM_implementation_registry.md` — 신규/재사용/기각 파일 목록. 새 파일 추가 시 갱신.
+- **실험 분담 보드**: `RUN_QUEUE.md` — 두 서버 협업의 단일 기준. pull → 실행 → 결과 push.
+- **결과 수치**: `results/` (예: `20260709school.md`) + 체크포인트별 `results.json`.
+- 이 CLAUDE.md는 **나침반**이다 — 상세 지침을 담지 않고 위 문서로 안내한다. 목표·아키텍처가 바뀌면 이 파일부터 갱신.
+
+## 2. 실험 격리 (재현성)
+- **실험당 전용 config 분리** (`configs/tsem_sage_N차.yaml`) — 공유 config를 플래그로 껐다 켜지 않음.
+- 캐시 키 분리: 라벨 정의 변경 시 캐시 키에 반영 (예: `_sd{δ}`). 캐시는 raw만 저장, 파생 채널은 forward 계산 → 캐시 재생성 최소화.
+- 경로 분리: 캐시 `cache/tsem/`, 체크포인트 `checkpoints/tsem/{실험명}/`, 로그 `logs/tsem/`.
+- 새 기능은 **opt-in 기본값**(기존 실험 동작 불변) + CLI 배선 (`--W --H --seed --radius --stop_delta --raw_append --speed_reg --no_amp --grad_clip --lr`).
+
+## 3. 검증 루프 (자율 품질 관리)
+- 새 라벨/피처/증강 구현 시: 스모크 스크립트(`scripts/tsem_verify_dataloader.py`)로 분포·shape 검증 → 짧은 학습 → 본 실험.
+- 결과 보고는 항상 **각자 라벨 기준 Persist baseline과 비교** (라벨이 다르면 accuracy 직접비교 금지).
+- 유의성 판단 기준: 4-seed std 0.14 (이보다 작은 차이는 노이즈로 판정).
+- 성능 주장 전 과적합 확인: val 곡선이 peak 후 하락하는지, best.pt 기준 test인지.
+
+## 4. 수정 금지 영역
+- NAGraphSAGE 원본 (`/home/oem/graph_vehicle_v1/`) — 읽기 전용 참조.
+- 확정 라벨 정의(LC window, stop ±2) — 변경은 비교성 파괴, ablation으로만.
+- 기존 ET-NAGraphSAGE 계열 코드(`train.py`, `modules/data_manager.py`, `models/et_nagraphsage.py` 호출부) — TSEM은 병행 파일로 구현, 기본값으로 하위호환 유지.
+
+## 5. 커밋 → 완료 처리
+- 커밋 메시지는 Conventional Commits 형식: `feat(scope): 설명`
+
+---
 
 ## 저장소 경로
-- **T-NAGraphSAGE 저장소 (현재)**: `/home/oem/TNA_research/`
+- **TSEM/T-NAGraphSAGE 저장소 (현재)**: `/home/oem/TNA_research/`
 - NAGraphSAGE 원본 (수정 금지): `/home/oem/graph_vehicle_v1/`
 - M2MambaV2 (별도): `/home/oem/access2/`
-- 데이터: `/home/oem/data/` (Gongeoptap, DRIFT)
-- 계획서: `/home/oem/TNA_research/docs/TNA_research_plan.html`
-- 논문 PDF: `/home/oem/TNA_research/docs/IEEE_TII_25_9364_20260401_rev1_0_NAGraphSAGE.pdf`
-- Mamba 기초: `/home/oem/access2/review/20260515_process.html` (sec-basics)
+- 원격 학교 서버: 172.30.1.84 (GitHub `access_et_nagraphsage.git` 경유 협업)
 
-## 코드 참조
-- NAGraphSAGE 모델: `/home/oem/graph_vehicle_v1/proposed/models/model_node_final.py`
-- NAGraphSAGE Conv: `/home/oem/graph_vehicle_v1/proposed/models/convlayer_final.py`
-- 학습 스크립트: `/home/oem/graph_vehicle_v1/proposed/train_proposed_node_final.py`
-- Config: `/home/oem/graph_vehicle_v1/proposed/config_proposed_world.yaml`
+## 핵심 코드 (TSEM)
+- 모델: `models/tsem_sage.py` (TSEMSAGE / TSEMSemanticOnly / TSEMNAGraphSAGEAdapted)
+- Semantic 파생: `models/tsem_semantic_derivation.py`
+- 라벨: `modules/tsem_instant_label.py` / 데이터: `modules/data_manager_tsem.py` / 증강: `modules/tsem_augment.py`
+- 학습: `train_tsem.py` / 평가: `modules/tsem_eval.py`
+- 분석: `journal/` (cross_location_eval, stop_error_analysis, speedreg_subgroup_eval, qualitative_cases 등)
+- 논문 그림: `journal/paper_figs/`
+
+## 베이스라인 수치 (참고, 컨퍼런스 트랙)
+| 트랙 | 모델 | 지표 |
+|---|---|---|
+| 저널(예측) | **TSEM-SAGE 10D (최종)** | **81.97±0.14 acc / 82.03±0.14 F1** |
+| 저널(예측) | Persist baseline (window+B안 라벨) | 각 실험 results.json 참조 |
+| 컨퍼런스(탐지) | NAGraphSAGE (World, best) | 94.54±1.03 acc |
+| 컨퍼런스(탐지) | Flagship D-h192 fp32 4-seed | 95.37±0.45 acc (p=0.0042) |

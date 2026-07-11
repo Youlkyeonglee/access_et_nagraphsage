@@ -125,6 +125,8 @@ def build_model(cfg: dict, T: int):
         dropout=mcfg['dropout'],
         decomp_kernel=mcfg.get('decomp_kernel', 5),
         decomp_learnable=mcfg.get('decomp_learnable', True),
+        use_speed_head=(mcfg.get('use_speed_head', False)
+                        or cfg.get('loss', {}).get('speed_reg_weight', 0.0) > 0),
     )
     if name == 'tsem_semantic_only':
         return TSEMSemanticOnly(**kw)
@@ -188,6 +190,7 @@ def train(cfg: dict):
         num_workers=tcfg['num_workers'],
         augment=augment if augment.enabled else None,
         stop_persist_delta=stop_delta,
+        with_v_future=cfg['loss'].get('speed_reg_weight', 0.0) > 0,
     )
 
     raw_model = build_model(cfg, T=W).to(device)
@@ -217,12 +220,14 @@ def train(cfg: dict):
     lambda_temporal = lcfg.get('lambda_temporal', 0.0)
     lambda_spatial = lcfg.get('lambda_spatial', 0.0)
     kl_weight = lcfg.get('kl_weight', 0.0)
-    use_aux = lambda_temporal > 0 or lambda_spatial > 0 or kl_weight > 0
+    speed_reg_weight = lcfg.get('speed_reg_weight', 0.0)
+    use_aux = lambda_temporal > 0 or lambda_spatial > 0 or kl_weight > 0 or speed_reg_weight > 0
     use_uncertainty_weight = lcfg.get('use_uncertainty_weight', False)
     print(
         f'TSEM loss 구성: L_main + {lambda_temporal}*L_temporal + '
         f'{lambda_spatial}*L_spatial + {kl_weight}*KL(main_logits‖Uniform)'
         + ('  [8차: stop_conf 기반 불확실성 가중치 적용]' if use_uncertainty_weight else '')
+        + (f'  [제안1: +{speed_reg_weight}*SmoothL1(v̂, v(t+H)/10)]' if speed_reg_weight > 0 else '')
     )
 
     opt = torch.optim.AdamW(
@@ -238,10 +243,15 @@ def train(cfg: dict):
 
     save_dir = Path(cfg['save_dir']) / cfg['experiment']
     save_dir.mkdir(parents=True, exist_ok=True)
-    scaler = GradScaler(enabled=device.type == 'cuda')
+    # Mamba fp16 발산 대책 (2026-07-10): use_amp=false면 fp32 학습 — selective scan의
+    # 비유계 재귀가 fp16 최대값(65504)을 forward에서 넘는 문제를 원천 차단 (clip/lr로는 못 막음)
+    use_amp = device.type == 'cuda' and tcfg.get('use_amp', True)
+    scaler = GradScaler(enabled=use_amp)
 
     patience = tcfg.get('early_stop_patience', 0)
     print(f'[TSEM] early stopping: {"patience=" + str(patience) + " epoch" if patience > 0 else "미사용"}')
+    grad_clip = tcfg.get('grad_clip_norm', 0)
+    print(f'[TSEM] grad clipping: {"max_norm=" + str(grad_clip) if grad_clip > 0 else "미사용"}')
 
     best_val = 0.0
     best_epoch = 0
@@ -257,7 +267,7 @@ def train(cfg: dict):
             }
             opt.zero_grad(set_to_none=True)
             sw = stop_uncertainty_weight(batch_gpu['stop_conf']) if use_uncertainty_weight else None
-            with autocast(enabled=device.type == 'cuda'):
+            with autocast(enabled=use_amp):
                 if use_aux:
                     out = model(batch_gpu, return_aux=True)
                     logits = out['logits']
@@ -268,10 +278,18 @@ def train(cfg: dict):
                         loss = loss + lambda_spatial * apply_loss(out['logits_spatial'], batch_gpu['y'], sw)
                     if kl_weight > 0:
                         loss = loss + kl_weight * kl_uniform_loss(logits)
+                    if speed_reg_weight > 0:
+                        # v(t+H) 회귀 보조 task — /10 스케일로 CE와 크기 정렬 (제안1)
+                        loss = loss + speed_reg_weight * torch.nn.functional.smooth_l1_loss(
+                            out['v_pred'].squeeze(-1), batch_gpu['v_future'] / 10.0
+                        )
                 else:
                     logits = model(batch_gpu)
                     loss = apply_loss(logits, batch_gpu['y'], sw)
             scaler.scale(loss).backward()
+            if grad_clip > 0:
+                scaler.unscale_(opt)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
             scaler.step(opt)
             scaler.update()
             if sched is not None:
@@ -342,6 +360,13 @@ def main():
     parser.add_argument('--raw_append', type=str, default=None,
                         help="semantic에 추가할 raw 채널: none|pos|pos_dir|polar")
     parser.add_argument('--decomp_kernel', type=int, default=None, help='low-pass 커널 크기 (기본 5)')
+    parser.add_argument('--grad_clip', type=float, default=None,
+                        help='grad clipping max_norm (기본 0=미사용, config train.grad_clip_norm)')
+    parser.add_argument('--lr', type=float, default=None, help='learning rate 오버라이드 (config train.lr)')
+    parser.add_argument('--no_amp', action='store_true',
+                        help='AMP(fp16) 비활성화 — Mamba fp16 발산 대책 (train.use_amp=false)')
+    parser.add_argument('--speed_reg', type=float, default=None,
+                        help='제안1: v(t+H) 회귀 보조 loss 가중치 (>0이면 use_speed_head 자동 켜짐)')
     parser.add_argument(
         '--gpus', type=str, default=None,
         help='콤마로 구분된 GPU id (예: "0,1,2,3") — 지정 시 CUDA_VISIBLE_DEVICES를 덮어쓰고, '
@@ -376,6 +401,16 @@ def main():
         cfg['model']['raw_append'] = args.raw_append
     if args.decomp_kernel is not None:
         cfg['model']['decomp_kernel'] = args.decomp_kernel
+    if args.grad_clip is not None:
+        cfg['train']['grad_clip_norm'] = args.grad_clip
+    if args.lr is not None:
+        cfg['train']['lr'] = args.lr
+    if args.no_amp:
+        cfg['train']['use_amp'] = False
+    if args.speed_reg is not None:
+        cfg['loss']['speed_reg_weight'] = args.speed_reg
+        if args.speed_reg > 0:
+            cfg['model']['use_speed_head'] = True
     train(cfg)
 
 
