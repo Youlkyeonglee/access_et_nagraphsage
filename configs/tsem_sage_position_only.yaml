@@ -1,0 +1,69 @@
+# TSEM-SAGE 위치 암기 가설 검증② — position-only 신경망 (2026-07-12)
+# 목적: "위치만 있고 운동학 정보가 전혀 없을 때 신경망이 얼마나 맞히는가"를 직접 측정.
+#   journal/position_memorization_entropy.py(정적 좌표 격자 룩업, 재학습 없음)는 60~64%대에
+#   그쳐 Persist baseline(63.17%/50.55%) 근방에 머물렀다 — 신경망이 궤적 형태(다중 프레임의
+#   좌표 변화 패턴)+이웃 배치까지 학습해 이보다 훨씬 높은 성능을 내는지가 이 실험의 핵심 질문.
+# model.semantic_variant: position_only 만 다르다 — 나머지(시간 인코더/공간 GNN/loss/증강/
+#   학습 프로토콜)는 10차-2 계열과 완전히 동일하게 맞춰 "입력을 2D로 제한했을 때만"의 효과를 격리.
+# raw_append: none 필수(안 그러면 raw position이 중복으로 두 번 들어감).
+# 실행: python train_tsem.py --config configs/tsem_sage_position_only.yaml --gpus <N>
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  semantic_variant: position_only   # ★ 이 config의 유일한 변경점 — raw pos_x,pos_z 2D만 입력
+  raw_append: none                  # position 중복 방지(semantic 자체가 이미 position)
+  edge_temporal: false
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 300   # comparison/ 5개 baseline·edge-temporal 재검증과 동일 프로토콜
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_position_only_2d

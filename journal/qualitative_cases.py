@@ -25,7 +25,7 @@ from modules.data_manager_tsem import TSEMFutureStateDataset, _collate_fn, _get_
 from modules.tsem_instant_label import CLASS_NAMES
 
 DEV = 'cuda' if torch.cuda.is_available() else 'cpu'
-OUT_DIR = '/home/oem/TNA_research/journal/paper_figs/qualitative'
+OUT_DIR = '/home/oem/TNA_research/journal/paper_figs/gongeoptap/qualitative'
 CKPT = '/home/oem/TNA_research/checkpoints/tsem/tsem_sage_w10_h10_sem_pos_10d/best.pt'
 DATA_DIR = '/home/oem/data/TII_data/Gongeoptap'
 N_PER_CLASS = 5

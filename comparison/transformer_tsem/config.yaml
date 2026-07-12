@@ -1,0 +1,58 @@
+# Transformer-adapted 비교 실험 설정 — comparison/cratpred_tsem/config.yaml과
+# data/tsem/graph/train/loss/augment 항목을 동일하게 맞춰 공정 비교되도록 함.
+# model 항목만 Transformer 고유 하이퍼파라미터로 교체.
+# 원본 GitHub repo 없음 — 순수 아키텍처 대조군(공간 모듈 없는 Transformer 시간 인코더),
+# comparison/lstm_tsem과 짝을 이루는 실험(README.md, model.py 상단 docstring 참조).
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # Transformer-adapted도 2-hop 미사용(공간 모듈 자체가 없음 — 1-hop 이웃만 pooling)
+
+model:
+  d_model: 64          # 시간 인코더 hidden dim — HiVT-adapted(embed_dim=64)와 동일 규모로 맞춤
+  nhead: 4
+  num_layers: 2
+  dim_feedforward: 128
+  dropout: 0.1
+  num_classes: 3
+
+train:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: transformer_tsem_w10_h10

@@ -39,6 +39,9 @@ loss:
   gamma: 2.0
   use_class_weights: true
   class_weight_power: 0.7
+  kl_weight: 0.1              # 10차-2(TSEM-SAGE 최종 채택) 레시피와 동일 — 아키텍처 무관하게
+                               # logits에만 걸리므로 baseline에도 동일 적용 (2026-07-11 수정)
+  use_uncertainty_weight: true  # stop_conf(샘플 속성)에만 걸림 — 마찬가지로 동일 적용
 
 augment:
   noise_std: 1.0

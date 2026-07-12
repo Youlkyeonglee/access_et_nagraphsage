@@ -22,6 +22,7 @@ import torch.nn as nn
 import yaml
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import CosineAnnealingLR, OneCycleLR
+from tqdm import tqdm
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT))
@@ -63,9 +64,14 @@ def train(cfg: dict):
         rotate_deg=acfg.get('rotate_deg', 0.0),
     )
     print(f'[SIMPL-TSEM] augmentation (train split만 적용): {augment.describe()}')
+    # nn.DataParallel 배치 분할로 GPU당 배치가 줄어드는 문제 방지 — comparison/hivt_tsem 동일 조치.
+    train_batch_size = tcfg['batch_size'] * max(n_gpus, 1)
+    if n_gpus > 1:
+        print(f'[SIMPL-TSEM] {n_gpus}개 GPU 병렬 — GPU당 배치 {tcfg["batch_size"]} 유지 위해 '
+              f'총 배치 {tcfg["batch_size"]}→{train_batch_size}로 스케일')
     train_loader, val_loader, test_loader = build_tsem_dataloaders(
         csv_files, W=W, H=H, radius=gcfg['radius'], K_max=gcfg['K_max'], K_max2=gcfg['K_max2'],
-        batch_size=tcfg['batch_size'], train_ratio=cfg['data']['train_ratio'],
+        batch_size=train_batch_size, train_ratio=cfg['data']['train_ratio'],
         val_ratio=cfg['data']['val_ratio'], num_workers=tcfg['num_workers'],
         augment=augment if augment.enabled else None, stop_persist_delta=stop_delta,
     )
@@ -130,7 +136,8 @@ def train(cfg: dict):
         model.train()
         t0 = time.time()
         total_loss = n = 0
-        for batch in train_loader:
+        pbar = tqdm(train_loader, desc=f'[SIMPL] Epoch {epoch:03d}', leave=False)
+        for batch in pbar:
             batch_gpu = {
                 k: v.to(device) if isinstance(v, torch.Tensor) else v
                 for k, v in batch.items()
@@ -152,6 +159,7 @@ def train(cfg: dict):
                 sched.step()
             total_loss += loss.item() * batch_gpu['y'].size(0)
             n += batch_gpu['y'].size(0)
+            pbar.set_postfix(loss=f'{total_loss / n:.4f}', lr=f'{opt.param_groups[0]["lr"]:.2e}')
 
         val_m, _ = evaluate_tsem(model, val_loader, device, class_names=list(CLASS_NAMES))
         elapsed = time.time() - t0

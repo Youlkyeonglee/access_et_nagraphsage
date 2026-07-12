@@ -225,6 +225,13 @@
     <div><b>TSEM-SAGE</b><span>저널 연구 설계 · 2026-07-07</span></div>
   </div>
 
+  <div class="toc-section" style="color:#dc2626;">🕒 시간별 연구로그</div>
+  <ul class="toc">
+    <li class="toc-item">
+      <a class="toc-link" data-page="timeline" style="font-weight:700;">뭐가 언제 업데이트됐나</a>
+    </li>
+  </ul>
+
   <div class="toc-section" style="color:#059669;">🧪 구현 검증</div>
   <ul class="toc">
     <li class="toc-item">
@@ -245,6 +252,12 @@
         <li><a data-page="comparison" data-anchor="comparison-cratpred">▸ CRAT-Pred</a></li>
         <li><a data-page="comparison" data-anchor="comparison-simpl">▸ SIMPL</a></li>
         <li><a data-page="comparison" data-anchor="comparison-forecastmae">▸ Forecast-MAE</a></li>
+        <li><a data-page="comparison" data-anchor="comparison-newbatch">개요 · 신규 5종 (2026-07-12)</a></li>
+        <li><a data-page="comparison" data-anchor="comparison-stgcn">▸ STGCN</a></li>
+        <li><a data-page="comparison" data-anchor="comparison-dcrnn">▸ DCRNN</a></li>
+        <li><a data-page="comparison" data-anchor="comparison-tgn">▸ TGN</a></li>
+        <li><a data-page="comparison" data-anchor="comparison-lstm">▸ LSTM</a></li>
+        <li><a data-page="comparison" data-anchor="comparison-transformer">▸ Transformer</a></li>
       </ul>
     </li>
   </ul>
@@ -270,11 +283,13 @@
       </a>
       <ul class="sub" id="sub-data">
         <li><a data-page="data" data-anchor="data-overview">데이터셋 개요</a></li>
+        <li><a data-page="data" data-anchor="data-position-verify">▸ 위치 암기 검증 (①②④)</a></li>
         <li><a data-page="data" data-anchor="data-sampling">샘플 구성 (W·H·split)</a></li>
         <li><a data-page="data" data-anchor="data-label">라벨 정의</a></li>
         <li><a data-page="data" data-anchor="data-distribution">클래스 분포</a></li>
         <li><a data-page="data" data-anchor="data-neighbor">이웃 · 그래프 구성</a></li>
         <li><a data-page="data" data-anchor="data-argoverse">Argoverse 1·2 (외부 검증)</a></li>
+        <li><a data-page="data" data-anchor="data-opendd">openDD (외부 검증, 로터리 7곳)</a></li>
       </ul>
     </li>
     <li class="toc-item">
@@ -344,6 +359,7 @@
         <li><a data-page="experiments" data-anchor="exp-wh">W×H·Spatial·Encoder</a></li>
         <li><a data-page="experiments" data-anchor="exp-graph">그래프 구성·기타</a></li>
         <li><a data-page="experiments" data-anchor="exp-cross">교차 장소 (DRIFT)</a></li>
+        <li><a data-page="experiments" data-anchor="exp-20260712-plan">▸ 20260712 추가 실험계획</a></li>
       </ul>
     </li>
     <li class="toc-item">
@@ -375,6 +391,84 @@
   <div id="subsec-banner" class="subsec-banner">
     <span>🔎 이 하위 섹션만 분리해서 보고 있습니다.</span>
     <a id="subsec-banner-reset" href="#">← 전체 페이지 보기</a>
+  </div>
+
+  <!-- ▸ 시간별 연구로그 -->
+  <div class="page" id="page-timeline">
+    <div class="hero">
+      <div class="eyebrow">🕒 시간별 연구로그</div>
+      <h1>"기록해줘"라고 할 때마다 여기 한 줄 추가</h1>
+      <p>이 문서는 페이지가 많아서(구현검증·비교연구·문제정의·데이터·방법론·구조·실험현황 등)
+      "최근에 뭐가 바뀌었는지" 찾기 어렵다는 문제가 있었다. 이 탭은 그 문제의 해법이다 —
+      <b>기록 요청이 들어온 시각마다 한 항목을 추가</b>하고, 그 항목에서 실제로 갱신된 절로
+      바로 뛰어가는 링크를 단다(클릭하면 해당 페이지·하위 섹션으로 자동 이동). 최신 항목이
+      맨 위에 온다. 로그는 <b>2026-07-11부터 시작</b> — 그 이전 변경은 각 페이지 자체의
+      날짜 표기(예: "2026-07-08 신설")로만 추적 가능하다.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="ci">📌</span>
+      <div><b>사용법(에이전트용 메모).</b> 사용자가 "기록해줘/정리해줘"라고 요청하면: (1) 해당
+      페이지·섹션에 내용을 기록한 뒤 (2) 반드시 <b>이 페이지 맨 위에 새 항목을 추가</b>한다 —
+      시각(가능한 정밀하게), 한 줄 요약, 그리고 실제로 수정된 h3/h4 id를 가리키는
+      <code>&lt;a data-goto="&lt;page&gt;" data-anchor="&lt;id&gt;"&gt;</code> 링크. 새 h4를
+      추가했다면 <b>그 h4 자체에 id를 붙여야</b> 여기서 정확히 링크할 수 있다(h3 없이 h4만
+      추가하면 페이지 전체가 아니라 그 지점까지 스크롤됨 — 기존 h3 subsection 안에 있어도 됨).</div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (오후) — hypothesis 1(공간 집계 시점) 검증: ①edge-temporal 구현(미실행), ②spatial-temporal 교차 학습 시작</div>
+      <ul class="dash">
+        <li>6D invariant가 HiVT·QCNet에 뒤지는 원인 가설 두 가지(① edge-temporal, ② spatial-temporal
+        순서 교차) 정리, Obsidian에 도식화(<code>Drawing 2026-07-12 spatial-temporal 검증.excalidraw.md</code>)</li>
+        <li>② 채택, 우선 학습 — <code>models/tsem_sage.py::TSEMSAGEInterleaved</code> 신규 구현(매
+        프레임마다 spatial 집계 후 시간 인코더), 전용 config, 1-epoch 스모크 통과, GPU 0에서
+        500epoch 학습 시작</li>
+        <li>① 구현만 완료, 학습은 보류 — <code>TSEMSAGE</code>에 <code>edge_temporal</code> opt-in
+        플래그 추가(et_nagraphsage.py의 TemporalEncoder 재사용), forward/backward 정합성 검증,
+        하위호환(기본값 False) 확인. 전용 config만 준비해두고 미실행:
+        <a data-goto="comparison" data-anchor="cmp-h1-interleaved">§hypothesis 1 검증</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (오전) — 6D invariant·HiVT·QCNet 300epoch 결과 기록</div>
+      <ul class="dash">
+        <li>TSEM-SAGE semantic 6D invariant(구조만, zero landmark) 실측 완료 — CRAT-Pred는 이기지만
+        HiVT·QCNet엔 뒤진다는 솔직한 결과와 해석: <a data-goto="comparison" data-anchor="cmp-6d-invariant-result">§6D invariant 실측 결과</a></li>
+        <li>HiVT 300epoch 완료(acc 77.48%/F1 76.35%) 기록: <a data-goto="comparison" data-anchor="cmp-hivt-300ep">§HiVT 300-epoch 결과</a></li>
+        <li>QCNet 300epoch 완료(acc 77.97%/F1 76.96%, 5개 baseline 중 현재 최고) 기록: <a data-goto="comparison" data-anchor="cmp-qcnet-300ep">§QCNet 300-epoch 결과</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-11 (밤) — semantic 8D 채널 재점검 + 6D invariant 실험 착수</div>
+      <ul class="dash">
+        <li>semantic 8D 중 Δρ·접선 2채널만 로터리 중심(world 상수) 참조 — site-specific임을 코드
+        레벨로 확인, "semantic-only=공정한 비교"라는 기존 서술을 정정: <a data-goto="comparison" data-anchor="cmp-site-specific-channels">§semantic 8D 채널별 site-specific 재점검</a></li>
+        <li>왜 baseline과의 입력값 차이가 있어도 비교연구로서 정당한가(ego-relative 불변성 vs
+        TSEM-SAGE의 의도적 불변성 포기) 논증: <a data-goto="comparison" data-anchor="cmp-fairness-rationale">§비교연구 정당성 논증</a></li>
+        <li>models/tsem_semantic_derivation.py에 semantic_variant='invariant'(6D) 옵션 구현,
+        전용 config 신설, HiVT 종료 자동 감지 후 학습 큐 등록(코드 변경 — 문서 페이지 없음,
+        <code>configs/tsem_sage_invariant_6d.yaml</code> 참조)</li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-11 (오후) — 5개 baseline 원 논문 실제 입력값 조사, Forecast-MAE 버그 발견·수정</div>
+      <ul class="dash">
+        <li>HiVT/QCNet/CRAT-Pred/SIMPL/Forecast-MAE 5개 pristine 코드를 직접 읽어 원 논문의 실제
+        입력 스펙(맵/edge/출력 포함) 조사, 우리 adapter가 뺀 것과 이유 정리: <a data-goto="comparison" data-anchor="cmp-native-input-diff">§원 논문 vs adapted 입력 대조</a></li>
+        <li><b>실수 발견·수정</b>: Forecast-MAE adapter가 원 논문(변위 기반)과 다르게 절대위치를
+        쓰고 있었음 — <code>forecastmae_tsem/model.py::_build_inputs</code> 수정,
+        <code>test_model.py</code> 재검증(같은 섹션 내 경고 blockquote 참조)</li>
+        <li>5개 어댑터 입력값 정리 표의 "Forecast-MAE만 절대위치" 서술 정정: <a data-goto="comparison" data-anchor="cmp-input-spec">§입력값(모델 입력 규격) 정리</a></li>
+      </ul>
+    </div>
+
+    <p class="small">더 이전 기록(CRAT-Pred 300epoch 완료, GPU 배치 스케일링 실측, SIMPL 버그
+    수정 등)은 <a data-goto="comparison" data-anchor="comparison-overview">🆚 비교 연구 → 개요</a>
+    페이지 안에 날짜 표기와 함께 남아 있으나, 이 로그 형식으로는 아직 소급 정리되지 않았다.</p>
   </div>
 
   <!-- ▸ 구현 검증 결과 -->
@@ -1254,21 +1348,44 @@ else:
       + <code>modules/data_manager_tsem.py::build_tsem_dataloaders</code>를 그대로 import — 평가 방식이
       달라지면 비교 자체가 무의미해지기 때문.</li>
     </ol>
+    <p class="small">계획을 바꿔 5개 전부 <b>이 서버(GPU 0-3)에서 직접</b> 순차/병행 실행 중이다 —
+    "타 서버 예정" 문구는 더 이상 유효하지 않음.</p>
     <table>
       <thead><tr><th>모델</th><th>상태</th><th>위치</th></tr></thead>
       <tbody>
-        <tr class="hl"><td><b>HiVT</b> (CVPR 2022)</td><td>✅ 구현+검증 완료, <b>학습은 타 서버 예정</b></td>
-          <td><code>comparison/HiVT/</code>(원본), <code>comparison/hivt_tsem/</code>(어댑터)</td></tr>
-        <tr class="hl"><td><b>QCNet</b> (CVPR 2023)</td><td>✅ 구현+검증 완료, <b>학습은 타 서버 예정</b></td>
-          <td><code>comparison/QCNet/</code>(원본), <code>comparison/qcnet_tsem/</code>(어댑터)</td></tr>
-        <tr class="hl"><td><b>CRAT-Pred</b> (ICRA 2022)</td><td>✅ 구현+검증 완료, <b>학습은 타 서버 예정</b></td>
+        <tr class="hl"><td><b>CRAT-Pred</b> (ICRA 2022)</td>
+          <td>✅ <b>300epoch 완료</b>(best@78) — test acc 75.02% / F1 72.84%</td>
           <td><code>comparison/crat-pred/</code>(원본), <code>comparison/cratpred_tsem/</code>(어댑터)</td></tr>
-        <tr class="hl"><td><b>SIMPL</b> (RA-L 2024)</td><td>✅ 구현+검증 완료, <b>학습은 타 서버 예정</b></td>
+        <tr class="hl"><td><b>HiVT</b> (CVPR 2022)</td>
+          <td>✅ <b>300epoch 완료</b> — test acc 77.48% / F1 76.35%</td>
+          <td><code>comparison/HiVT/</code>(원본), <code>comparison/hivt_tsem/</code>(어댑터)</td></tr>
+        <tr class="hl"><td><b>QCNet</b> (CVPR 2023)</td>
+          <td>✅ <b>300epoch 완료</b> — test acc 77.97% / F1 76.96%</td>
+          <td><code>comparison/QCNet/</code>(원본), <code>comparison/qcnet_tsem/</code>(어댑터)</td></tr>
+        <tr><td><b>SIMPL</b> (RA-L 2024)</td><td>⏳ 구현+검증 완료, 300epoch 실행 대기</td>
           <td><code>comparison/SIMPL/</code>(원본), <code>comparison/simpl_tsem/</code>(어댑터)</td></tr>
-        <tr class="hl"><td><b>Forecast-MAE</b> (ICCV 2023)</td><td>✅ 구현+검증 완료, <b>학습은 타 서버 예정</b></td>
+        <tr><td><b>Forecast-MAE</b> (ICCV 2023)</td>
+          <td>⏳ 구현+검증 완료, 300epoch 실행 대기(멀티 GPU 재벤치마크 필요 — 아래 참조)</td>
           <td><code>comparison/forecast-mae/</code>(원본), <code>comparison/forecastmae_tsem/</code>(어댑터)</td></tr>
+        <tr><td><b>STGCN</b> (IJCAI 2018)</td>
+          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+          <td><code>comparison/STGCN/</code>(원본, hazdzz/STGCN), <code>comparison/stgcn_tsem/</code>(어댑터)</td></tr>
+        <tr><td><b>DCRNN</b> (ICLR 2018)</td>
+          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+          <td><code>comparison/DCRNN/</code>(원본, chnsh/DCRNN_PyTorch), <code>comparison/dcrnn_tsem/</code>(어댑터)</td></tr>
+        <tr><td><b>TGN</b> (ICML 2020 WS)</td>
+          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+          <td><code>comparison/TGN/</code>(원본, twitter-research/tgn), <code>comparison/tgn_tsem/</code>(어댑터)</td></tr>
+        <tr><td><b>LSTM</b> (원본 repo 없음 — 대조군)</td>
+          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+          <td><code>comparison/lstm_tsem/</code>(어댑터만)</td></tr>
+        <tr><td><b>Transformer</b> (원본 repo 없음 — 대조군)</td>
+          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+          <td><code>comparison/transformer_tsem/</code>(어댑터만)</td></tr>
       </tbody>
     </table>
+    <p class="small">STGCN/DCRNN/TGN/LSTM/Transformer 5종은 2026-07-12에 추가됐다 — 상세 설계·
+    입력값·검증은 왼쪽 하위 탭 "개요 · 신규 5종" 및 각 모델 탭 참조.</p>
 
     <h4>5개 어댑터 — 설계 차이 한눈에 비교</h4>
     <p>각 모델 하위 탭에 흩어진 "설계 변경점"을 한 표로 모았다 — 상세 근거·수식은 각 모델 탭 참조.</p>
@@ -1320,6 +1437,347 @@ else:
     </table>
     </div>
 
+    <h4 id="cmp-input-spec">5개 어댑터 — 입력값(모델 입력 규격) 정리</h4>
+    <p>각 어댑터가 실제로 신경망에 넣는 per-timestep 노드 피처와 edge/관계 피처의 차원·구성이
+    서로 다르다 — "같은 원시 데이터를 쓰지만 모델별로 뽑아 쓰는 채널이 다르다"는 점을 명시해둔다
+    (전부 <code>modules/data_manager_tsem.py</code>가 만드는 동일한 6D raw 노드 피처
+    <code>[pos_x, pos_z, speed, dir_x, dir_z, accel]</code>에서 출발 — 각 <code>model.py</code>의
+    <code>_build_inputs</code>/<code>_build_graph</code>에서 확인).</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>모델</th><th>노드 입력(차원)</th><th>구성</th><th>edge/관계 입력(차원)</th><th>구성</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>HiVT</b></td><td><b>6D</b></td>
+          <td>Δx,Δz(변위)+speed+dir_x,dir_z+accel — raw 6D 전 채널 사용</td>
+          <td>2D</td><td>rel_pos(위치차, 원본 그대로)</td></tr>
+        <tr><td><b>QCNet</b></td><td>4D</td>
+          <td>motion_norm(변위 크기)+motion_angle(변위-heading 각도)+speed+accel</td>
+          <td>4D(시간축)+3D(공간축)</td><td>r_t: dist,angle,rel_head,Δt / r_a2a: dist,angle,rel_head</td></tr>
+        <tr class="hl"><td><b>CRAT-Pred</b></td><td><b>3D</b>(최소)</td>
+          <td>Δx,Δy(변위)+valid flag만 — speed/accel 등 추가 채널 의도적으로 미사용</td>
+          <td>2D</td><td>상대 center(target−source, 원본 그대로)</td></tr>
+        <tr class="hl"><td><b>SIMPL</b></td><td><b>3D</b>(최소)</td>
+          <td>Δx,Δy(변위)+valid flag만 — CRAT-Pred와 동일 이유로 최소 유지</td>
+          <td>5D</td><td>RPE: cos_a1,sin_a1,cos_a2,sin_a2,dist</td></tr>
+        <tr class="hl"><td><b>Forecast-MAE</b></td><td>4D</td>
+          <td>Δx,Δy(변위)+speed_diff(속도 프레임간 차분)+valid flag — <b>2026-07-11 수정, 원본과
+          동일 정의</b></td>
+          <td>없음</td><td>명시적 edge 없음 — scene-level attention이 암묵적으로 상호작용 학습</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small"><b>해석</b>: HiVT만 원시 6D를 전부 사용(TSEM-SAGE와 "같은 정보량"을 주기
+    위한 의도적 확장). QCNet은 원시 채널 대신 <b>가공된(엔지니어링된) 피처</b>(변위 크기·각도)로
+    재표현(원 논문 설계 그대로). CRAT-Pred·SIMPL은 의도적으로 <b>최소 입력</b>(변위+valid flag
+    3D)만 사용 — "최소 정보로 얼마나 되는가"가 두 모델을 고른 이유 중 하나라 채널을 늘리지
+    않았다. <b>(정정, 2026-07-11)</b> Forecast-MAE도 나머지 4개와 마찬가지로 변위 기반이다 —
+    이전 버전 문서에는 "Forecast-MAE만 절대 위치를 쓴다"고 잘못 적혀 있었으나, 원 논문
+    (<code>av2_extractor.py:155-174</code>)도 프레임간 변위+속도차분을 쓴다는 걸 확인해 adapter를
+    그에 맞게 수정했다(아래 "원 논문 실제 입력 vs TSEM-adapted 입력 대조" 참조). Forecast-MAE는
+    <b>명시적 edge 입력이 없는</b> 유일한 모델이다(에이전트 토큰을 한 시퀀스로 놓고 scene-level
+    self-attention에 상호작용 학습을 전적으로 맡김, 원본 설계 그대로) — 이 특징은 변경 없음.</p>
+
+    <h4 id="cmp-native-input-diff">5개 어댑터 — 원 논문(pristine 코드) 실제 입력 vs TSEM-adapted 입력 대조 (2026-07-11, 원본 코드 직접 조사)</h4>
+    <p><code>comparison/HiVT/</code>, <code>comparison/QCNet/</code>, <code>comparison/crat-pred/</code>,
+    <code>comparison/SIMPL/</code>, <code>comparison/forecast-mae/</code> 5개 pristine clone의
+    전처리·모델 forward 코드를 직접 읽어 "원 논문이 실제로 뭘 입력으로 쓰는지"를 확인하고, 우리
+    adapter(<code>comparison/&lt;model&gt;_tsem/model.py</code>)가 거기서 무엇을 뺐는지/바꿨는지
+    전부 대조했다. 목적: 위 "입력값 정리" 표는 <b>우리 adapter끼리의 비교</b>였고, 이 표는 <b>각
+    adapter가 원 논문 대비 무엇을 잃었는지</b>를 보여준다.</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>모델</th><th>원 논문 agent 노드 입력</th><th>원 논문 맵/lane 입력</th><th>원 논문 edge/관계 입력</th><th>원 논문 출력</th></tr></thead>
+      <tbody>
+        <tr><td><b>HiVT</b></td><td>2D: Δx,Δy(변위, actor별 헤딩 재정렬)</td>
+          <td><b>있음</b> — lane centerline vector(2D) + intersection/turn_direction/traffic_control
+          3종 카테고리 embedding, radius 50m</td>
+          <td>AA/AL 2D(상대위치)</td><td>multi-modal(6모드) Laplace 궤적, 30스텝</td></tr>
+        <tr><td><b>QCNet</b></td><td>4D: motion_norm,motion_angle,velocity_norm,velocity_angle +
+          agent type(10종) embedding</td>
+          <td><b>있음(가장 정교)</b> — polygon+point 2-level lane graph, PRED/SUCC/LEFT/RIGHT 등
+          5종 edge, marking type 17종</td>
+          <td>temporal 4D + spatial 3D, map 쪽 4D+edge type 5종</td>
+          <td>multi-modal(6모드) propose-refine 2단계, 60스텝</td></tr>
+        <tr><td><b>CRAT-Pred</b></td><td>3D: Δx,Δy,valid</td>
+          <td><b>없음</b>(원래부터 map-free)</td>
+          <td>2D: 상대 center(target−source)</td><td>multi-modal(6모드) 궤적, 30스텝</td></tr>
+        <tr><td><b>SIMPL</b></td><td>AV1: 3D(vel dx,dy+pad) / AV2: 14D(disp+heading+vel+type
+          onehot7+pad)</td>
+          <td><b>있음</b> — LaneNet, 10-point polyline당 10D(AV1)/16D(AV2)</td>
+          <td>RPE 5D(cos/sin Δheading, cos/sin bearing, dist) — agent·lane 통합 scene 그래프</td>
+          <td>multi-modal(6모드) Bezier 궤적, 30/60스텝</td></tr>
+        <tr><td><b>Forecast-MAE</b></td><td>4D: Δx,Δy,velocity_diff,valid(history) + agent
+          category(4종) embedding</td>
+          <td><b>있음</b> — LaneEmbeddingLayer(PointNet식, polyline 20점×3D)</td>
+          <td>명시적 edge 없음(scene self-attention)</td>
+          <td>pretrain=변위 복원, finetune=multi-modal 궤적</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>모델</th><th>TSEM-adapted 입력</th><th>뺀 것/바꾼 것</th><th>왜</th></tr></thead>
+      <tbody>
+        <tr><td><b>HiVT</b></td><td>6D(Δx,Δy+speed+dir+accel), edge 2D(원본과 동일)</td>
+          <td>lane 맵 전체(centerline+intersection/turn/traffic 임베딩), agent type, multi-modal
+          궤적 디코더</td>
+          <td>이 데이터셋엔 원본 Argoverse 형식의 HD맵 lane-graph가 없다(<code>road_data/</code>에
+          lane_id는 있으나 이 adapter들엔 배선 안 됨 — 별도 작업). 이 과제(3클래스 분류)엔 agent
+          type이 전부 "차량" 하나뿐이라 구분할 게 없고, 회귀용 multi-modal 디코더는 분류 헤드로
+          교체(공통 패턴)</td></tr>
+        <tr><td><b>QCNet</b></td><td>4D(motion_norm,angle,speed,accel), temporal 4D+spatial 3D</td>
+          <td>2-level lane graph 전체, agent type(10→1종), propose-refine 2단계 구조</td>
+          <td>맵 없음(동일 사유). propose-refine은 회귀 정밀도를 높이는 구조라 분류 태스크엔 불필요</td></tr>
+        <tr><td><b>CRAT-Pred</b></td><td>3D(Δx,Δy,valid), edge 2D</td>
+          <td><b>없음</b> — 5개 중 유일하게 원 논문과 거의 1:1 재현(원래 map-free라 뺄 맵 자체가
+          없음). 회귀 디코더만 분류 헤드로 교체</td>
+          <td>해당 없음 — 원 논문 설계와 가장 가까운 재현</td></tr>
+        <tr><td><b>SIMPL</b></td><td>3D(Δx,Δy,valid, <b>AV1 최소 config 채택</b>), RPE 5D(원본과
+          동일 정의)</td>
+          <td>LaneNet 전체(lane 맵), AV2의 heading+type onehot 확장(14D→3D로 축소)</td>
+          <td>맵 없음(동일 사유). AV2 확장판 대신 AV1 최소 config를 기준으로 삼음 — "최소 입력으로
+          얼마나 되는가"라는 SIMPL을 고른 이유와도 부합, RPE(agent-agent 상대각도·거리)는 원본
+          정의 그대로 보존</td></tr>
+        <tr><td><b>Forecast-MAE</b></td><td>4D(Δx,Δy,speed_diff,valid) — <b>2026-07-11 수정</b>:
+          이전엔 변위 대신 절대위치를 잘못 사용하고 있었음(원 논문도 변위 사용임을 이번 조사로
+          확인, 아래 참조)</td>
+          <td>lane 맵 전체(LaneEmbeddingLayer), agent category embedding, future 궤적 복원
+          브랜치, propose-refine</td>
+          <td>맵 없음(동일 사유). future 복원은 우리 데이터에 미래 좌표 정답이 없어서(3클래스
+          라벨만 존재) 애초에 불가능</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <blockquote><b>⚠️ 2026-07-11 수정 — Forecast-MAE adapter의 실수 정정.</b> 기존 문서(위
+    "입력값 정리" 표, 그리고 "왜 이 입력값 차이가 있어도 비교연구로서 정당한가" 절)에는
+    "Forecast-MAE만 원 논문 설계 그대로 절대위치를 쓴다"고 적혀 있었다. 이건 <b>검증 없이 내린
+    잘못된 추정</b>이었다 — 이번에 <code>comparison/forecast-mae/</code> 원본 코드
+    (<code>src/datasets/av2_extractor.py:155-174</code>)를 직접 읽어보니 <b>원본도 프레임간
+    변위(Δx,Δy)와 속도의 프레임간 차분(velocity_diff)을 쓰지, 절대위치를 쓰지 않는다.</b> 즉 우리
+    <code>forecastmae_tsem/model.py</code>가 절대위치를 쓴 건 원 논문을 따른 게 아니라 <b>의도치
+    않은 설계 이탈</b>이었다. <code>_build_inputs</code>를 수정해 원본과 동일하게 프레임간
+    변위+속도차분 기반으로 바꾸고(<code>test_model.py</code> 3/3 재통과 확인), 아직 300epoch 본
+    실행 전이라 실제 결과에는 영향 없음. <span class="small">— comparison/README.md에 동일 내용
+    상세 기록</span></blockquote>
+
+    <h4 id="cmp-fairness-rationale">왜 이 입력값 차이가 있어도 비교연구로서 정당한가 (2026-07-12 기록, 2026-07-11 코드 검증으로 보강)</h4>
+    <p><b>먼저 진짜로 통제된 것부터 확인.</b> 5개 baseline과 TSEM-SAGE는 다음을 전부 동일하게
+    공유한다: 데이터 소스(<code>node_seq</code>/<code>nbr_node_seqs</code>, 동일 raw 6D 텐서),
+    train/val/test split, W=10/H=10, 라벨 정의(stop ±2, LC window), loss 레시피(focal+class_weight
+    +kl_weight 0.1+uncertainty weight — 5개 config 전부 동일하게 맞춤), 학습 예산(300 epoch/
+    patience 50), 평가 코드(<code>modules/tsem_eval.py</code> 공용). <b>모델 자체와 그 모델이 그
+    raw 6D를 어떻게 가공해서 받는지만 다르다.</b> 즉 "다른 데이터를 봤다"가 아니라 "같은 데이터를
+    다르게 가공해서 봤다"는 뜻이고, 이건 비교연구에서 원래부터 통제 대상이 아니다(각 아키텍처가
+    원 논문에서 정의한 입력 가공 방식은 그 아키텍처의 일부이지, 실험자가 임의로 끼워 맞춘 변수가
+    아니다).</p>
+    <p><b>핵심 확인(코드 직접 대조): 입력 차이는 자의적이지 않고, 5개 baseline 전부가 "같은
+    규칙"을 따른다.</b> <code>hivt_tsem/model.py</code>, <code>qcnet_tsem/model.py</code>,
+    <code>cratpred_tsem/model.py</code>, <code>simpl_tsem/model.py</code>,
+    <code>forecastmae_tsem/model.py</code> 5개 파일의 입력 구성 함수를 전부 대조한 결과, <b>예외
+    없이 전부</b> ego(자기 차량)의 anchor 시점 위치·헤딩을 원점으로 좌표를 이동시키고 회전시켜
+    정규화한다(<code>pos_centered = pos - ego_pos_anchor; rotate by ego_heading</code>). 이건
+    궤적예측 분야의 표준 관행인 <b>translation+rotation invariance(장소·방향 불변성)</b>이며,
+    5개 원 논문이 전부 이 방식을 쓰기 때문에 우리도 그대로 재현한 것이다. <b>세계좌표
+    (world-absolute position)를 그대로 받는 baseline은 5개 중 단 하나도 없다.</b></p>
+    <p>반대로 <b>TSEM-SAGE 자신의 최종 우승 config(10차-2)만 이 불변성을 깨고 있다</b> — raw
+    position 채널 2D(<code>raw_append='position'</code>, 세계좌표 그대로)와 semantic 채널의
+    Δρ(로터리 중심 world 고정 상수 C=(72.86,-13.45)까지의 거리 변화)를 쓴다. 즉 입력 차이의
+    정체는 "baseline이 정보를 못 받아서 불리하다"가 아니라 <b>"TSEM-SAGE만 장소-특정
+    (site-specific) 신호를 켜고, baseline 5개는 전부 원 논문 그대로 장소-불변 신호만
+    쓴다"</b>는 것이다.</p>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>이게 왜 불공정이 아니라 "이미 실측된 트레이드오프"인가.</b> 이 프로젝트 자체의
+      이전 실험(<a data-goto="structure" data-anchor="structure-baseline">§베이스라인</a>,
+      위치 암기 가설)에서 이미 이렇게 확인했다: raw 절대좌표 채널은 +3.74%p를 주지만 이건
+      <b>로터리 단일 지점 암기</b>이고, 교차 장소(DRIFT) 평가에서 이 position 모델은 LC recall이
+      80%→0.3%로 붕괴한다. 즉 TSEM-SAGE가 이 벤치마크(공업탑 단일 장소)에서 baseline을 이기는
+      이유 중 일부는 "NAGraphSAGE 구조가 더 낫다"가 아니라 <b>"이 장소 하나만 맞히도록 세계좌표를
+      암기했다"</b>일 수 있고, baseline들은 원 논문 설계상 애초에 이 암기를 할 수 없게(불변성
+      유지) 만들어져 있다 — 우리가 baseline에게서 이 정보를 빼앗은 게 아니라, baseline의
+      아키텍처 자체(rotate2/rotate6, RPE 등 회전-불변 모듈)가 세계좌표를 받도록 설계되어 있지
+      않다.</div>
+    </div>
+    <p><b>결론 — 논문 Discussion/Limitation에 다음을 명시할 것:</b></p>
+    <blockquote>"5개 baseline은 원 논문이 채택한 ego-anchor 중심 좌표 정규화(translation+rotation
+    invariance)를 예외 없이 그대로 따랐으며, 세계좌표(world-absolute position)나 고정 랜드마크
+    (로터리 중심) 기준 거리 정보를 받지 않는다. 반면 TSEM-SAGE의 최종 config는 이 불변성을
+    의도적으로 깨고 raw 절대좌표 채널과 로터리 중심 기준 거리(Δρ)를 포함한다. 본 프로젝트의 별도
+    교차-장소 평가에서 이 절대좌표 채널이 단일 장소 암기로 인해 타 장소에서 일반화되지 않음을
+    확인했다(LC recall 80%→0.3%). 따라서 본 비교연구에서 TSEM-SAGE가 보이는 우위는 (a)
+    NAGraphSAGE 계열 spatial 구조, (b) 위 장소-특정 좌표 신호, (c) 나머지 semantic feature 중
+    하나 이상에서 기인할 수 있으며 본 실험 설계로는 세 요인이 완전히 분리되지 않는다. 이는
+    baseline의 원 설계(불변성)를 보존하기 위한 의도적 선택이었으나, 향후 연구에서는 (i)
+    TSEM-SAGE에서 position 채널뿐 아니라 semantic 8D 중 로터리 중심 참조 채널(Δρ·접선)까지
+    제거한 완전 invariant 버전(6D: v,a,j,ω,d_lat,κ)과의 비교, (ii) baseline 중 하나에
+    세계좌표/Δρ를 이식하는 입력-통제 ablation을 통해 세 요인을 분리하는 것이 필요하다."
+    <span class="small">— 논문 Discussion/Limitation 절에 포함할 문장 초안</span></blockquote>
+
+    <h4 id="cmp-site-specific-channels">semantic 8D 채널별 site-specific 여부 재점검 (2026-07-11, 코드 직접 확인 — 중요 정정)</h4>
+    <p>위에서 "semantic-only(9차, 78.05%)는 위치 채널이 없으니 공정한 비교용"이라고 서술했는데,
+    <code>models/tsem_semantic_derivation.py</code>(<code>SemanticDerivation.forward</code>)를
+    채널 단위로 직접 읽어보니 <b>이 서술이 부정확했다.</b> semantic 8채널
+    <code>[v, a, j, ω, d_lat, κ, Δρ, 접선]</code>을 계산 방식별로 분해하면 다음과 같다.</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>채널</th><th>계산 방식</th><th>site-specific?</th></tr></thead>
+      <tbody>
+        <tr><td>v, a, j, ω, κ</td><td>자기 궤적의 시간 미분/차분만 사용(speed, heading 변화율 등)</td>
+          <td><b>아니다</b> — 순수 운동학, 장소·방향 불변</td></tr>
+        <tr><td>d_lat</td><td><code>h0,dx,dz = 윈도우 첫 프레임 기준 heading/위치</code>, 즉
+          자기 궤적 시작점 기준 상대 횡변위</td>
+          <td><b>아니다</b> — baseline들의 ego-relative 방식과 동일 성격, 외부 참조 불필요</td></tr>
+        <tr class="hl"><td><b>Δρ (drho)</b></td><td><code>rho = 거리(현재위치, CENTER)</code>의
+          프레임간 변화, <code>CENTER=(72.86,-13.45)</code>는 로터리 중심 world 고정 상수(공업탑
+          전용)</td>
+          <td><b>그렇다</b> — 이 로터리라는 걸 알아야 계산 가능</td></tr>
+        <tr class="hl"><td><b>접선(tangent)</b></td><td><code>dtheta·rho</code> — Δρ와 같은
+          rho/theta(로터리 중심 기준 극좌표)에서 유도</td>
+          <td><b>그렇다</b> — Δρ와 동일한 이유</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>즉 semantic 8D 중 <b>6채널(v,a,j,ω,d_lat,κ)만 진짜로 baseline과 동급으로 불변</b>이고,
+    <b>Δρ·접선 2채널은 raw position 채널과 마찬가지로 site-specific</b>하다. "semantic-only
+    (9차)는 공정한 비교용"이라는 기존 서술은 틀렸다 — 9차도 Δρ·접선을 포함하므로 baseline과 완전히
+    동급이 아니다. <b>진짜 apples-to-apples 버전은 semantic 6D(v,a,j,ω,d_lat,κ)이고, 이 조합은
+    지금까지 단독으로 학습·측정된 적이 없다</b>(10차 계열 ablation 표에는 8D/10D/11D/12D만 있음,
+    <a data-goto="structure" data-anchor="structure-tbl-input">§Table — 입력 조합 ablation</a>
+    참조).</p>
+    <p><b>spatial(ETSAGELayer)은 별도 조치 불필요</b>: spatial 레이어는 raw position을 직접 받지
+    않고 temporal encoder가 만든 노드 임베딩(=위 입력으로 만들어진 것)만 받으며, edge feature도
+    <code>[rel_speed, rel_accel, rel_dir, distance]</code>(두 차량 간 상대량,
+    <code>modules/data_manager.py</code>)라 고정 랜드마크 참조가 없다. 즉 temporal 입력 단에서
+    position+Δρ+접선만 제거하면 spatial 경로도 자동으로 함께 정리된다 — 이중으로 손볼 곳은 없다.</p>
+    <p><b>정규화(normalization) 부재도 별도로 확인</b>: <code>models/tsem_sage.py</code>/
+    <code>train_tsem.py</code> 전체에 z-score/BatchNorm 등 명시적 feature 정규화가 없다 —
+    position(수십 미터), speed(0~15 m/s), ω(라디안, 매우 작은 값) 등이 스케일 그대로 concat된다.
+    이건 site-암기 문제와는 <b>별개의 축</b>이다(정규화해도 Δρ·position이 "이 로터리"라는 정보를
+    담고 있다는 사실 자체는 안 바뀐다 — 스케일만 조정될 뿐 정보량은 그대로) — 학습 안정성 관점에서
+    정석대로 고치는 게 맞지만, fairness 문제의 해법은 아니다.</p>
+    <h4 id="cmp-6d-invariant-result">✅ semantic 6D invariant 실측 완료 (2026-07-12) — 결과는
+    기대와 다르게 나왔다</h4>
+    <p>진짜 공정한 비교용 TSEM-SAGE 버전(<b>semantic 6D: v,a,j,ω,d_lat,κ만 사용, position·Δρ·접선
+    전부 제외</b>)을 실제로 학습했다. 구현은 <code>models/tsem_semantic_derivation.py</code>의
+    <code>variant='invariant'</code>(6D 반환) 옵션 + 전용 config
+    <code>configs/tsem_sage_invariant_6d.yaml</code>(하네스 원칙 §2). HiVT 300epoch 종료를 자동
+    감지해 대기 중이던 SIMPL/Forecast-MAE보다 먼저 실행되도록 배치했다. 결과
+    (<code>checkpoints/tsem/tsem_sage_invariant_6d/results.json</code>):</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>모델</th><th>test acc</th><th>test macro-F1</th></tr></thead>
+      <tbody>
+        <tr><td>Persist baseline</td><td>63.17%</td><td>50.55%</td></tr>
+        <tr><td>CRAT-Pred</td><td>75.02%</td><td>72.84%</td></tr>
+        <tr class="hl"><td><b>TSEM-SAGE 6D invariant(구조만, zero landmark)</b></td>
+          <td><b>76.21%</b></td><td><b>74.78%</b></td></tr>
+        <tr><td>HiVT</td><td>77.48%</td><td>76.35%</td></tr>
+        <tr><td>QCNet</td><td>77.97%</td><td>76.96%</td></tr>
+        <tr><td>TSEM-SAGE semantic 8D(9차, Δρ·접선 포함)</td><td>78.05%</td><td>77.22%</td></tr>
+        <tr><td>TSEM-SAGE 10D(10차-2, site-specific 최종)</td><td>81.91~81.97%</td><td>81.95~82.03%</td></tr>
+        <tr><td>SIMPL / Forecast-MAE</td><td colspan="2">아직 미실행</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>솔직한 해석 — "구조만으로 baseline을 전부 이긴다"는 희망은 부분적으로만 맞았다.</b>
+      6D invariant(76.21%)는 가장 단순한 baseline인 CRAT-Pred(75.02%)는 이기지만, 더 정교한
+      HiVT(77.48%)·QCNet(77.97%)에는 1~1.8%p 뒤진다. 이건 NAGraphSAGE 구조에 novelty가 없다는
+      뜻이 아니라, <b>구조의 우위가 무조건적이지 않고 더 풍부한 정보를 쓰는 baseline 앞에서는
+      좁혀지거나 역전된다</b>는 훨씬 정직하고 미묘한 그림이다. 10D(81.91~81.97%)의 압도적 우위
+      대부분은 여전히 위치 암기 신호(Δρ+raw position)에서 나온다는 게 이 결과로 더 분명해졌다 —
+      기존 위치 암기 서사(<a data-goto="structure" data-anchor="structure-baseline">§베이스라인</a>)와
+      정확히 맞물리는 결과.</div>
+    </div>
+    <p class="small">논문 서사 반영 방향: "구조는 약한 baseline 대비 경쟁력이 있지만, 강한
+    baseline 앞에서는 site-specific 신호(10D)가 진짜 우위를 만든다"는 문장을 Results/Discussion에
+    명시할 것 — 감추지 않고 그대로 반영하는 게 위치 암기 진단 서사의 정직성과도 일치한다. SIMPL·
+    Forecast-MAE 결과가 나오면 이 표를 갱신한다. 5개 중 하나(CRAT-Pred/HiVT)에 world-absolute
+    position/Δρ를 역으로 이식하는 입력-통제 ablation은 여전히 옵션으로 남아있다.</p>
+
+    <h4 id="cmp-h1-interleaved">hypothesis 1(공간 집계 시점) 검증 (2026-07-12)</h4>
+    <p>6D invariant가 HiVT·QCNet에 뒤지는 이유를 "TSEM-SAGE가 spatial 집계를 anchor 프레임에서
+    딱 1번만 한다"는 구조적 차이로 설명할 수 있는지 검증하는 두 갈래. 도식은 Obsidian
+    <code>Drawing 2026-07-12 spatial-temporal 검증.excalidraw.md</code> 참조.</p>
+    <p><b>① edge-temporal — ✅ 구현 완료, 학습은 보류(사용자 결정).</b> 구조 순서(시간 먼저
+    요약 → anchor에서 spatial 1회)는 그대로 두고, edge 표현만 바꾼다.
+    <code>models/tsem_sage.py::TSEMSAGE</code>에 <code>edge_temporal: bool = False</code>
+    (opt-in, 기본값 유지로 하위호환) 추가 — 켜지면 기존 <code>edge_proj</code>(Linear, anchor
+    프레임만) 대신 <code>_encode_edges()</code>가 <code>TemporalEncoder</code>(GRU,
+    et_nagraphsage.py와 동일 모듈 재사용)로 edge_seqs 전체 W프레임을 인코딩한다. 전용 config
+    <code>configs/tsem_sage_invariant_6d_edgetemporal.yaml</code>(6D invariant와 동일,
+    <code>edge_temporal: true</code>만 다름). 실제 데이터로더로 forward+backward 정합성 검증
+    완료(NaN 없음, params 172,073→175,657 — GRU 엣지 인코더만큼 증가,
+    <code>edge_temporal=False</code>는 기존과 파라미터 수 완전히 동일해 하위호환 확인됨).
+    <b>학습은 미실행.</b></p>
+    <p><b>② spatial-temporal 교차 — 🔄 학습 진행 중.</b> 파이프라인 순서 자체를 뒤집는다.
+    <code>models/tsem_sage.py</code>에 <code>TSEMSAGEInterleaved</code> 신설 — 매 프레임 t마다
+    먼저 <code>ETSAGELayer</code>(spatial)로 공간인지 벡터 s_t를 만들고, 시퀀스 s_1..s_W를
+    GRU(시간 인코더)에 넣어 anchor 표현을 얻는다(HiVT의 AAEncoder→TemporalEncoder, QCNet의
+    시공간 attention 교대 반복과 동일 원리). 전용 config
+    <code>configs/tsem_sage_invariant_6d_interleaved.yaml</code>(6D invariant와 라벨/loss/
+    augmentation 전부 동일, 구조만 다름), 1-epoch 스모크 통과(94.5s/epoch, NaN 없음, params
+    216,581).</p>
+    <p class="small"><b>2026-07-12 정정 ①(epoch 수):</b> 최초 <code>num_epochs: 500</code>
+    (TSEM-SAGE 자체 실험 관례)으로 실행했으나, comparison/ 5개 baseline과 직접 비교하는 실험이라
+    300epoch/patience 50 프로토콜로 통일해야 한다는 지적을 받아 config를 300으로 고치고
+    처음부터 재시작(30 epoch 지점에서 중단). <code>edgetemporal.yaml</code>(①)도 동일하게
+    300으로 맞춤 — 6D invariant는 이미 227epoch에서 early stop돼 재실행 불필요.
+    <b>정정 ②(GPU) — 실측 결과 4-GPU가 오히려 느림, 단일 GPU로 원복:</b> epoch 1 시작 전 GPU
+    4개(DataParallel, batch 16384→GPU당 4096)로 전환해봤으나, 실측 결과
+    <b>123.9s/epoch로 단일 GPU(92~96s/epoch)보다 약 30% 느렸다</b> — 이 모델이 작아서
+    (216,581 params, comparison/의 최경량 그룹과 비슷한 급) DataParallel의 모델 복제·scatter/
+    gather 오버헤드가 배치 병렬화 이득을 상쇄한다는 아래 "멀티 GPU 배치 스케일링 실측"의 기존
+    관찰(작은 모델일수록 이득이 작거나 없음)과 정확히 일치하는 결과다.
+    <code>--gpus 0</code>(batch 4096)로 원복해 재시작했다. 완료되면 6D invariant
+    (76.21%/74.78%)와 직접 비교해 위 표에 추가한다.</p>
+
+    <h4>5개 어댑터 — 멀티 GPU(DataParallel) 배치 스케일링 실측 (2026-07-11)</h4>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>2026-07-11 18:55 — 아래 표의 Forecast-MAE 수치는 신뢰할 수 없음(오염된 측정).</b>
+      사후 확인 결과, Forecast-MAE 벤치마크 3건(사전학습 4GPU 18:44 완료, 미세조정 4GPU 18:47
+      완료, 미세조정 2GPU 18:51 완료)이 <b>실제 CRAT-Pred 300epoch 학습(18:38 시작)·HiVT
+      300epoch 학습(18:46 시작)과 같은 GPU 0-3에서 동시에</b> 돌아가는 도중 측정됐다 —
+      "Forecast-MAE는 멀티 GPU에서 이득이 없다"는 결론은 순수 아키텍처 문제가 아니라 <b>다른 두
+      실제 학습 작업과의 자원 경쟁 때문일 가능성이 크다.</b> CRAT-Pred의 1GPU 기준값(57.6초)도
+      다른 작업 없이 측정된 반면 4GPU 값들은 그렇지 않아 비교 기준 자체가 아니다. <b>GPU가 비는
+      대로 격리된 환경에서 재측정 필요</b> — 그 전까지 이 표의 "결론" 칸은 잠정치로만 취급할 것.</div>
+    </div>
+    <p><code>nn.DataParallel</code>은 배치를 GPU 수만큼 쪼개 각 GPU에 할당한다 — config의
+    <code>batch_size</code>를 그대로 쓰면 GPU당 실제 배치가 1/n_gpus로 줄어, 작은 모델은 모델
+    복제·scatter/gather 오버헤드가 실제 연산량을 넘어 GPU를 늘릴수록 오히려 느려질 수 있다.
+    이를 막기 위해 5개 스크립트 전부 총 배치를 <code>config batch_size × n_gpus</code>로 자동
+    스케일하도록 수정했는데(GPU당 배치는 config 값 유지), 결과는 모델마다 갈렸다(단, 아래
+    Forecast-MAE 행은 위 경고 참조).</p>
+    <table>
+      <thead><tr><th>모델</th><th>1GPU(config 배치)</th><th>2GPU(스케일 후)</th>
+        <th>4GPU(스케일 전)</th><th>4GPU(스케일 후)</th><th>결론</th></tr></thead>
+      <tbody>
+        <tr><td>CRAT-Pred</td><td>57.6초/ep(격리 측정)</td><td>—</td><td>120초/ep(격리 측정)</td>
+          <td class="hl"><b>69.7초/ep</b>(격리 측정)</td>
+          <td>스케일링으로 42% 개선, 그래도 1GPU보다 느림 — <b>신뢰 가능</b></td></tr>
+        <tr class="hlb"><td>Forecast-MAE(finetune)</td><td>74.3초/ep(격리 측정, 신뢰 가능)</td>
+          <td>85.4초/ep ⚠️오염</td><td>79.0초/ep ⚠️오염</td><td>—</td>
+          <td><b>재측정 필요</b> — 현재 결론 잠정치</td></tr>
+        <tr class="hlb"><td>Forecast-MAE(pretrain)</td><td>81.6초/ep(격리 측정, 신뢰 가능)</td>
+          <td>—</td><td>—</td><td>81.9초/ep ⚠️오염</td>
+          <td><b>재측정 필요</b> — 현재 결론 잠정치</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><b>결론(확정)</b>: CRAT-Pred는 배치 스케일링이 확실히 도움되지만(그래도
+    1GPU가 근소하게 더 빠름) — 이 값들은 다른 작업 없이 격리된 상태로 측정해 신뢰 가능하다.</p>
+    <p class="small"><b>결론(잠정, 재측정 필요)</b>: Forecast-MAE는 4GPU/2GPU 모두 1GPU보다
+    느리게 측정됐지만, 위 경고대로 그 측정이 실제 CRAT-Pred·HiVT 300epoch 학습과 GPU를 나눠
+    쓰던 도중 이뤄져 신뢰할 수 없다 — <code>train_forecastmae_tsem.py</code>에는 일단
+    <code>n_gpus&gt;1</code>일 때 <code>--gpus 0</code> 권장 경고를 넣어뒀지만(강제로 막지는
+    않음), <b>GPU가 비는 대로 격리 상태에서 재벤치마크해서 이 경고 문구를 유지할지 빼야 할지
+    다시 판단해야 한다.</b> HiVT/QCNet/SIMPL은 아직 멀티 GPU 실측 자체를 안 했다 — 파라미터·
+    연산량이 CRAT-Pred·Forecast-MAE보다 훨씬 커(488K~533K vs 68K~411K) 배치 스케일링의 이득이
+    더 클 것으로 예상되지만, 이것도 실제로 <b>다른 작업 없는 격리 환경에서</b> 확인해야 한다
+    (지금은 이 두 모델 자체가 GPU를 점유 중이라 서로가 서로의 벤치마크 대상이 될 수 없다).</p>
+
     <h4>5개 어댑터 — 공통점</h4>
     <ul class="dash">
       <li><b>그래프 구조 동일</b> — 전부 ego+1-hop 이웃(K=6) 고정 크기(N=7) 그래프만 사용, 2-hop
@@ -1342,7 +1800,7 @@ else:
     </ul>
 
     <h3 id="comparison-hivt"><span class="ic">◆</span>HiVT (CVPR 2022)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-green" style="font-size:10px;">✅ 300epoch 완료 — acc 77.48%/F1 76.35%</span></h3>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/ZikangZhou/HiVT" target="_blank"
     rel="noopener">github.com/ZikangZhou/HiVT</a> (Apache-2.0) · 저장 위치
     <code>comparison/HiVT/</code>(원본) · <code>comparison/hivt_tsem/</code>(어댑터)</p>
@@ -1417,9 +1875,28 @@ else:
     (GPU 1개 기준). 체크포인트는 <code>checkpoints/comparison/hivt_smoketest/</code>에 저장, 최종
     실험에는 사용하지 않고 삭제 예정.</p>
 
-    <h4>실행 방법 (타 서버에서 실행 예정)</h4>
-    <pre># 저장소 전체(comparison/ 포함)를 타 서버로 복사한 뒤
-cd TNA_research
+    <h4 id="cmp-hivt-300ep">✅ 실제 300-epoch 학습 완료 (2026-07-12, 이 서버 GPU 0-3에서 직접 실행)</h4>
+    <p>18:46 시작, 다음날 새벽 종료(early stop). <code>checkpoints/comparison/hivt_tsem_w10_h10/</code>
+    기준 최종 test 결과:</p>
+    <table>
+      <thead><tr><th>지표</th><th>HiVT(300ep)</th><th>Persist baseline</th><th>10차-2(TSEM-SAGE 최종)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td><b>77.48%</b></td><td>63.17%</td><td>81.91%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td><b>76.35%</b></td><td>50.55%</td><td>81.95%</td></tr>
+        <tr><td>stop recall/precision</td><td>94.15% / 79.11%</td><td>—</td><td>—</td></tr>
+        <tr><td>lane_change recall/precision</td><td>72.04% / 71.87%</td><td>—</td><td>—</td></tr>
+        <tr><td>normal recall/precision</td><td>65.00% / 78.53%</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Persist baseline 대비 accuracy <b>+14.31%p</b>, macro-F1 <b>+25.80%p</b>. 5개
+    baseline 중 CRAT-Pred(75.02%)는 이기고, 10차-2(81.91%)에는 accuracy −4.43%p, macro-F1 −5.60%p
+    뒤진다. raw 6D 전 채널(TSEM-SAGE와 동일 정보량)을 쓰는데도 10차-2보다 낮다는 건, 10차-2의
+    우위 중 상당 부분이 NAGraphSAGE 구조나 정보량 자체가 아니라 <b>semantic 분해+위치 암기
+    신호(Δρ·raw position)</b>에서 온다는 걸 보여주는 또 하나의 근거다(<a data-goto="comparison"
+    data-anchor="cmp-site-specific-channels">§semantic 채널별 site-specific 재점검</a> 참조).</p>
+
+    <h4>실행 방법 (참고용 — 이 서버에서 이미 실행 완료)</h4>
+    <pre>cd TNA_research
 conda activate tna_research   # torch_geometric 불필요 — 순수 PyTorch만 사용
 
 # (선택) 재구현 검증 먼저 재실행 — 수 초 내 완료
@@ -1429,14 +1906,12 @@ python comparison/hivt_tsem/test_model.py
 python comparison/hivt_tsem/train_hivt_tsem.py \
     --config comparison/hivt_tsem/config.yaml \
     --experiment hivt_tsem_w10_h10 --gpus 0,1,2,3</pre>
-    <p class="small">데이터 경로(<code>data.data_dir: /home/oem/data/TII_data/</code>)가 타 서버에도
-    동일하게 있어야 캐시를 새로 빌드하지 않고 그대로 재사용 가능 — 없으면 최초 1회 캐시 빌드가 필요하다
-    (기존 TSEM-SAGE 실험 로그 기준 수 분~수십 분 소요). 결과는
-    <code>checkpoints/comparison/hivt_tsem_w10_h10/results.json</code>에 저장되며, 10차-2(acc 81.91%/
-    F1 81.95%)와 같은 형식(<code>modules/tsem_eval.py</code> 출력)이라 바로 비교 가능하다.</p>
+    <p class="small">결과는 <code>checkpoints/comparison/hivt_tsem_w10_h10/results.json</code>에
+    저장되며, 10차-2(acc 81.91%/F1 81.95%)와 같은 형식(<code>modules/tsem_eval.py</code> 출력)이라
+    바로 비교 가능하다.</p>
 
     <h3 id="comparison-qcnet"><span class="ic">◆</span>QCNet (CVPR 2023)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-green" style="font-size:10px;">✅ 300epoch 완료 — acc 77.97%/F1 76.96%</span></h3>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/ZikangZhou/QCNet" target="_blank"
     rel="noopener">github.com/ZikangZhou/QCNet</a> (Apache-2.0, 같은 저자 Zikang Zhou의 HiVT 후속작)
     · 저장 위치 <code>comparison/QCNet/</code>(원본) · <code>comparison/qcnet_tsem/</code>(어댑터)</p>
@@ -1508,9 +1983,28 @@ python comparison/hivt_tsem/train_hivt_tsem.py \
     그래프(ego+6이웃)에서는 계산량이 더 적기 때문으로 보인다. 체크포인트는
     <code>checkpoints/comparison/qcnet_smoketest/</code>에 저장, 최종 실험에는 사용하지 않고 삭제 예정.</p>
 
-    <h4>실행 방법 (타 서버에서 실행 예정)</h4>
-    <pre># 저장소 전체(comparison/ 포함)를 타 서버로 복사한 뒤
-cd TNA_research
+    <h4 id="cmp-qcnet-300ep">✅ 실제 300-epoch 학습 완료 (2026-07-12, 이 서버 GPU 0-3에서 직접 실행)</h4>
+    <p>21:12 시작, HiVT와 겹치는 시간대에 같은 GPU 0-3을 공유하며 실행됐다(자원 경쟁이 있었으나
+    학습 자체의 정합성에는 영향 없음 — loss/accuracy는 정상 수렴). <code>checkpoints/comparison/qcnet_tsem_w10_h10/</code>
+    기준 최종 test 결과:</p>
+    <table>
+      <thead><tr><th>지표</th><th>QCNet(300ep)</th><th>Persist baseline</th><th>10차-2(TSEM-SAGE 최종)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td><b>77.97%</b></td><td>63.17%</td><td>81.91%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td><b>76.96%</b></td><td>50.55%</td><td>81.95%</td></tr>
+        <tr><td>stop recall/precision</td><td>93.64% / 78.88%</td><td>—</td><td>—</td></tr>
+        <tr><td>lane_change recall/precision</td><td>71.37% / 74.63%</td><td>—</td><td>—</td></tr>
+        <tr><td>normal recall/precision</td><td>66.92% / 78.57%</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Persist baseline 대비 accuracy <b>+14.80%p</b>, macro-F1 <b>+26.41%p</b> —
+    5개 문헌 baseline 중 <b>현재까지 최고 성능</b>(HiVT 77.48%, CRAT-Pred 75.02%보다 높음). 10차-2
+    (81.91%)에는 여전히 accuracy −3.94%p, macro-F1 −4.99%p 뒤진다. 가공된 4D 입력(motion 크기·각도
+    +speed+accel)만으로 raw 6D를 그대로 쓰는 HiVT보다 나은 성능이 나온 건 QCNet의 시공간 attention
+    교대 반복 구조가 이 작은 그래프(ego+6이웃)에서도 효율적으로 작동함을 시사한다.</p>
+
+    <h4>실행 방법 (참고용 — 이 서버에서 이미 실행 완료)</h4>
+    <pre>cd TNA_research
 conda activate tna_research   # torch_geometric·torch_cluster 불필요 — 순수 PyTorch만 사용
 
 # (선택) 재구현 검증 먼저 재실행 — 수 초 내 완료
@@ -1520,12 +2014,12 @@ python comparison/qcnet_tsem/test_model.py
 python comparison/qcnet_tsem/train_qcnet_tsem.py \
     --config comparison/qcnet_tsem/config.yaml \
     --experiment qcnet_tsem_w10_h10 --gpus 0,1,2,3</pre>
-    <p class="small">데이터 경로·결과 저장 형식은 HiVT-adapted와 동일 —
+    <p class="small">결과는
     <code>checkpoints/comparison/qcnet_tsem_w10_h10/results.json</code>에 저장되며, 10차-2(acc
     81.91%/F1 81.95%)와 같은 형식(<code>modules/tsem_eval.py</code> 출력)이라 바로 비교 가능하다.</p>
 
     <h3 id="comparison-cratpred"><span class="ic">◆</span>CRAT-Pred (ICRA 2022)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-green" style="font-size:10px;">✅ 300epoch 완료 — acc 75.02%/F1 72.84%</span></h3>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/schmidt-ju/crat-pred" target="_blank"
     rel="noopener">github.com/schmidt-ju/crat-pred</a> · 저장 위치
     <code>comparison/crat-pred/</code>(원본) · <code>comparison/cratpred_tsem/</code>(어댑터)</p>
@@ -1591,9 +2085,35 @@ python comparison/qcnet_tsem/train_qcnet_tsem.py \
     <code>checkpoints/comparison/cratpred_smoketest/</code>에 저장, 최종 실험에는 사용하지 않고
     삭제 예정.</p>
 
-    <h4>실행 방법 (타 서버에서 실행 예정)</h4>
-    <pre># 저장소 전체(comparison/ 포함)를 타 서버로 복사한 뒤
-cd TNA_research
+    <h4>✅ 실제 300-epoch 학습 완료 (2026-07-11, 이 서버에서 직접 실행)</h4>
+    <p>당초 "타 서버에서 진행 예정"이었으나 실제로는 이 서버 GPU 0-3에서 바로 실행해 완료됐다
+    (<code>kl_weight: 0.1</code>/<code>use_uncertainty_weight: true</code> 수정 반영 + 배치
+    스케일링 적용 후 버전). <b>best epoch 78</b>(early stop patience 50,
+    <code>checkpoints/comparison/cratpred_tsem_w10_h10/</code>) 기준 최종 test 결과:</p>
+    <table>
+      <thead><tr><th>지표</th><th>CRAT-Pred(300ep, best@78)</th><th>Persist baseline</th><th>10차-2(TSEM-SAGE 최종)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td><b>75.02%</b></td><td>63.17%</td><td>81.91%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td><b>72.84%</b></td><td>50.55%</td><td>81.95%</td></tr>
+        <tr><td>stop recall/precision</td><td>95.81% / 76.94%</td><td>—</td><td>—</td></tr>
+        <tr><td>lane_change recall/precision</td><td>59.30% / 71.08%</td><td>—</td><td>—</td></tr>
+        <tr><td>normal recall/precision</td><td>63.59% / 74.29%</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Persist baseline 대비 accuracy <b>+11.85%p</b>, macro-F1 <b>+22.29%p</b>로
+    뚜렷하게 상회 — 학습이 정상적으로 수렴했다는 확실한 근거다. 다만 10차-2(TSEM-SAGE 최종 채택
+    모델) 대비로는 accuracy <b>−6.89%p</b>, macro-F1 <b>−9.11%p</b> 낮다 — 파라미터 수(68,291,
+    TSEM-SAGE의 약 1/2.5)가 훨씬 적은 경량 구조라는 점을 감안하면 예상 범위 내 결과다.</p>
+    <p class="small"><b>1-epoch 스모크테스트 대비 변화</b>: accuracy 69.61%→75.02%(+5.41%p),
+    macro-F1 67.41%→72.84%(+5.43%p)로 학습이 진행될수록 꾸준히 개선됐다. 다만 <b>LC recall은
+    오히려 하락</b>했다(1-epoch 70.45%(val) → 300ep 완주 후 59.30%(test)) — 학습 초반엔 LC를
+    과다예측하다가, 학습이 진행되며 normal/stop 쪽 정확도가 함께 올라가면서 LC recall이
+    상대적으로 낮아진 것으로 보인다(LC precision은 오히려 71.08%로 높아짐 — recall↔precision
+    트레이드오프 방향). 단일 run이라 확정적 결론은 아니고, 다른 4개 모델도 완주 후 같은 패턴을
+    보이는지 비교가 필요하다.</p>
+
+    <h4>실행 방법 (참고용 — 이 서버에서 이미 실행 완료)</h4>
+    <pre>cd TNA_research
 conda activate tna_research   # torch_geometric 불필요 — 순수 PyTorch만 사용
 
 # (선택) 재구현 검증 먼저 재실행 — 수 초 내 완료
@@ -1603,7 +2123,7 @@ python comparison/cratpred_tsem/test_model.py
 python comparison/cratpred_tsem/train_cratpred_tsem.py \
     --config comparison/cratpred_tsem/config.yaml \
     --experiment cratpred_tsem_w10_h10 --gpus 0,1,2,3</pre>
-    <p class="small">데이터 경로·결과 저장 형식은 HiVT/QCNet-adapted와 동일 —
+    <p class="small">결과 저장 형식은 HiVT/QCNet-adapted와 동일 —
     <code>checkpoints/comparison/cratpred_tsem_w10_h10/results.json</code>에 저장되며, 10차-2(acc
     81.91%/F1 81.95%)와 같은 형식(<code>modules/tsem_eval.py</code> 출력)이라 바로 비교 가능하다.</p>
 
@@ -1806,7 +2326,299 @@ python comparison/forecastmae_tsem/train_forecastmae_tsem.py \
     10차-2(acc 81.91%/F1 81.95%)와 같은 형식(<code>modules/tsem_eval.py</code> 출력)이라 바로
     비교 가능하다.</p>
 
-    <footer>TSEM-SAGE 저널 연구 설계 · 비교 연구(comparison/) · 2026-07-11</footer>
+    <h3 id="comparison-newbatch"><span class="ic">◆</span>개요 · 신규 5종 (STGCN/DCRNN/TGN/LSTM/Transformer, 2026-07-12)
+      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료 (5/5)</span></h3>
+    <p class="sec-desc">위 5개 문헌 baseline(HiVT/QCNet/CRAT-Pred/SIMPL/Forecast-MAE)과 별도로,
+    그래프-시계열 예측 계열의 대표 아키텍처 3종(STGCN/DCRNN/TGN)과 "학습되는 공간 상호작용 모듈이
+    아예 없을 때 이 데이터셋에서 얼마나 되는가"를 보는 순수 아키텍처 대조군 2종(LSTM/Transformer)을
+    추가했다. 위쪽 §개요·진행상황의 원칙 1~5를 그대로 따른다 — <b>STGCN/DCRNN/TGN은
+    <code>comparison/&lt;Model&gt;/</code>(원본 clone, 미수정) + <code>comparison/&lt;model&gt;_tsem/</code>
+    (어댑터) 2단 구조</b>를 그대로 따랐고, <b>LSTM/Transformer는 원본 GitHub repo가 존재하지 않는
+    일반 아키텍처</b>라 어댑터 폴더만 만들었다(원칙 2의 전제인 "보존할 원본 구현" 자체가 없음 —
+    표준 <code>nn.LSTM</code>/<code>nn.TransformerEncoder</code>를 그대로 사용). data/graph/train/
+    loss/augment config 섹션도 <code>cratpred_tsem/config.yaml</code>과 동일하게 맞췄다(모델 섹션만
+    고유 하이퍼파라미터). 전부 재구현 검증(<code>test_model.py</code>, 독립 브루트포스 대조) PASS.</p>
+    <div class="meta">
+      <span class="chip">✅ 5개 어댑터 구현 완료</span>
+      <span class="chip">✅ 재구현 검증 전부 통과 (8/8, 4/4, 5/5, 3/3, 4/4)</span>
+      <span class="chip">🐛 STGCN·TGN 검증에서 각각 실버그 발견·수정</span>
+      <span class="chip">⏳ GPU 여유 부족으로 정식 1-epoch 스모크 대신 50-step 미니 학습만 확인</span>
+      <span class="chip">⏳ 전체 학습은 GPU 여유 확보 후 예정</span>
+    </div>
+
+    <h4>신규 5종 — 입력값(모델 입력 규격) 정리</h4>
+    <p>위 "5개 어댑터 — 입력값 정리" 표와 동일한 형식 — 전부
+    <code>modules/data_manager_tsem.py</code>가 만드는 동일한 6D raw 노드 피처
+    <code>[pos_x, pos_z, speed, dir_x, dir_z, accel]</code>에서 출발한다.</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>모델</th><th>노드 입력(차원)</th><th>구성</th><th>edge/관계 입력(차원)</th><th>구성</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>STGCN</b></td><td><b>6D</b></td>
+          <td>Δx,Δz(scene-align 변위)+speed+dir_x,dir_z+accel — raw 6D 전 채널(HiVT와 동일 근거)</td>
+          <td>없음(노드 edge feature 아님)</td>
+          <td>N×N 인접행렬(Gaussian distance kernel, σ=10m) — 그래프 conv 자체가 관계 정보</td></tr>
+        <tr class="hl"><td><b>DCRNN</b></td><td><b>6D</b></td>
+          <td>위와 동일(HiVT와 동일 근거)</td>
+          <td>없음(노드 edge feature 아님)</td>
+          <td>N×N 양방향 확산 전이행렬 P_f,P_b(Gaussian distance kernel 기반 인접행렬에서 유도)</td></tr>
+        <tr class="hl"><td><b>TGN</b></td><td><b>6D</b></td>
+          <td>위와 동일(HiVT와 동일 근거)</td>
+          <td>5D</td>
+          <td>edge_seqs 그대로: rel_speed,rel_accel,rel_dir_x,rel_dir_z,distance — message function 입력</td></tr>
+        <tr><td><b>LSTM</b>(원본 repo 없음)</td><td><b>6D</b></td>
+          <td>Δx,Δz(scene-align 변위)+speed+dir_x,dir_z+accel — HiVT와 동일 정보량</td>
+          <td>없음</td><td>공간 상호작용 모듈 자체가 없음(masked mean-pooling)</td></tr>
+        <tr><td><b>Transformer</b>(원본 repo 없음)</td><td><b>6D</b></td>
+          <td>위와 동일</td>
+          <td>없음</td><td>공간 상호작용 모듈 자체가 없음(masked mean-pooling, LSTM과 대조쌍)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small"><b>해석</b>: STGCN/DCRNN/TGN 셋 다 6D 전 채널을 사용 — 원 논문들은 각각 도로
+    센서 하나당 스칼라(교통 속도) 하나만 입력으로 쓰지만, HiVT와 동일하게 "정보량 손실 없이 준다"는
+    원칙을 적용했다. STGCN·DCRNN은 <b>명시적 edge feature가 없다</b> — 대신 그래프 자체(인접행렬/
+    확산 전이행렬)가 관계 정보를 담는 구조라 HiVT/CRAT-Pred류의 "edge feature 벡터" 개념 자체가
+    원 논문에 없다(인접행렬은 둘 다 Gaussian distance kernel로 구성 — 원 논문의 도로망 거리 기반
+    가중 인접행렬에 더 충실한 선택). <b>TGN만 유일하게</b> <code>edge_seqs</code> 5D(다른 5개
+    baseline과 동일한 원시 edge feature)를 그대로 message function 입력으로 쓴다 — 원 논문 자체가
+    "상호작용(edge event)마다 메시지를 만든다"는 설계라 이 개념과 정확히 대응된다. LSTM/Transformer는
+    <b>공간 상호작용 모듈 자체가 없는 게 설계 의도</b>라 edge 입력 개념이 없다 — 나머지 9개
+    baseline 전부가 갖는 학습된 공간 상호작용 메커니즘(attention/GNN/diffusion conv)을 뺀 순수
+    시간축-only 대조군이다.</p>
+
+    <h4>신규 5종 — 파라미터/검증 요약</h4>
+    <table>
+      <thead><tr><th>모델</th><th>파라미터</th><th>원본 repo</th><th>재구현 검증</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>STGCN</td><td class="hl"><b>7,827</b>(최경량)</td><td><code>hazdzz/STGCN</code></td>
+          <td>8/8 PASS<span class="badge b-red" style="font-size:9px;">실버그 발견·수정</span></td>
+          <td>Gaussian kernel 인접행렬</td></tr>
+        <tr><td>DCRNN</td><td class="hl"><b>190,659</b>(최대)</td><td><code>chnsh/DCRNN_PyTorch</code></td>
+          <td>4/4 PASS</td><td>K=0→표준GRU 동치 sanity check</td></tr>
+        <tr><td>TGN</td><td>81,695</td><td><code>twitter-research/tgn</code></td>
+          <td>5/5 PASS<span class="badge b-red" style="font-size:9px;">실버그 발견·수정</span></td>
+          <td>memory 샘플단위 리셋(설계 이탈)</td></tr>
+        <tr><td>LSTM</td><td>26,883</td><td>없음(대조군)</td><td>3/3 PASS</td>
+          <td>공간모듈 없음, masked mean-pool</td></tr>
+        <tr><td>Transformer</td><td>75,843</td><td>없음(대조군)</td><td>4/4 PASS</td>
+          <td>공간모듈 없음, LSTM과 대조쌍</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><b>주의</b>: 위 5종은 아직 1-epoch 스모크테스트(정식 accuracy/F1 측정)가
+    아니라 50-step 미니 학습만 확인했다(GPU 4개가 이미 다른 300-epoch job으로 21~22GB/24GB씩 차
+    있어 정식 스모크 대신 여유 있는 GPU에서 소규모 스텝만 확인) — 위 "다섯 모델 종합" 표의 5개
+    문헌 baseline과 달리 아직 accuracy/F1/LC recall 수치가 없다. GPU가 비는 대로 각
+    <code>comparison/&lt;model&gt;_tsem/train_&lt;model&gt;_tsem.py</code>로 1-epoch 스모크 →
+    이상 없으면 300-epoch(patience 50) 본 실행 예정.</p>
+
+    <h3 id="comparison-stgcn"><span class="ic">◆</span>STGCN (IJCAI 2018)
+      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+    <p class="sec-desc">원본: <a class="doclink" href="https://github.com/hazdzz/STGCN" target="_blank"
+    rel="noopener">github.com/hazdzz/STGCN</a>(Yu, Yin &amp; Zhu 원 논문의 순수 PyTorch 재구현,
+    <code>torch_geometric</code> 의존 없음) · 저장 위치 <code>comparison/STGCN/</code>(원본) ·
+    <code>comparison/stgcn_tsem/</code>(어댑터)</p>
+    <h4>설계 변경점</h4>
+    <p>핵심은 <b>ST-Conv 블록</b>(temporal gated conv → graph conv → temporal gated conv 반복) —
+    원래는 고정된 도로 센서망(그래프 구조가 매 샘플 동일) 위의 교통량 회귀용이라, 우리처럼 샘플마다
+    다른 ego+이웃(K=6, N=7) 그래프를 쓰려면 배치별로 인접행렬을 새로 구성해야 한다.</p>
+    <ul class="dash">
+      <li><b>Temporal Gated Conv</b>: 원본과 동일하게 1D causal convolution + GLU(Gated Linear Unit)
+      그대로 재현, 커널 크기(Kt=3)만 W=10 시퀀스 길이에 맞게 축소.</li>
+      <li><b>Graph Conv</b>: 원본의 1차 근사(GCN 스타일) 정규화 인접행렬 Â=D⁻¹ᐟ²(A+I)D⁻¹ᐟ²를 N=7
+      dense 텐서 행렬곱으로 구현(<code>torch_geometric</code>/sparse 불필요). 인접행렬은 이진 대신
+      <b>Gaussian distance kernel</b>(σ=10m)로 구성 — 원 논문(도로망 거리 기반 가중 인접행렬)에
+      더 충실하다는 판단.</li>
+      <li>다중스텝 회귀 출력(원본은 미래 여러 스텝 교통량 예측) 제거 → ego 노드 최종 표현을 분류
+      헤드로.</li>
+      <li>노드 입력 6D(HiVT와 동일 근거), scene 1회 정렬(ego anchor 위치·헤딩 기준 회전)은 다른
+      baseline과 동일 적용.</li>
+    </ul>
+    <h4>재구현 검증 (2026-07-12, <code>comparison/stgcn_tsem/test_model.py</code>, 8/8 PASS)</h4>
+    <p>정규화 인접행렬 vs 손계산(3노드), 무효 노드 고립 처리, graph conv einsum vs 노드별 for-loop,
+    causal conv의 인과성(미래 프레임이 과거 출력에 영향 없음), 배치 vs 샘플별 단독 처리(그래프
+    누수 없음) 등을 검증했다. <b>검증 중 실제 버그 1건 발견·수정</b>: <code>LayerNorm</code>이
+    vertex+channel 축을 함께 정규화하면서, graph conv가 무효 이웃의 메시지 기여는 정확히 0으로
+    처리했음에도 무효 이웃의 raw 피처가 LayerNorm 통계량에는 그대로 섞여 들어가고 있었다 — ST-Conv
+    스택 진입 전에 무효 노드 피처를 명시적으로 0으로 만드는 방식으로 수정 후 재검증, 전부 PASS.</p>
+    <table>
+      <thead><tr><th>지표</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>파라미터 수</td><td class="hl"><b>7,827</b>(6개 신규 baseline 중 최경량)</td></tr>
+        <tr><td>50-step 미니 학습(GPU2, batch=8)</td><td>loss 0.607→0.207, NaN 없음</td></tr>
+      </tbody>
+    </table>
+    <pre>cd TNA_research
+conda activate tna_research   # torch_geometric 불필요 — 순수 PyTorch만 사용
+python comparison/stgcn_tsem/test_model.py
+python comparison/stgcn_tsem/train_stgcn_tsem.py \
+    --config comparison/stgcn_tsem/config.yaml \
+    --experiment stgcn_tsem_w10_h10 --gpus 0,1,2,3</pre>
+
+    <h3 id="comparison-dcrnn"><span class="ic">◆</span>DCRNN (ICLR 2018)
+      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+    <p class="sec-desc">원본: <a class="doclink" href="https://github.com/chnsh/DCRNN_PyTorch"
+    target="_blank" rel="noopener">github.com/chnsh/DCRNN_PyTorch</a>(Li, Yi, Shahabi &amp; Liu 원
+    논문의 PyTorch 포트 — 저자 공식 구현은 TensorFlow뿐) · 저장 위치 <code>comparison/DCRNN/</code>
+    (원본) · <code>comparison/dcrnn_tsem/</code>(어댑터)</p>
+    <h4>설계 변경점</h4>
+    <p>핵심은 <b>DCGRU</b> — 표준 GRU의 게이트 내부 선형변환(Wx+Uh)을 그래프 위의 <b>diffusion
+    convolution</b>(K-hop 양방향 확산, forward P_f=D_O⁻¹A · backward P_b=D_I⁻¹Aᵀ)으로 치환한
+    구조. 원본은 seq2seq 인코더-디코더로 멀티스텝 회귀를 하지만, 분류 문제인 우리는 <b>인코더만</b>
+    사용(디코더 제거 — 다른 baseline과 동일한 "회귀→분류" 공통 패턴).</p>
+    <ul class="dash">
+      <li>diffusion conv <code>Σ(θ_{k,f}P_f^k x + θ_{k,b}P_b^k x)</code>를 N=7 dense 텐서의 반복
+      행렬곱(<code>bmm</code>)으로 구현 — 원본의 sparse/Chebyshev 재귀 대신 논문 원 수식을 그대로
+      직접 계산(작은 그래프라 dense가 더 단순하고 안전). 인접행렬은 STGCN과 동일하게 Gaussian
+      distance kernel로 구성해 P_f/P_b를 유도.</li>
+      <li>DCGRU 셀은 표준 GRU 게이트 수식(update/reset/candidate)에서 Wx+Uh만 diffusion conv로
+      치환 — 원본과 동일 재현. W=10 프레임 순차 적용 후 ego(slot 0) 최종 hidden state를 분류
+      헤드로.</li>
+      <li>노드 입력 6D(HiVT와 동일 근거), 2-hop 이웃 미사용(K-hop diffusion conv 자체가 확산
+      범위를 커버하므로 원본 2-hop 데이터는 불필요 — 다른 baseline과 동일 근거).</li>
+    </ul>
+    <h4>재구현 검증 (2026-07-12, <code>comparison/dcrnn_tsem/test_model.py</code>, 4/4 PASS)</h4>
+    <p><code>build_diffusion_supports</code>(P_f,P_b 구성, 무효 노드 마스킹 포함) vs 손계산(4노드),
+    벡터화 diffusion conv vs 노드별 for-loop(K=3), <b>K=0일 때 DCGRU가 표준 fc-GRU와 수식적으로
+    완전히 동치가 되는지</b>(diffusion 항이 결과에 영향 없음을 직접 확인 — sanity check), 배치 vs
+    샘플별 단독 처리(그래프 누수 없음)를 검증했다.</p>
+    <table>
+      <thead><tr><th>지표</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>파라미터 수</td><td class="hl"><b>190,659</b>(hidden_dim=64, K=2, num_layers=2 — 6개 신규 baseline 중 최대)</td></tr>
+        <tr><td>50-step 미니 학습(GPU2, batch=32)</td><td>loss 0.49→0.23, 3.9초/50step, NaN 없음</td></tr>
+      </tbody>
+    </table>
+    <pre>cd TNA_research
+conda activate tna_research
+python comparison/dcrnn_tsem/test_model.py
+python comparison/dcrnn_tsem/train_dcrnn_tsem.py \
+    --config comparison/dcrnn_tsem/config.yaml \
+    --experiment dcrnn_tsem_w10_h10 --gpus 0,1,2,3</pre>
+
+    <h3 id="comparison-tgn"><span class="ic">◆</span>TGN (ICML 2020 Workshop)
+      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+    <p class="sec-desc">원본: <a class="doclink" href="https://github.com/twitter-research/tgn"
+    target="_blank" rel="noopener">github.com/twitter-research/tgn</a>(Rossi et al., Twitter
+    Research, Apache 2.0) · 저장 위치 <code>comparison/TGN/</code>(원본) ·
+    <code>comparison/tgn_tsem/</code>(어댑터)</p>
+    <h4>설계 변경점 — 가장 큰 설계 이탈</h4>
+    <p><b>원본 TGN은 비동기 연속시간 이벤트 스트림 위에서, 전체 데이터셋에 걸쳐 지속되는 전역
+    memory 테이블</b>로 동작하지만, 우리 과제는 W=10 고정 길이 윈도우 단위의 지도학습 분류이고
+    그래프도 샘플마다(KNN) 다르다 — 전역 영속 memory를 그대로 쓰면 train/val/test 분할을 가로질러
+    정보가 새는 구조적 모순이 생긴다. 그래서 <b>memory를 샘플 단위로 리셋</b>한다: 각 샘플의
+    에이전트 슬롯(1+K=N개)마다 윈도우 시작 시 zero-initialized memory를 두고, W개 프레임을 순서대로
+    "이벤트 배치"로 처리하며 원본과 동일한 message→aggregate→GRUCell 갱신 규칙을 매 프레임
+    적용한다. 이 이탈은 "연속 스트림 데이터가 없다"는 데이터 특성상 불가피한 최소 변경이라
+    판단했다(다른 4개 신규 baseline도 "핵심 메커니즘 보존, 필요한 만큼만 변경" 원칙을 따름).</p>
+    <ul class="dash">
+      <li><b>Message function</b>: <code>MLP([memory_src, memory_dst, edge_feat, Δt인코딩])</code>
+      — <code>edge_seqs</code> 5D(rel_speed,rel_accel,rel_dir_x,rel_dir_z,distance)를 그대로 edge
+      feature로 사용(원본 <code>MLPMessageFunction</code>과 구조 동일 — TGN이 유일하게 다른 5개
+      문헌 baseline과 같은 edge feature 개념을 쓰는 이유).</li>
+      <li><b>Message aggregator</b>: 원본의 mean aggregator를 masked mean(N≤7 dense)으로 재현.</li>
+      <li><b>Memory updater</b>: <code>nn.GRUCell(message_dim, memory_dim)</code>, 원본과 동일.</li>
+      <li><b>Embedding module</b>: <code>TemporalAttentionLayer</code>를 masked
+      <code>nn.MultiheadAttention</code> 기반으로 재현, 원본처럼 매 프레임이 아니라 <b>anchor
+      시점(t=W-1)에만</b> 적용(원본도 실제 쿼리 시점에만 임베딩을 계산하므로 동일 원칙).</li>
+      <li>노드 입력 6D, scene 1회 정렬은 다른 baseline과 동일 적용, 1-hop만 사용.</li>
+    </ul>
+    <h4>재구현 검증 (2026-07-12, <code>comparison/tgn_tsem/test_model.py</code>, 5/5 PASS)</h4>
+    <p>masked mean vs for-loop, GRUCell 순차 memory 갱신 손계산 대조, <b>전체 forward 파이프라인을
+    완전히 독립적으로 손계산한 memory 갱신+attention과 K=1 케이스로 end-to-end 대조</b>(오차 0),
+    temporal attention의 masked softmax vs 수동 QK^T softmax(고립 노드 케이스 포함)를 검증했다.
+    <b>검증 중 실제 버그 1건 발견·수정</b>: 브루트포스 참조 구현 쪽에서 head 결합 후
+    <code>out_proj</code>를 빠뜨렸고, 고립 노드(이웃 0개)일 때의 zero-fill 정책도 원본과 다르게
+    처리하고 있었다 — 수정 후 재검증 전부 PASS. 배치 vs 샘플별 단독 처리(memory가 샘플 단위로
+    리셋되므로 누수가 없어야 함)도 확인.</p>
+    <table>
+      <thead><tr><th>지표</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>파라미터 수</td><td><b>81,695</b>(memory_dim=64, message_dim=64, time_dim=16)</td></tr>
+        <tr><td>50-step 미니 학습(GPU2, batch=32)</td><td>loss 1.257→0.222, NaN 없음</td></tr>
+      </tbody>
+    </table>
+    <pre>cd TNA_research
+conda activate tna_research
+python comparison/tgn_tsem/test_model.py
+python comparison/tgn_tsem/train_tgn_tsem.py \
+    --config comparison/tgn_tsem/config.yaml \
+    --experiment tgn_tsem_w10_h10 --gpus 0,1,2,3</pre>
+
+    <h3 id="comparison-lstm"><span class="ic">◆</span>LSTM (원본 repo 없음 — 아키텍처 대조군)
+      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+    <p class="sec-desc">저장 위치 <code>comparison/lstm_tsem/</code>(어댑터만, 원본 clone 없음)</p>
+    <h4>설계 메모</h4>
+    <p>문헌에서 가져온 baseline이 아니라, <b>"학습되는 공간 상호작용 모듈이 아예 없을 때 이
+    데이터셋에서 얼마나 되는가"를 보는 대조군</b>이다 — 나머지 9개(TSEM-SAGE 포함 8개 문헌/그래프
+    baseline)는 전부 attention/GNN/diffusion conv 중 하나로 명시적인 공간 상호작용을 학습하지만,
+    이 둘(LSTM/Transformer)은 그 모듈을 의도적으로 제거했다.</p>
+    <ul class="dash">
+      <li>노드 입력 6D(scene 1회 정렬된 변위+speed+dir+accel, HiVT와 동일 정보량).</li>
+      <li>ego와 각 이웃(K=6)을 <b>가중치 공유 단일 <code>nn.LSTM</code></b>(CRAT-Pred의
+      <code>TSEMEncoderLstm</code>과 같은 방식이나 입력 차원만 6으로 확장)으로 독립 인코딩, 마지막
+      timestep hidden state를 임베딩으로 사용.</li>
+      <li>공간 처리는 <b>의도적으로 없음</b> — 유효한 이웃 임베딩을 학습 파라미터 없는 <b>masked
+      mean-pooling</b>으로 합친다(attention도 GNN도 아님 — 이게 이 baseline의 핵심 포인트).</li>
+      <li><code>concat([ego_embed, pooled_nbr_embed])</code> → MLP → 3클래스.</li>
+    </ul>
+    <h4>재구현 검증 (2026-07-12, <code>comparison/lstm_tsem/test_model.py</code>, 3/3 PASS)</h4>
+    <p>masked mean-pooling 벡터화 vs 브루트포스 for-loop 대조(오차 1.1e-16), 배치 처리 vs 샘플별
+    단독 처리(그래프/배치 누수 검사, 완전 일치), 이웃이 전부 무효인 고립 ego 케이스 NaN 없음(3
+    seed).</p>
+    <table>
+      <thead><tr><th>지표</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>파라미터 수</td><td><b>26,883</b></td></tr>
+        <tr><td>50-step 미니 학습(GPU2, batch=32)</td><td>loss 0.526→0.222, NaN 없음</td></tr>
+      </tbody>
+    </table>
+    <pre>cd TNA_research
+conda activate tna_research
+python comparison/lstm_tsem/test_model.py
+python comparison/lstm_tsem/train_lstm_tsem.py \
+    --config comparison/lstm_tsem/config.yaml \
+    --experiment lstm_tsem_w10_h10 --gpus 0,1,2,3</pre>
+
+    <h3 id="comparison-transformer"><span class="ic">◆</span>Transformer (원본 repo 없음 — 아키텍처 대조군)
+      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+    <p class="sec-desc">저장 위치 <code>comparison/transformer_tsem/</code>(어댑터만, 원본 clone
+    없음)</p>
+    <h4>설계 메모 — LSTM과의 대조쌍</h4>
+    <p>LSTM baseline과 <b>공간 처리 부분을 서로 동일하게 맞춰</b>(masked mean-pooling, 그래프/
+    attention 전혀 없음) "시간 인코더를 LSTM→Transformer로 바꾸면(공간 모듈 없이) 뭐가 달라지는가"
+    만 순수하게 비교할 수 있게 설계했다.</p>
+    <ul class="dash">
+      <li>노드 입력 6D(LSTM baseline과 동일).</li>
+      <li>표준 <code>nn.TransformerEncoder</code>(2 layer, d_model=64, nhead=4, sinusoidal
+      positional encoding, <b>causal mask</b>로 미래 프레임을 보지 못하게 함 — LSTM의 "마지막
+      hidden state만 앞의 정보를 담는다"는 성질과 동등하게 맞추기 위함), anchor 시점(t=W-1) 출력을
+      임베딩으로 사용.</li>
+      <li>공간 처리는 LSTM baseline과 완전히 동일(masked mean-pooling, 학습 파라미터 없음).</li>
+      <li><code>concat([ego_embed, pooled_nbr_embed])</code> → MLP → 3클래스.</li>
+    </ul>
+    <h4>재구현 검증 (2026-07-12, <code>comparison/transformer_tsem/test_model.py</code>, 4/4 PASS)</h4>
+    <p>masked mean-pooling 벡터화 vs 브루트포스(오차 1.2e-07), positional encoding이 시간축마다
+    서로 다른 값을 갖는지(sanity), 배치 처리 vs 샘플별 단독 처리(causal mask 포함, 오차 6.7e-08),
+    이웃이 전부 무효인 케이스 NaN/Inf 없음을 확인했다.</p>
+    <table>
+      <thead><tr><th>지표</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>파라미터 수</td><td><b>75,843</b></td></tr>
+        <tr><td>50-step 미니 학습(GPU2/3, batch=32)</td><td>loss 1.13→0.75, NaN 없음</td></tr>
+      </tbody>
+    </table>
+    <pre>cd TNA_research
+conda activate tna_research
+python comparison/transformer_tsem/test_model.py
+python comparison/transformer_tsem/train_transformer_tsem.py \
+    --config comparison/transformer_tsem/config.yaml \
+    --experiment transformer_tsem_w10_h10 --gpus 0,1,2,3</pre>
+    <p class="small">신규 5종의 상세 설계 근거(원 논문 파일 대응 관계, 재구현 검증 코드 전문)는
+    각 <code>comparison/&lt;model&gt;_tsem/model.py</code> 상단 docstring과
+    <code>comparison/README.md</code>에 동일 내용이 더 상세히 기록돼 있다.</p>
+
+    <footer>TSEM-SAGE 저널 연구 설계 · 비교 연구(comparison/) · 2026-07-12</footer>
   </div>
 
   <!-- ▸ 배경 -->
@@ -1952,6 +2764,185 @@ python comparison/forecastmae_tsem/train_forecastmae_tsem.py \
             <code>journal/map_features.py</code>가 CSV의 bbox↔position 쌍으로 호모그래피 fit (재투영 오차 중앙값 0.05m)</td></tr>
       </tbody>
     </table>
+
+    <h4>왜 세계좌표(world-absolute position) 입력이 "위치 암기"가 되는가 (2026-07-12 기록)</h4>
+    <p>10차-2(TSEM-SAGE 최종 채택 모델)는 semantic 8D 외에 raw position 2D(<code>raw_append='position'</code>,
+    세계좌표 그대로)를 추가로 쓴다. 이 채널이 같은 장소(공업탑) 테스트에서 <b>+3.74%p</b>의 성능
+    이득을 주지만, "차량이 어떻게 움직이는가"를 배운 게 아니라 <b>"이 로터리의 이 지점에서는 늘
+    이런 라벨이 나온다"는 장소별 정답표(lookup table)를 암기</b>한 결과라는 게 교차 장소(DRIFT)
+    평가로 확인됐다. 왜 이런 일이 생기는지 정리한다.</p>
+    <ul class="dash">
+      <li><b>학습 데이터가 공업탑 로터리 단 하나의 장소</b>에서만 수집됐다. 로터리의 기하구조
+      (차선 곡률, 진입·합류 지점, 정지선 위치 등)는 데이터셋 전체에서 절대 변하지 않는다.</li>
+      <li>그런데 이 고정된 기하구조 자체가 차량 행동(감속, 차선변경 시점 등)을 강하게 결정한다 —
+      즉 세계좌표 <code>(x,z)</code>와 그 지점에서 나오는 라벨이 이 데이터셋 안에서는 거의 1:1로
+      대응된다(로터리 진입부 좌표 근처 = 감속·정지 라벨이 몰려있는 식).</li>
+      <li>모델 입장에서는 이 대응관계를 <b>모델링(진짜 운동학적 원인 파악)</b>하지 않고 <b>좌표값
+      자체를 색인 삼아 암기</b>하는 쪽이 손실을 더 빨리·크게 줄여준다 — "이 좌표 근처면
+      lane_change"라고 외우는 게, "곡률·횡가속도·주변 차량 배치가 이런 패턴이면 lane_change"라고
+      추론하는 것보다 단일 장소 데이터에서는 훨씬 쉬운 지름길이다. 좌표와 라벨의 상관관계가
+      인과관계처럼 보이지만 실제로는 "이 장소 하나"라는 공통 원인이 만든 가짜(spurious)
+      상관관계다.</li>
+      <li><b>semantic 피처와의 대비가 이를 잘 보여준다</b> —
+      <code>models/tsem_semantic_derivation.py</code>가 만드는 semantic 8채널 중
+      <code>v,a,j,ω,d_lat,κ</code>(속도·가속도·jerk·각속도·자기궤적 기준 횡변위·곡률)는 자기
+      자신의 움직임만으로 계산된다 — 로터리가 어디 있든 "지금 이렇게 감속하며 곡선을 타고
+      있다"는 의미는 동일하다. 반면 raw position은 세계좌표 값 자체엔 물리적 의미가 없고, 오직
+      "이 로터리에서는 이 좌표가 곧 저 지점"이라는 <b>이 데이터셋 한정 대응관계</b>로만 의미를
+      가진다.</li>
+    </ul>
+    <blockquote><b>실제 증거(교차 장소 검증)</b> — 진짜 암기인지 진짜 학습인지는 다른 장소
+    데이터(DRIFT)에 그대로 넣어보면 바로 드러난다. raw 절대좌표를 넣은 모델은 같은 장소(공업탑)
+    테스트에서는 <b>+3.74%p</b> 이득을 주지만, <b>완전히 다른 장소(DRIFT)</b>에 그대로 적용하면
+    lane_change recall이 <b>80% → 0.3%로 붕괴</b>한다. 모델이 진짜 "차량이 어떻게 움직이면 차선을
+    바꾸는가"라는 전이 가능한 규칙을 배웠다면 새 장소에서 성능이 다소 떨어질 순 있어도 이렇게
+    거의 0%로 무너지진 않는다 — 이 정도의 완전 붕괴는 "그 좌표 구간에서 그 라벨이 나온다"는 걸
+    외운 표가, 새 장소는 좌표계 자체가 안 맞아서(다른 로터리 = 다른 좌표) 무용지물이 됐다는
+    뜻이다. 이게 "위치 암기(position memorization)"라고 부르는 근거다.</blockquote>
+    <p class="small"><b>참고</b>: 같은 논리로 semantic 8D 안의 Δρ(로터리 중심까지 거리 변화)·접선
+    성분도 "공업탑 로터리 중심 좌표 C=(72.86,-13.45)"라는 고정 랜드마크를 참조하므로 부분적으로
+    site-specific하다는 게 재점검에서 확인됐다 — 순수하게 장소 불변인 건 <code>v,a,j,ω,d_lat,κ</code>
+    6채널뿐이다(§구조 "semantic 8D 채널별 site-specific 여부 재점검" 및
+    <code>comparison/README.md</code> 동일 절 참조). 이 발견은 CLAUDE.md "확정된 핵심 발견" §1
+    "위치 암기 가설 3중 확증"에도 기록돼 있다 — 논문 서사는 site-specific(10D, 이 로터리 한정 최고
+    성능) / transferable(semantic 8D 또는 polar 11D, 장소 불변) 2-트랙으로 구성된다.</p>
+
+    <h3 id="data-position-verify"><span class="ic">◆</span>위치 암기 검증① · ④ 종합 (2026-07-12)
+      <span class="badge b-green" style="font-size:10px;">✅ ①④ 완료 · ⏳ ② 진행 중</span></h3>
+    <p class="sec-desc">위 DRIFT 교차 장소 붕괴는 <b>간접 증거</b>(다른 장소에서 실패하는 걸 보고
+    암기였다고 역추론)다. 이를 더 직접적으로 확인하기 위해 서로 독립적인 방법론 두 가지를
+    추가로 검증했다 — 하나는 <b>모델 없이 데이터 자체</b>로(①), 하나는 <b>이미 학습된 체크포인트를
+    추론 시점에 조작</b>해서(④). 세 번째(②, position-only 신경망을 처음부터 학습)는 현재 GPU1에서
+    학습 중이라 수렴하는 대로 이 절에 추가한다.</p>
+
+    <h4>① 정적 좌표 격자 룩업 — 재학습 없이 데이터의 성질만으로</h4>
+    <p>anchor 위치를 격자(0.5~5m)로 쪼개 셀별 라벨 엔트로피를 재고, train 셀의 다수결 라벨을
+    test에 그대로 적용하는 "위치 룩업" 정확도를 쟀다(<code>journal/position_memorization_entropy.py</code>).</p>
+    <table>
+      <thead><tr><th>지표</th><th>값</th><th>해석</th></tr></thead>
+      <tbody>
+        <tr><td>I(y;position) 정보량 (cell=2m)</td><td>0.572 / 1.585 bits (36%)</td>
+          <td>위치를 알면 라벨 불확실성이 36% 줄어듦 — 우연이 아닌 실제 연관</td></tr>
+        <tr><td>위치 룩업 test accuracy (모든 cell 크기 공통)</td><td class="hl">60~64%대에 갇힘</td>
+          <td>Persist baseline(63.17%) 근방 — <b>정적 좌표 하나만으론 신경망 근처에도 못 감</b></td></tr>
+        <tr><td>10차-2 신경망(비교 기준)</td><td>81.91% / 81.95%</td>
+          <td>정적 룩업과 <b>17~20%p 격차</b></td></tr>
+      </tbody>
+    </table>
+    <p class="small">→ <b>결론①</b>: "위치와 라벨이 강하게 얽혀있다"는 사실 자체는 데이터 차원에서
+    확인되지만, 그 연관은 단순 룩업으로 뽑아낼 수 있는 수준(~64%)을 크게 넘는다 — 신경망이 얻는
+    이득은 "좌표를 그대로 읽는" 단순 메커니즘이 아니라는 뜻이다.</p>
+
+    <h4>④ 10D 체크포인트 — 추론 시 특정 입력값만 상수로 바꿔 넣고 성능 비교</h4>
+    <p>재학습 없이 <code>tsem_sage_w10_h10_sem_pos_10d/best.pt</code>(10차-2, epoch 130, test
+    81.91%/81.95%)를 그대로 두고, <b>테스트 시점에만 특정 입력 채널을 train 평균값(상수)으로
+    바꿔서</b> 그 채널 값을 모델이 못 보게 만든 뒤 정확도 하락폭을 쟀다
+    (<code>journal/position_freeze_ablation.py</code>). 아래 각 행은 "무엇을 상수로 바꿔
+    넣었는지"를 그대로 뜻한다 — ego뿐 아니라 1-hop·2-hop 이웃 노드에도 동일하게 적용했다.</p>
+    <table>
+      <thead><tr><th>모델</th><th>테스트 시 입력한 값</th><th>설명</th><th>accuracy</th><th>Δ (baseline 대비)</th></tr></thead>
+      <tbody>
+        <tr><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, ω=원본, d_lat=원본, κ=원본,
+          Δρ=원본, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>baseline, 개입 없음</td><td>81.91%</td><td>—</td></tr>
+        <tr class="hl"><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, ω=원본, d_lat=원본,
+          κ=원본, Δρ=원본, tangent=원본,
+          <b>pos_x=상수(73.69)</b>, <b>pos_z=상수(-14.62)</b></td>
+          <td>semantic 8D는 원래(진짜) 좌표로 정상 계산된 뒤, 마지막에 이어붙는 raw 2채널만 교체</td>
+          <td>64.55%</td><td><b>-17.36%p</b></td></tr>
+        <tr class="hl"><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, ω=원본,
+          <b>d_lat≈0(연쇄)</b>, κ=원본,
+          <b>Δρ≈0(연쇄)</b>, <b>tangent≈0(연쇄)</b>, <b>pos_x=상수(73.69)</b>,
+          <b>pos_z=상수(-14.62)</b></td>
+          <td>pos_x,pos_z를 semantic 계산 전에 상수로 치환 — 위치가 윈도우 내내 똑같으면 프레임 간
+          차이가 자동으로 0이 되기 때문에 d_lat,Δρ,tangent도 연쇄적으로 0에 가까워짐</td>
+          <td>63.05%</td><td><b>-18.87%p</b></td></tr>
+        <tr class="hl" style="background:#ecfdf5;"><td><b>6D invariant(별도로 처음부터
+          재학습</b>, <code>tsem_sage_invariant_6d</code>, epoch 227 early-stop)</td>
+          <td>v=원본, a=원본, j=원본, ω=원본, d_lat=원본, κ=원본 — <b>Δρ, tangent, pos_x, pos_z는
+          입력 자체가 아키텍처에 존재하지 않음</b>(추론 시 가리는 게 아니라 애초에 그 채널을
+          계산·전달하는 코드 경로가 없음)</td>
+          <td>site-specific 신호를 사후에 지우는 대신, 처음부터 그 신호 없이 gradient descent로
+          학습하면 훨씬 높은 성능에 도달한다는 대조 — freeze-ablation(63~65%대)과 6D invariant
+          (76.21%) 사이 <b>11~13%p 격차</b>는 "학습 안 된 채로 위치만 가림" vs "위치 없이 처음부터
+          학습"의 차이</td>
+          <td><b>76.21%</b></td><td><b>-5.70%p</b></td></tr>
+        <tr><td>10D 체크포인트(추론만)</td><td><b>v=상수(11.82)</b>, a=원본, j=원본, ω=원본,
+          d_lat=원본, κ=원본, Δρ=원본, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>v는 위치와 무관하게 계산되는 채널</td>
+          <td>50.07%</td><td>-31.84%p(전체 최대, stop 정의 자체가 speed 기준이라 위치와 무관)</td></tr>
+        <tr><td>10D 체크포인트(추론만)</td><td>v=원본, <b>a=상수(3.45)</b>, j=원본, ω=원본,
+          d_lat=원본, κ=원본, Δρ=원본, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>a는 위치와 무관하게 계산되는 채널</td><td>81.20%</td><td>-0.72%p</td></tr>
+        <tr><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, <b>j=상수(-0.02)</b>, ω=원본,
+          d_lat=원본, κ=원본, Δρ=원본, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>j는 위치와 무관하게 계산되는 채널</td><td>81.96%</td><td>+0.05%p</td></tr>
+        <tr><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, <b>ω=상수(-0.04)</b>,
+          d_lat=원본, κ=원본, Δρ=원본, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>ω는 위치와 무관하게 계산되는 채널</td><td>81.96%</td><td>+0.04%p</td></tr>
+        <tr><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, ω=원본,
+          <b>d_lat=상수(0.10)</b>, κ=원본, Δρ=원본, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>d_lat은 위치에서 유도되지만 이 실험은 raw pos_x,pos_z 입력 자체는 그대로 두고
+          d_lat 결과값만 상수로 바꿈</td>
+          <td>81.89%</td><td>-0.02%p</td></tr>
+        <tr><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, ω=원본, d_lat=원본,
+          <b>κ=상수(0.27)</b>, Δρ=원본, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>κ는 위치와 무관하게 계산되는 채널</td><td>81.91%</td><td>-0.01%p</td></tr>
+        <tr class="hl"><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, ω=원본, d_lat=원본,
+          κ=원본, Δρ=원본, <b>tangent=상수(0.52)</b>, pos_x=원본, pos_z=원본</td>
+          <td>site-specific 유도값. raw pos_x,pos_z 입력 자체는 원본 그대로 살아있고 tangent
+          결과값만 상수로 바꿈</td>
+          <td>65.22%</td><td><b>-16.69%p</b>(pos_x,pos_z 상수 대체와 거의 동급)</td></tr>
+        <tr><td>10D 체크포인트(추론만)</td><td>v=원본, a=원본, j=원본, ω=원본, d_lat=원본, κ=원본,
+          <b>Δρ=상수(-0.03)</b>, tangent=원본, pos_x=원본, pos_z=원본</td>
+          <td>site-specific 유도값. raw pos_x,pos_z 입력 자체는 원본 그대로 살아있고 Δρ 결과값만
+          상수로 바꿈</td>
+          <td>74.81%</td><td>-7.11%p</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><b>6D invariant를 이 표에 넣은 이유</b>: 위쪽 두 freeze 행(64.55%/63.05%)과
+    6D invariant(76.21%)는 <b>"입력에서 위치가 빠졌다"는 조건은 같지만 방식이 다르다</b> —
+    freeze는 <b>이미 위치가 있다고 가정하고 학습된 모델</b>에서 사후에 그 정보를 가리는 것이라
+    모델이 위치 없이 추론하는 법을 배운 적이 없고, 6D invariant는 <b>처음부터 위치 없이
+    gradient descent로 학습</b>해 그 상황에 최적화된 가중치를 갖는다. 그 차이가 정확히
+    11~13%p로 나타난다 — "위치를 못 쓰게 됐을 때 신경망이 낼 수 있는 진짜 성능 상한"은 63~65%가
+    아니라 76.21%에 더 가깝다는 뜻이고, 10D(81.91%)와의 진짜 격차는 이걸 기준으로 보면
+    5.70%p로 좁혀진다.</p>
+    <p class="small"><b>표 읽는 법</b>: 위 세 그룹은 "무엇을 상수로 바꿔 넣었는지"가 서로 다르다.
+    ① <code>raw position 2D만 상수</code>는 semantic 8D 계산에는 손대지 않고 마지막에 붙는 원시
+    좌표 2채널만 교체. ② <code>semantic 계산 이전 단계에서 상수</code>는 그보다 더 앞단에서
+    위치를 바꿔치기해 semantic 안의 위치 유도 채널(d_lat,Δρ,tangent)까지 함께 무너지게 만든
+    "더 포괄적인" 버전. ③ <code>semantic「채널명」결과값만 상수</code> 대조군들은 raw 위치를
+    전혀 건드리지 않고, 이미 다 계산된 semantic 채널 하나만 사후에 값을 바꿔치기한 것 —
+    <code>v,a,j,ω,κ</code>는 위치와 무관한 채널이라 순수 대조군이고, <code>d_lat,Δρ,tangent</code>
+    3개만 위치에서 유도된 값이라 대조군이면서 동시에 "위치 유도 채널 각각의 영향력"을 보여준다.</p>
+    <p class="small">→ <b>결론④</b>: 학습이 끝난 모델은 실제 추론에서 위치 정보를 <b>강하게
+    참조하고 있다</b> — 하락폭이 순수 운동학 채널(v 제외) 평균 하락폭의 3~4배. 다만 그 의존은
+    raw position 채널 하나에 국한되지 않는다 — semantic 안에 숨은 site-specific 채널(<code>tangent</code>)
+    하나만으로도 raw position과 맞먹는 손실이 난다. 즉 <b>"위치 정보"는 raw 2D 채널과 semantic의
+    Δρ·접선 채널 여러 경로에 분산 저장돼 있다.</b></p>
+
+    <h4>①④ 종합 결론 (②는 수렴 후 갱신 예정)</h4>
+    <blockquote>
+      <b>①이 보여주는 것</b>: 정적 좌표만으로는(모델 없이 단순 다수결 룩업) Persist baseline
+      수준(~64%)에 그친다 — "이 좌표에서는 이 라벨"이라는 단순 정답표 암기만으로는 신경망의
+      81.91%를 설명할 수 없다.<br><br>
+      <b>④가 보여주는 것</b>: 그럼에도 이미 학습된 신경망은 추론 시 위치 정보(raw 채널 + semantic
+      속 site-specific 채널)를 강하게 참조한다 — 이 의존을 끊으면 정확히 ①의 정적 룩업 수준
+      (63~65%대)으로 떨어진다는 점이 특히 시사적이다(우연이 아니라 <b>"신경망이 위치에 의존하지
+      않을 때 도달하는 성능 = 위치만으로 도달 가능한 정적 성능"과 정확히 일치</b>).<br><br>
+      <b>종합</b>: 신경망은 "좌표를 그대로 읽는" 단순 룩업보다 훨씬 정교한 무언가(궤적 형태·이웃
+      배치까지 결합한 패턴 매칭)를 하고 있지만, 그 정교한 추론이 만들어내는 초과 성능(81.91%
+      → 정적 룩업 64% 대비 +18%p)은 <b>정확히 위치를 없애면 사라지는 몫과 일치</b>한다. 다시 말해
+      신경망이 학습한 "정교한 무언가"의 상당 부분이 <b>바로 그 위치 정보를 정교하게 활용하는
+      방법</b>이었다는 뜻이다 — DRIFT 교차 장소 붕괴(LC recall 80%→0.3%)와 함께 놓고 보면, 이
+      정교한 활용법은 <b>이 로터리 하나에만 유효한, 전이 불가능한 형태의 암기</b>라는 결론이
+      일관되게 뒷받침된다.
+    </blockquote>
+    <p class="small">⏳ <b>②(position-only 신경망, semantic 채널 없이 raw position 2D만 입력)</b>이
+    GPU1에서 학습 중이다(<code>configs/tsem_sage_position_only.yaml</code>) — "신경망이 위치만
+    가지고도 궤적 형태를 학습해 정적 룩업(64%)보다 훨씬 높은 성능에 도달하는지"가 마지막 조각이다.
+    수렴하는 대로(300epoch 또는 patience 50) 이 절에 결과를 추가한다.</p>
 
     <h3 id="data-sampling"><span class="ic">◆</span>샘플 구성 — W · H · split</h3>
     <table>
@@ -2262,6 +3253,145 @@ nbr_mask[:n_real] = 1.0   # t 시점 실제 이웃 수만 1</pre>
     </ul>
     <p class="small">분석 재현: 원격 <code>/tmp/av2_full_stats.py</code> (env <code>access_mamba</code>, 20 workers,
     전수 ~15분). 서브셋 분석 <code>/tmp/journal_label_a2.py</code>, A1 <code>/tmp/journal_label_a1.py</code>.</p>
+
+    <h3 id="data-opendd"><span class="ic">◆</span>openDD — 로터리 7곳 (외부 검증) <span class="badge b-amber">2026-07-12 데이터 분석 완료, 학습 미착수</span></h3>
+    <p><b>배경:</b> 연구 방향 보고서(<a href="TSEM_research_directions_20260711.html">TSEM_research_directions_20260711.html</a>)
+    필수 항목 2 "rounD held-out-site 검증"의 대체/보완 후보로 <b>openDD</b>(Breuer et al., ITSC 2020,
+    L3Pilot/RWTH Aachen 드론 로터리 데이터셋)가 이미 <code>/home/oem/data/TII_data/opendd_dataset/</code>에
+    다운로드되어 있음을 확인 — 학습 착수 전 데이터 분석·호환성 점검을 수행했다. rounD과 달리 openDD는
+    <b>서로 다른 로터리 7곳(rdb1~rdb7)</b>을 포함해 <a data-goto="verification" data-anchor="ver-cross-location">§12.15 DRIFT 실험</a>보다
+    훨씬 큰 held-out-site 풀을 제공한다.</p>
+
+    <table>
+      <thead><tr><th>항목</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>구성</td><td>rdb1~rdb7(로터리 7곳) 각각 <code>trajectories_rdb{i}_v3.sqlite</code>(궤적) + <code>map_rdb{i}.sqlite</code>·shapefile(차선지도) + geo-referenced 이미지(.png/.pgw)</td></tr>
+        <tr><td>레코딩 수</td><td>rdb1=153·rdb2=56·rdb3=54·rdb4=69·rdb5=60·rdb6=52·rdb7=57 — <b>총 501개 독립 레코딩</b>(각각 개별 sqlite 테이블)</td></tr>
+        <tr><td>용량</td><td>궤적 DB 합계 약 4.7GB (rdb1 2.0GB가 최대)</td></tr>
+        <tr><td>샘플레이트</td><td>Δt≈0.03337s → <b>~29.97Hz</b> (공업탑 CSV 대비 별도 리샘플링 필요 — 공업탑 프레임레이트는 <code>configs/tsem_sage_10th_2.yaml</code> 참조)</td></tr>
+        <tr><td>궤적 컬럼</td><td><code>ID, TIMESTAMP, OBJID, UTM_X, UTM_Y, UTM_ANGLE, V, ACC, ACC_LAT, ACC_TAN, CLASS, WIDTH, LENGTH, TRAILER_ID</code> — 좌표는 UTM32N 절대좌표(공업탑의 world-fixed 로터리 중심 상수 방식과 유사한 재중심화 필요)</td></tr>
+        <tr><td>CLASS 종류</td><td>Heavy Vehicle / Car / Medium Vehicle / Bicycle / Pedestrian / Trailer / Motorcycle / Bus — <code>opendd_analysis</code> 공식 툴킷은 자동차류(Bus/Car/Medium/Heavy/Motorcycle)만 필터링</td></tr>
+        <tr><td>차선지도</td><td><code>map_rdb{i}.sqlite</code>에 lane 단위 테이블(<code>index, id, type, geometry(WKT LINESTRING), successors, predecessors, markingType, laneType, areaType</code>) — rdb1 기준 trafficLane 48개, boundary 139개, area 11개. <b>successors/predecessors로 차선 그래프 연결관계 제공</b> → lane_id 부여·B안 stop persistence·A안 LC window 라벨링에 그대로 활용 가능(공업탑 <code>road_data</code>와 동일 역할)</td></tr>
+        <tr><td>공식 분석 툴킷</td><td><code>opendd_analysis/</code>(git clone, RWTH 공식) — <code>src/opendd.py</code>(sqlite→DataFrame 로더, CLASS 필터), <code>src/path_extraction.py</code>·<code>src/path_assignment.py</code>(차선/경로 매칭, Hausdorff 거리 기반), <code>src/drive_off.py</code>(정지→출발 이벤트 추출 — <a data-goto="verification" data-anchor="ver-normal-recall">§12.5 "출발임박 normal recall"</a> 난제와 직접 관련)</td></tr>
+        <tr><td>data split 정의</td><td><code>split_definition/r_{1,2,3}_{train,val}.txt</code>, <code>r_A/B/C.txt</code>, <code>r_123.txt</code>, <code>r_ABC.txt</code> — 공식 3-fold 교차검증 분할(레코딩 단위) 이미 제공됨, 자체 split 설계 불필요</td></tr>
+        <tr><td>라이선스</td><td>rdb별 <code>LICENSE_by_nd_4.0.txt</code>(CC BY-ND 4.0) 동봉 — 비상업 학술 사용 적합</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>구조적 호환성 양호.</b> ① 좌표계가 UTM 절대좌표라는 점, ② 차선 그래프(successors/predecessors)가
+      lane_id 기반 라벨 파이프라인(<code>modules/tsem_instant_label.py</code>)에 이식 가능하다는 점, ③ 공식
+      train/val split이 레코딩 단위로 이미 정의돼 있다는 점에서 §12.15 DRIFT 실험보다 통합 난이도가 낮다.
+      다만 프레임레이트(29.97Hz)가 공업탑과 달라 W/H 윈도우(현재 프레임 단위 W10-H10)를 <b>초 단위로 환산해
+      재정의</b>해야 하며, UTM_ANGLE·V·ACC 등 semantic 8D 파생에 필요한 원시 필드가 공업탑 CSV와 컬럼명이
+      달라 <code>models/tsem_semantic_derivation.py</code> 입력 어댑터가 별도로 필요하다.</div>
+    </div>
+
+    <h4>단계별 데이터 분석 (2026-07-12)</h4>
+
+    <p><b>1단계 — 사이트별 구조 통계 전수 스캔</b> (501개 레코딩 전체, 차량류 CLASS만 필터):</p>
+    <table>
+      <thead><tr><th>사이트</th><th>레코딩</th><th>fps</th><th>차량 트랙</th><th>정지비율(V≤1.0)</th><th>차선 수</th><th>UTM 중심</th><th>bbox(m)</th></tr></thead>
+      <tbody>
+        <tr><td>rdb1</td><td>153</td><td>29.97</td><td>30,550</td><td>10.27%</td><td>48</td><td>(619314.6, 5809163.6)</td><td>159×105</td></tr>
+        <tr><td>rdb2</td><td>56</td><td>29.97</td><td>8,935</td><td>4.66%</td><td>37</td><td>(618082.2, 5805729.2)</td><td>83×78</td></tr>
+        <tr><td>rdb3</td><td>54</td><td>29.97</td><td>8,162</td><td>5.90%</td><td>25</td><td>(618138.3, 5806277.7)</td><td>88×89</td></tr>
+        <tr><td>rdb4</td><td>69</td><td>29.97</td><td>6,667</td><td>3.69%</td><td>16</td><td>(624450.7, 5809526.0)</td><td>107×96</td></tr>
+        <tr><td>rdb5</td><td>60</td><td>29.97</td><td>4,041</td><td>1.23%</td><td>16</td><td>(617384.6, 5806790.8)</td><td>90×102</td></tr>
+        <tr><td>rdb6</td><td>52</td><td>29.97</td><td>13,251</td><td>10.94%</td><td>29</td><td>(674610.4, 5407003.0)</td><td>102×111</td></tr>
+        <tr><td>rdb7</td><td>57</td><td>29.97</td><td>7,753</td><td>3.79%</td><td>26</td><td>(673957.0, 5410629.5)</td><td>118×81</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>7개 사이트가 물리적으로 2개 도시 클러스터로 완전히 분리됨</b> — rdb1~5는 UTM_X≈617k~625k/
+      UTM_Y≈5806k~5810k (Wolfsburg 추정), rdb6~7은 UTM_X≈674k/UTM_Y≈5408k (Ingolstadt 추정, rdb1~5와
+      약 270km 이격). openDD 논문의 "Wolfsburg 5곳 + Ingolstadt 2곳" 구성과 일치. <b>이 두 도시 간 held-out
+      분할이 §12.15 DRIFT 교차장소 실험보다 더 강한 "도시 단위" 일반화 테스트가 된다</b> — 예: Wolfsburg
+      5곳 학습 → Ingolstadt 2곳(rdb6,7) held-out 평가. 정지비율(1.2%~10.9%)·차선 수(16~48개)의 사이트 간
+      편차도 커서, 로터리 기하 복잡도에 따른 일반화 스트레스 테스트로도 활용 가능. fps는 7개 사이트 전부
+      <b>정확히 29.97Hz로 동일</b> — 공업탑(10fps) 대비 W10-H10 윈도우(현재 프레임 단위, 1초 예측)를 그대로
+      적용하면 0.33초 예측이 되어버리므로, <b>W≈30·H≈30 프레임으로 재정의하거나 3프레임 간격 서브샘플링</b>이
+      필요하다.</div>
+    </div>
+
+    <p><b>2단계 — 차선 그래프 포맷 점검</b> (<code>map_rdb{i}.sqlite</code>의 <code>successors</code>/
+    <code>predecessors</code> 컬럼):</p>
+    <p>값이 <code>"[2.0]"</code>, <code>"[3.0, 4.0]"</code> 같은 파이썬 리스트 리터럴 문자열로 저장되어
+    <code>ast.literal_eval</code>로 즉시 파싱 가능. 이는 <a data-goto="data" data-anchor="data-argoverse">Argoverse 2의
+    lane_segments 구조와 동일한 패턴</a>이라, A2에서 이미 검증한 <b>"successor 체인 필터링으로 정상 차선
+    진행과 실제 LC를 구분"</b> 방법론을 그대로 이식할 수 있다.</p>
+
+    <p><b>3단계 — nearest-lane 방식 lane_id 부여 실현성 검증</b> (1차 rdb1 단일 차량 샘플(38포인트) →
+    <b>2026-07-12 재검증: 7개 사이트 전체 × 사이트당 차량 8대, 총 1,175포인트·232회 차선전이로 확장</b>):</p>
+    <table>
+      <thead><tr><th>사이트</th><th>차선</th><th>successors 파싱 실패</th><th>거리평균(m)</th><th>거리 p95(m)</th><th>전이 수</th><th>비-successor 점프</th><th>비율</th></tr></thead>
+      <tbody>
+        <tr><td>rdb1</td><td>48</td><td>0</td><td>0.55</td><td>1.38</td><td>15</td><td>1</td><td>6.7%</td></tr>
+        <tr class="hlb"><td>rdb2</td><td>37</td><td>0</td><td><b>2.74</b></td><td><b>15.37</b></td><td>53</td><td>6</td><td>11.3%</td></tr>
+        <tr><td>rdb3</td><td>25</td><td>0</td><td>1.44</td><td>4.45</td><td>33</td><td>2</td><td>6.1%</td></tr>
+        <tr><td>rdb4</td><td>16</td><td>0</td><td>0.78</td><td>1.58</td><td>28</td><td>7</td><td>25.0%</td></tr>
+        <tr><td>rdb5</td><td>16</td><td>0</td><td>0.80</td><td>1.77</td><td>20</td><td>1</td><td>5.0%</td></tr>
+        <tr><td>rdb6</td><td>29</td><td>0</td><td>1.00</td><td>3.59</td><td>37</td><td>6</td><td>16.2%</td></tr>
+        <tr><td>rdb7</td><td>26</td><td>0</td><td>0.69</td><td>1.74</td><td>46</td><td>11</td><td>23.9%</td></tr>
+      </tbody>
+    </table>
+    <p class="small">successors 문자열 파싱은 <b>7개 사이트 전부 실패 0건</b> — 2단계에서 확인한 리스트-리터럴
+    포맷이 전 사이트에 일관됨을 확인. 정지→재출발 패턴(V≈0 유지 후 단조 증가)도 여러 사이트 샘플에서 반복
+    관측되어 B안 stop persistence 정의 적용에 문제없음을 재확인.</p>
+
+    <div class="callout warn">
+      <span class="ci">📝</span>
+      <div><b>1차 rdb1 단일 샘플의 "비-successor 점프 0건"은 샘플 크기(전이 4회)가 작아 과낙관적이었음 —
+      확장 검증에서 정정.</b> 사이트 확대 시 비-successor 점프가 <b>5~25%</b> 발생. 원인 두 가지를 분리 확인:
+      ① <b>지도 커버리지 한계</b> — rdb2 심층 진단 결과 궤적 UTM bbox(Y: 5805675~5805803)가 매핑된
+      trafficLane bbox(Y: 5805693~5805771)보다 넓음 — 로터리 진입/진출 접근로 일부가 lane 폴리곤 밖에 있어
+      해당 구간 포인트가 거리 15~38m로 엉뚱한 차선에 붙잡힘(rdb2가 유독 나쁜 이유). ② <b>병렬 차선 경계
+      노이즈</b> — 나머지 사이트(특히 rdb4·rdb7, 25%·24%)는 거리 자체는 준수(p95 1.6~1.7m)한데도 비율이
+      높아, Argoverse 2에서 이미 문서화한 "병렬 차선 경계 주행 시 세그먼트 플래핑" 패턴과 일치.
+      → <b>batch 구현 시 A2와 동일한 대응이 필요</b>: (a) 거리 임계값(예: p95 기준 2~3m) 밖 포인트는
+      "차선 미배정"으로 분리해 접근로 구간을 라벨링에서 제외, (b) 신규 차선 N프레임(<a data-goto="data" data-anchor="data-argoverse">A2와
+      동일하게 10프레임 후보</a>) 유지 조건으로 플래핑 노이즈를 필터링한 뒤에만 lane_change로 인정.</div>
+    </div>
+
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>남은 미착수 항목:</b> ① 위 대응(거리 임계값 분리 + N프레임 유지 필터) 포함한 lane_id 부여
+      스크립트를 전체 레코딩에 배치 적용(<code>data_manager_tsem.py</code> 이식), ② stop(B안 ±2 다수결)·
+      lane_change(A안 window) 저널 라벨을 openDD CLASS·V·부여된 lane_id 기준으로 재구현, ③ W/H를 29.97fps
+      기준으로 재정의(예: W=30·H=30 또는 3프레임 서브샘플링 후 W10·H10 유지), ④ Wolfsburg(rdb1~5)/
+      Ingolstadt(rdb6~7) 도시 단위 held-out split 코드 — 아직 실행 전, <b>실제 학습·평가는 미실행</b>.</div>
+    </div>
+
+    <h4>4단계 — 위치 암기 분석·정성적 케이스 시각화를 openDD로 이식 (2026-07-12)</h4>
+    <p>공업탑의 <code>journal/position_memorization_entropy.py</code>·<code>journal/animated_case_svg.py</code>와
+    같은 방법론을 openDD에 적용한 openDD 전용 스크립트를 새로 작성했다(<code>journal/opendd_position_memorization_entropy.py</code>,
+    <code>journal/opendd_animated_case_svg.py</code>) — 위 ①②③(lane_id 배치 부여, B안·A안 라벨 재구현,
+    fps 재정의)을 스크립트 내부에 자체 구현해 rdb1(Wolfsburg, 처음 15개 레코딩, 범위 제한 명시)에서
+    바로 돌렸다. 결과물은 데이터셋별 폴더로 분리(<code>journal/paper_figs/gongeoptap/</code>,
+    <code>journal/paper_figs/opendd/</code>) — 앞으로 다른 데이터셋을 추가해도 같은 규칙을 따른다.</p>
+
+    <table>
+      <thead><tr><th>cell</th><th>H(y)</th><th>H(y|cell)</th><th>I(y;cell)</th><th>정보량 감소</th><th>위치룩업 acc</th><th>macro-F1</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>1.0m</td><td>1.447</td><td>0.795</td><td>0.652</td><td>45.0%</td><td><b>75.58%</b></td><td>63.91%</td></tr>
+        <tr><td>2.0m</td><td>1.447</td><td>0.881</td><td>0.566</td><td>39.1%</td><td>73.92%</td><td>64.55%</td></tr>
+        <tr><td>5.0m</td><td>1.447</td><td>1.054</td><td>0.393</td><td>27.2%</td><td>66.31%</td><td>55.25%</td></tr>
+      </tbody>
+    </table>
+    <p class="small">라벨 분포(rdb1 anchor 2,386,752개, train/test는 object_id 기준 80/20): stop 17.4% /
+    lane_change 29.8% / normal 52.8% — 공업탑(§데이터 설계 라벨 정의)과 클래스 비율 자체는 다르지만
+    (라벨 정의·데이터 분포가 달라 정확도 수치 직접비교는 금지, <a data-goto="verification" data-anchor="ver-cross-location">§12.15와
+    동일한 원칙</a>), <b>다수결 baseline(52.8%)을 위치 정보만으로 22.8%p 상회(75.58%)</b>하고 정보량도
+    45% 감소 — 공업탑에서 이미 확인한 "좌표만으로 라벨이 상당히 샌다"는 패턴이 <b>다른 로터리(openDD
+    rdb1)에서도 재현됨</b>을 보여준다. 이는 위치 암기가 공업탑 특유의 우연이 아니라 로터리라는 도로
+    구조 자체에서 비롯된 일반적 현상일 가능성을 시사 — 논문 Discussion에서 위치 암기 논거를 보강하는
+    데 쓸 수 있다(단, 정식 결론을 내리려면 ⑦ lane_id 정식 배치 적용 등 남은 미착수 항목 완료 후 재검증 필요).</p>
+
+    <p class="small">정성적 케이스 애니메이션(GT-only, 학습된 모델 없음 — 아직 openDD로 학습하지 않았으므로
+    Pred 패널은 없음)은 <code>journal/paper_figs/opendd/qualitative/{stop,lane_change,normal}_{1,2,3}/animation.svg</code>에
+    저장. 공업탑 버전과 달리 semantic 8D 채널이 없어 v(speed)·dist_to_center 2채널만 표시.</p>
 
     <footer>TSEM-SAGE 저널 연구 설계 · 데이터 설계 · 2026-07-10</footer>
   </div>
@@ -3708,14 +4838,158 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
         <tr><td>10D → DRIFT/A</td><td>10차-2 체크포인트</td><td>50.17 / 28.06 (LC recall 80→0.3%)</td><td>✅ 붕괴 — 2-트랙 프레임 근거</td></tr>
         <tr><td>속도 정규화 zero-shot (방법3)</td><td>도메인 이동(속도 2~3배) 보정 후 재평가</td><td>–</td><td>⬜ 후보</td></tr>
         <tr><td>다중 장소 학습 (방법2)</td><td>공업탑+DRIFT A~D 학습 → E/I 평가</td><td>–</td><td>⬜ 보류 — 장소 held-out split 코드 필요</td></tr>
+        <tr><td>openDD held-out-site (신규 후보)</td><td>로터리 7곳(rdb1~7) — <a data-goto="data" data-anchor="data-opendd">데이터 설계 페이지</a>에서 데이터 분석·호환성 점검 완료</td><td>–</td><td>⬜ 데이터 분석만 완료 — lane_id 부여·라벨 재구현·학습 미착수</td></tr>
       </tbody>
     </table>
 
     <p class="small">갱신 이력: 2026-07-10 신설 (M-1/M-2 fp32 재실행·speedreg 학습중 시점) →
     <b>2026-07-11 학교서버 선택 실험 3종(radius·augmentation 단독·kernel) 완료 반영</b> —
     이로써 <b>학교서버 실험 전체 종료</b>(results/20260709school.md), 남은 실행 가능 실험은 다중 장소 학습
-    (장소 held-out split 코드 필요, 보류)뿐. 이후 실험 완료 시
-    이 페이지의 해당 행과 "논문 구조" 페이지의 상세 표를 함께 갱신할 것.</p>
+    (장소 held-out split 코드 필요, 보류)과 openDD held-out-site(§12.16, 데이터 분석 완료·구현 대기)뿐.
+    이후 실험 완료 시 이 페이지의 해당 행과 "논문 구조" 페이지의 상세 표를 함께 갱신할 것.</p>
+
+    <h3 id="exp-20260712-plan"><span class="ic">◆</span>9. 20260712 추가 실험계획
+      <span class="badge" style="font-size:10px;">⏳ 계획 수립 — 코드 준비 중, 미실행</span></h3>
+    <p class="sec-desc"><b>배경</b>: 6D invariant(76.21%/74.78%, <a data-goto="structure"
+    data-anchor="cmp-6d-invariant-result">§구조</a>)가 CRAT-Pred(75.02%)는 이기지만 HiVT(77.48%)·
+    QCNet(77.97%)에는 1~1.8%p 뒤진다. 이 격차의 원인 후보 4가지를 각각 독립 실험으로 분리해
+    검증한다 — 전부 <b>site-specific 신호(raw position, Δρ, tangent)는 배제한 채</b> 진행해
+    "위치 암기 없이 baseline을 이길 수 있는가"라는 2-트랙 서사(§구조·§기여3줄)를 지키면서
+    구조·표현력만으로 격차를 좁히는 게 목표다.</p>
+
+    <table>
+      <thead><tr><th>#</th><th>가설</th><th>조치</th><th>구현 방식</th><th>예정 config</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td><b>①</b></td>
+          <td>절대 heading(dir_x,dir_z)은 site-calibration에 묶여 못 쓰지만, <b>윈도우 시작 시점
+          대비 상대 회전량</b>은 invariant하면서 지금 6D에 없는 "누적 회전" 정보를 준다</td>
+          <td><code>cos(heading_t-heading_0), sin(heading_t-heading_0)</code> 2채널 추가
+          (6D→8D)</td>
+          <td><code>SemanticDerivation</code>에 <code>variant='invariant_rot'</code> 신설 —
+          기존 <code>heading, h0</code> 변수 재사용, wrap-around는 cos/sin이 자동 처리</td>
+          <td><code>configs/tsem_sage_invariant_8d_rot.yaml</code></td>
+          <td>⏳ 코드 준비</td></tr>
+        <tr><td><b>②</b></td>
+          <td><code>SemanticDerivation</code>은 파라미터가 0개인 고정 손공학 변환 — 압축 과정에서
+          버려지는 미세한 궤적 정보(정확한 곡선 형태, 고차 미분 등)가 있을 수 있다</td>
+          <td>위치 무관(invariant-safe) raw 스칼라만 보는 <b>학습 가능한 소형 MLP 잔차 브랜치</b>를
+          병렬로 추가해 고정 6D에 concat</td>
+          <td><code>models/tsem_semantic_derivation.py</code>에
+          <code>LearnableSemanticResidual</code> 신설 — 입력은 <code>speed, accel</code>(스칼라,
+          raw 6D 중 위치·절대방향과 무관해 invariant 보장)만 프레임별로 받는 Linear-ReLU-Linear,
+          출력 <code>residual_dim</code>(기본 4)채널을 고정 6D에 concat. <code>TSEMSAGE</code>에
+          <code>learnable_residual_dim: int = 0</code> opt-in 파라미터로 배선(0이면 기존 동작
+          완전 동일)</td>
+          <td><code>configs/tsem_sage_invariant_6d_learnable.yaml</code></td>
+          <td>⏳ 코드 준비</td></tr>
+        <tr><td><b>③</b></td>
+          <td>6D invariant는 172K params인데 HiVT(512K)·QCNet(533K)는 약 3배 — 입력이 줄어든 만큼
+          <code>hidden_dim</code>도 줄어든 채로 방치돼 용량 병목일 수 있다</td>
+          <td><code>hidden_dim</code> 128(현재) → 192 → 256 스윕, 파라미터 수를 HiVT/QCNet에
+          근접시킴</td>
+          <td>코드 변경 없음 — config의 <code>model.hidden_dim</code>만 변경(<code>d_e</code>도
+          비례 확대: 32→48→64)</td>
+          <td><code>configs/tsem_sage_invariant_6d_h192.yaml</code>,
+          <code>_h256.yaml</code></td>
+          <td>⏳ config만 준비하면 됨</td></tr>
+        <tr><td><b>④</b></td>
+          <td>시간 인코더가 GRU(순차 재귀) vs Transformer(attention) — <b>W=10처럼 짧은
+          시퀀스에서는 차이가 묻힐 수 있다.</b> W를 늘려야 두 방식의 진짜 격차가 드러날 가능성</td>
+          <td><code>encoder_type='transformer'</code> 신규 구현 + <code>W=10/20/30</code> ×
+          <code>encoder_type=gru/transformer</code> 그리드</td>
+          <td><code>models/temporal_encoder.py::TemporalEncoder</code>에 현재 <code>gru|lstm|
+          mamba</code> 3종만 있는 것을 확인(2026-07-12) — <code>transformer</code> 분기 신설
+          필요(<code>nn.TransformerEncoder</code> + sinusoidal PE + causal mask, comparison/
+          transformer_tsem과 동일 패턴 재사용)</td>
+          <td><code>configs/tsem_sage_invariant_6d_w20_transformer.yaml</code> 등 W×encoder
+          조합별</td>
+          <td>⏳ 코드 준비(신규 인코더 구현 필요)</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><b>실행 순서 원칙</b>: 4개 모두 <b>6D invariant(76.21%/74.78%, 227epoch
+    early-stop)</b>를 공통 기준선으로 삼고, 한 번에 하나씩만 바꿔서(§하네스 원칙 "실험당 전용
+    config 분리") 어느 조치가 격차를 좁히는지 개별적으로 격리한다. GPU 여유가 나는 대로 순서
+    무관하게 실행 가능 — ①③은 구조 변경이 없어 리스크가 낮고, ②④는 새 모듈이라 스모크
+    테스트(짧은 forward+backward, NaN 확인)를 먼저 거친다.</p>
+
+    <h4>코드·config 준비 완료 (2026-07-12) — 스모크테스트 전부 PASS</h4>
+    <p>①②③④ 각각의 구현(<code>models/tsem_semantic_derivation.py</code>::
+    <code>variant='invariant_rot'</code>·<code>LearnableSemanticResidual</code>,
+    <code>models/tsem_sage.py</code>의 <code>learnable_residual_dim</code> 배선,
+    <code>models/temporal_encoder.py</code>의 <code>encoder_type='transformer'</code>)과
+    config 9개를 미리 준비하고, 랜덤 텐서로 forward+backward+NaN 확인까지 전부 통과시켰다.
+    추가로 <b>①(8D)을 ②③④ 각각과 조합한 실험 8개</b>도 함께 준비했다 — ①이 만드는 새 신호
+    (cos_rot,sin_rot)가 ②③④의 효과와 누적되는지 별도로 볼 수 있다.</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>조합</th><th>config</th><th>params(스모크)</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>①단독</td><td><code>tsem_sage_invariant_8d_rot.yaml</code></td>
+          <td>173,619</td><td>✅ PASS</td></tr>
+        <tr><td>②단독</td><td><code>tsem_sage_invariant_6d_learnable.yaml</code></td>
+          <td>175,281</td><td>✅ PASS</td></tr>
+        <tr><td>③단독(h192)</td><td><code>tsem_sage_invariant_6d_h192.yaml</code></td>
+          <td>380,969</td><td>✅ PASS</td></tr>
+        <tr><td>③단독(h256)</td><td><code>tsem_sage_invariant_6d_h256.yaml</code></td>
+          <td>671,785</td><td>✅ PASS</td></tr>
+        <tr><td>④단독(W10,gru=기준)</td><td><code>tsem_sage_invariant_6d.yaml</code></td>
+          <td>172,073</td><td>✅ 실측완료(76.21%/74.78%)</td></tr>
+        <tr><td>④단독(W10,transformer)</td><td><code>tsem_sage_invariant_6d_w10_transformer.yaml</code></td>
+          <td>515,753</td><td>✅ PASS</td></tr>
+        <tr><td>④단독(W20,gru)</td><td><code>tsem_sage_invariant_6d_w20_gru.yaml</code></td>
+          <td>172,073</td><td>✅ PASS</td></tr>
+        <tr><td>④단독(W20,transformer)</td><td><code>tsem_sage_invariant_6d_w20_transformer.yaml</code></td>
+          <td>515,753</td><td>✅ PASS</td></tr>
+        <tr><td>④단독(W30,gru)</td><td><code>tsem_sage_invariant_6d_w30_gru.yaml</code></td>
+          <td>172,073</td><td>✅ PASS</td></tr>
+        <tr><td>④단독(W30,transformer)</td><td><code>tsem_sage_invariant_6d_w30_transformer.yaml</code></td>
+          <td>515,753</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+②</b>(8D+학습형잔차4D=12D)</td>
+          <td><code>tsem_sage_invariant_8d_rot_learnable.yaml</code></td>
+          <td>176,827</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+③</b>(8D, h192)</td>
+          <td><code>tsem_sage_invariant_8d_rot_h192.yaml</code></td>
+          <td>383,283</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+③</b>(8D, h256)</td>
+          <td><code>tsem_sage_invariant_8d_rot_h256.yaml</code></td>
+          <td>674,867</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+④</b>(8D, W10, transformer)</td>
+          <td><code>tsem_sage_invariant_8d_rot_w10_transformer.yaml</code></td>
+          <td>516,275</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+④</b>(8D, W20, gru)</td>
+          <td><code>tsem_sage_invariant_8d_rot_w20_gru.yaml</code></td>
+          <td>173,619</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+④</b>(8D, W20, transformer)</td>
+          <td><code>tsem_sage_invariant_8d_rot_w20_transformer.yaml</code></td>
+          <td>516,275</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+④</b>(8D, W30, gru)</td>
+          <td><code>tsem_sage_invariant_8d_rot_w30_gru.yaml</code></td>
+          <td>173,619</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td><b>①+④</b>(8D, W30, transformer)</td>
+          <td><code>tsem_sage_invariant_8d_rot_w30_transformer.yaml</code></td>
+          <td>516,275</td><td>✅ PASS</td></tr>
+        <tr class="hl" style="background:#fef3c7;"><td><b>①+②+③</b>(8D+학습형잔차4D=12D, h192)
+          <span class="small">— ⏳ ②단독 결과 확인 후 실행</span></td>
+          <td><code>tsem_sage_invariant_8d_rot_learnable_h192.yaml</code></td>
+          <td>388,027</td><td>✅ PASS(스모크)</td></tr>
+        <tr class="hl" style="background:#fef3c7;"><td><b>①+②+③</b>(8D+학습형잔차4D=12D, h256)
+          <span class="small">— ⏳ ②단독 결과 확인 후 실행</span></td>
+          <td><code>tsem_sage_invariant_8d_rot_learnable_h256.yaml</code></td>
+          <td>681,147</td><td>✅ PASS(스모크)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small"><b>부수 발견</b>: <code>encoder_type='transformer'</code>로 바꾸면 파라미터가
+    172K→515,753으로 늘어나는데 이게 <b>HiVT(512,835)·QCNet(532,899)와 거의 같은 규모</b>다 —
+    ③(hidden_dim 확대)이 노리는 "파라미터 격차 해소"를 ④가 부수적으로도 달성한다는 뜻이라,
+    ③④ 결과를 해석할 때 이 중첩을 감안해야 한다.</p>
+    <p class="small"><b>①+②+③ 삼중 조합(2026-07-12 추가)</b>: ②(학습형 잔차)가 단독 실험에서
+    유의미한 개선을 보일 경우를 대비해 ①(8D)+②(학습형 잔차)+③(용량 확대) 최대 조합도 미리
+    준비해뒀다 — h192/h256 두 스윕. <b>이 두 config는 ②단독 결과가 나오기 전까지는 실행하지
+    않는다</b>(§하네스 원칙 "한 번에 하나씩만 바꿔 격리" — ②가 도움이 안 되는데 삼중 조합부터
+    돌리면 무엇이 기여했는지 해석 불가능해진다). 총 <b>20개 config</b>(단독 9 + ①과의 조합 8 +
+    ①②③ 삼중 조합 2 + 기존 6D invariant 기준 1)가 준비 완료 상태 — 실행은 GPU 여유가 나는 대로
+    §"실행 순서 원칙"에 따라 진행한다.</p>
   </div>
 
   <div class="page" id="page-abstract">
@@ -3741,11 +5015,22 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
   <div class="page" id="page-contributions">
     <div class="sec-head"><div class="sec-num">9</div><h2>기여 3줄</h2></div>
     <ol style="margin-left:18px;color:#334155;line-height:1.9;">
-      <li><b>문제 재정의:</b> ±6 smear 기각, <b>과거 W → 미래 state(t+H)</b> 인과 예측 + 순간 3-class 규칙.</li>
-      <li><b>TSEM-SAGE:</b> NAGraphSAGE <b>spatial 계승</b> + maneuver <b>semantic temporal</b> — edge-temporal 중복은 제거.</li>
-      <li><b>절제 실험:</b> semantic / spatial / full 분해로 각 축 기여 측정; NAGraphSAGE 연구선과의 <b>연속성</b> 유지.</li>
+      <li><b>과제 정식화:</b> 로터리 <b>미래상태 예측</b>(과거 W프레임 → state(t+H), stop/LC/normal 3-class)을
+        표준 벤치마크 부재 지형에서 정식화 — 기존 계보(Brain4Cars 5-class, Honda HDD)와의 <b>라벨 대응표</b> +
+        Persist baseline 프로토콜 확립. <span class="small">(deep-research F1 확증: 3-class 미래상태 표준 벤치마크 없음)</span></li>
+      <li><b>구조 참조 위치 (핵심 novelty):</b> 절대좌표의 성능 기여(+3.74%p)가 <b>장소 암기</b>임을 3중 실증(입력 ablation·DRIFT 붕괴·polar 불변성)하고,
+        <b>차선 기하 없이 랜드마크(로터리 중심) 하나만 참조하는 극좌표가 이를 무손실 대체</b>(81.82 vs 81.91)함을 보임
+        — Frenet 정규화(Ye et al. ICRA 2023, 차선 기하 필수·궤적 회귀)와 달리 <b>HD맵 불필요·상태 분류</b>.
+        site-specific(10D) / transferable(polar 11D) <b>2-트랙</b> 제시.</li>
+      <li><b>TSEM-SAGE + 체계적 분해:</b> GRU semantic temporal + edge-aware spatial(+1.25%p) 구조에서 정보원별 기여를 분리 측정 —
+        edge-temporal 중복(단일 로터리, DRIFT에서만 부활), anticipation 지평 지배(H 0.5초당 −2.8%p, W=10 포화),
+        kinematics-only의 출발 예측 원리적 한계(recall 19.5%) 규명.</li>
     </ol>
-    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07</footer>
+    <p class="small" style="color:#64748b;margin-top:10px;">
+      ⚠️ 2026-07-12 전면 개정 — 구판(semantic temporal을 핵심으로 서술)은 §12.14 반증(semantic-only 78.05 &lt; raw)과 모순되어 폐기
+      (scholar evaluation C4 대응). 2번 기여는 rounD held-out-site 결과(<a href="TSEM_research_directions_20260711.html">연구 방향 보고서</a> 필수 2)
+      확보 시 "cross-site 검증" 문구를 추가하는 2단계 갱신 예정.</p>
+    <footer>TSEM-SAGE 저널 연구 설계 · 2026-07-07 (기여 3줄 개정: 2026-07-12)</footer>
   </div>
 
   <!-- ▸ 정보원 분해 프레임워크 -->
@@ -3975,7 +5260,23 @@ Level 4: + edge-temporal (ablation, 예상 ≈0 추가)</pre>
     } else {
       openedSub = null;
     }
+
+    // ── 딥링크: 주소창에 현재 위치를 반영해 URL만으로 이 페이지·섹션에 바로 올 수 있게 한다
+    // (북마크/새 탭/새로고침/링크 공유 전부 지원). replaceState라 방문기록은 안 쌓임.
+    const hashVal = '#' + pageId + (anchor ? '|' + anchor : '');
+    if (window.location.hash !== hashVal) history.replaceState(null, '', hashVal);
   }
+
+  // 모든 내비게이션 링크에 실제 href를 달아준다 — data-page/data-goto+data-anchor로부터 자동 생성.
+  // 이러면 (1) 마우스 오버 시 어디로 가는지 보이고 (2) 가운데클릭/Ctrl+클릭으로 새 탭에 열어도
+  // (그 탭은 처음부터 이 hash로 로드되므로) 올바른 위치로 열리고 (3) href가 있어야 우클릭
+  // "링크 주소 복사"도 동작한다. 클릭 자체는 아래 리스너들이 preventDefault로 가로채 SPA 방식으로 처리.
+  document.querySelectorAll('.toc-link, .sub li a, [data-goto]').forEach(el => {
+    const pageId = el.dataset.page || el.dataset.goto;
+    if (!pageId) return;
+    const anchor = el.dataset.anchor || '';
+    el.setAttribute('href', '#' + pageId + (anchor ? '|' + anchor : ''));
+  });
 
   document.querySelectorAll('.toc-link').forEach(link => {
     link.addEventListener('click', e => {
@@ -4004,8 +5305,9 @@ Level 4: + edge-temporal (ablation, 예상 ≈0 추가)</pre>
     });
   });
 
-  const hash = window.location.hash.replace('#', '');
-  navigateTo(hash && pageEls[hash] ? hash : 'verification');
+  const hashRaw = window.location.hash.replace('#', '');
+  const [hashPage, hashAnchor] = hashRaw.split('|');
+  navigateTo(hashPage && pageEls[hashPage] ? hashPage : 'verification', hashAnchor || null, true, null);
 })();
 </script>
 </body>

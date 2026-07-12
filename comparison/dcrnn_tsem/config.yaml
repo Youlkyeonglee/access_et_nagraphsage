@@ -1,0 +1,55 @@
+# DCRNN-adapted 비교 실험 설정 — comparison/cratpred_tsem/config.yaml과
+# data/graph/train/loss/augment 항목을 동일하게 맞춰 공정 비교되도록 함.
+# model 항목만 DCRNN 고유 하이퍼파라미터로 교체.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # DCRNN 모델 자체는 2-hop 미사용(1-hop 그래프의 K-hop diffusion conv가 이미 다중홉을 커버)
+
+model:
+  hidden_dim: 64      # 원 논문 기본값(64) 그대로 — 우리 그래프(N<=7)도 작아 축소할 필요 없음
+  K_diffusion: 2       # 원 논문 기본 max_diffusion_step=2
+  num_layers: 2         # 원 논문 기본 num_rnn_layers=2
+  num_classes: 3
+
+train:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  kl_weight: 0.1              # 10차-2(TSEM-SAGE 최종 채택) 레시피와 동일 — 아키텍처 무관하게
+                               # logits에만 걸리므로 baseline에도 동일 적용
+  use_uncertainty_weight: true  # stop_conf(샘플 속성)에만 걸림 — 마찬가지로 동일 적용
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: dcrnn_tsem_w10_h10

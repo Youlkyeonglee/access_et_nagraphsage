@@ -37,6 +37,9 @@ comparison/forecast-mae/
 comparison/QCNet/
 comparison/HiVT/
 comparison/crat-pred/
+comparison/STGCN/
+comparison/DCRNN/
+comparison/TGN/
 
 # OS
 .DS_Store

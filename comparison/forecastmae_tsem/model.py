@@ -121,7 +121,7 @@ class TSEMMAEEncoder(nn.Module):
         self.N = 1 + K
         self.embed_dim = embed_dim
 
-        self.agent_embed = TSEMAgentEmbed(in_chans=4, embed_dim=embed_dim, dropout=dropout)  # 4=dx,dy,speed,valid
+        self.agent_embed = TSEMAgentEmbed(in_chans=4, embed_dim=embed_dim, dropout=dropout)  # 4=dx,dy,speed_diff,valid (원본 av2_extractor.py와 동일하게 변위 기반)
         self.pos_embed = nn.Sequential(
             nn.Linear(4, embed_dim), nn.GELU(), nn.Linear(embed_dim, embed_dim))  # [cx,cz,cos,sin]
         self.blocks = nn.ModuleList([
@@ -186,13 +186,22 @@ def _build_inputs(batch: dict, N: int, W: int):
     pos = torch.where(present_flat.unsqueeze(-1), pos, torch.zeros_like(pos))
     speed = torch.where(present_flat, speed, torch.zeros_like(speed))
 
-    actor_in = torch.stack([pos[..., 0], pos[..., 1], speed, present_flat.float()], dim=-1)  # [B*N,W,4]
+    # 원본(av2_extractor.py:155-174)과 동일하게 절대(scene-relative) 위치가 아니라 프레임간
+    # 변위(disp)·speed 프레임간 차분(speed_diff)을 채널로 사용 — 양쪽 프레임 다 유효할 때만 계산,
+    # 첫 프레임은 0.
+    both_valid = present_flat[:, 1:] & present_flat[:, :-1]  # [B*N,W-1]
+    disp = torch.zeros_like(pos)
+    disp[:, 1:] = torch.where(both_valid.unsqueeze(-1), pos[:, 1:] - pos[:, :-1], torch.zeros_like(pos[:, 1:]))
+    speed_diff = torch.zeros_like(speed)
+    speed_diff[:, 1:] = torch.where(both_valid, speed[:, 1:] - speed[:, :-1], torch.zeros_like(speed[:, 1:]))
+
+    actor_in = torch.stack([disp[..., 0], disp[..., 1], speed_diff, present_flat.float()], dim=-1)  # [B*N,W,4]
     actor_in = actor_in.transpose(1, 2)  # [B*N,4,W]
 
     centers = pos[:, -1, :].reshape(B, N, 2)
     head_vecs = dir_rot[:, -1, :].reshape(B, N, 2)
 
-    return actor_in, pos.reshape(B, N, W, 2), present_flat.reshape(B, N, W), centers, head_vecs, valid_agent
+    return actor_in, disp.reshape(B, N, W, 2), present_flat.reshape(B, N, W), centers, head_vecs, valid_agent
 
 
 class TSEMMAEPretrain(nn.Module):
@@ -212,7 +221,7 @@ class TSEMMAEPretrain(nn.Module):
         self.decoder_blocks = nn.ModuleList([
             TSEMBlock(embed_dim, num_heads, dropout=dropout) for _ in range(decoder_depth)])
         self.decoder_norm = nn.LayerNorm(embed_dim)
-        self.recon_head = nn.Linear(embed_dim, W * 2)  # 과거 궤적(정규화된 x,z) 복원
+        self.recon_head = nn.Linear(embed_dim, W * 2)  # 과거 궤적 변위(dx,dz) 복원 — 원본과 동일하게 위치가 아닌 변위
 
     def _sample_mask(self, valid_agent: torch.Tensor) -> torch.Tensor:
         """valid_agent:[B,N] -> mask:[B,N] (True=복원 대상). 유효 에이전트 중 mask_ratio 비율을
@@ -230,7 +239,7 @@ class TSEMMAEPretrain(nn.Module):
         return mask
 
     def forward(self, batch: dict) -> torch.Tensor:
-        actor_in, pos, present, centers, head_vecs, valid_agent = _build_inputs(batch, self.N, self.W)
+        actor_in, disp, present, centers, head_vecs, valid_agent = _build_inputs(batch, self.N, self.W)
         B, N = valid_agent.shape
 
         tokens = self.encoder.embed_agents(actor_in, centers, head_vecs)
@@ -244,7 +253,7 @@ class TSEMMAEPretrain(nn.Module):
         x = self.decoder_norm(x)
 
         recon = self.recon_head(x).view(B, N, self.W, 2)
-        target = pos  # [B,N,W,2] (ego 앵커 프레임 기준 상대좌표, 이미 scene 정렬됨)
+        target = disp  # [B,N,W,2] (프레임간 변위 — actor_in의 dx,dy 채널과 동일 표현, 원본과 일치)
 
         reg_mask = present.clone()
         reg_mask[~mask] = False  # 마스킹된(복원 대상) + 실제 관측된 프레임만 loss에 포함
@@ -276,7 +285,7 @@ class TSEMMAEFinetune(nn.Module):
         return missing, unexpected
 
     def forward(self, batch: dict) -> torch.Tensor:
-        actor_in, pos, present, centers, head_vecs, valid_agent = _build_inputs(batch, self.N, self.W)
+        actor_in, disp, present, centers, head_vecs, valid_agent = _build_inputs(batch, self.N, self.W)
         tokens = self.encoder.embed_agents(actor_in, centers, head_vecs)
         key_padding_mask = ~valid_agent
         encoded = self.encoder(tokens, key_padding_mask, mask=None)  # 미세조정: 마스킹 없음

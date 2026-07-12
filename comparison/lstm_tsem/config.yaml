@@ -1,0 +1,54 @@
+# LSTM-adapted 비교 실험 설정 — comparison/cratpred_tsem/config.yaml과
+# data/tsem/graph/train/loss/augment 항목을 완전히 동일하게 맞춰 공정 비교되도록 함.
+# model 항목만 LSTM baseline 고유 하이퍼파라미터로 교체(원 논문 없음 — 직접 설계, README 참조).
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # 이 baseline은 공간 상호작용 모듈 자체가 없어 2-hop 미사용(1-hop만 pooling 대상)
+
+model:
+  latent_size: 64    # CRAT-Pred-adapted(68,291 params)와 파라미터 규모를 비슷하게 맞추기 위한 값
+  hidden_size: 64    # 분류 헤드 MLP 은닉 차원
+  num_classes: 3
+  dropout: 0.1
+
+train:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: lstm_tsem_w10_h10

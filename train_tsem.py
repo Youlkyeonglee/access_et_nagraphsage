@@ -26,7 +26,7 @@ import yaml
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import CosineAnnealingLR, OneCycleLR
 
-from models.tsem_sage import TSEMSAGE, TSEMSemanticOnly, TSEMNAGraphSAGEAdapted
+from models.tsem_sage import TSEMSAGE, TSEMSemanticOnly, TSEMNAGraphSAGEAdapted, TSEMSAGEInterleaved
 from modules.data_manager_tsem import build_tsem_dataloaders, summarize_label_distribution
 from modules.tsem_eval import evaluate_tsem
 from modules.tsem_instant_label import CLASS_NAMES
@@ -112,6 +112,25 @@ def get_csv_files(cfg: dict) -> list:
 def build_model(cfg: dict, T: int):
     mcfg = cfg['model']
     name = mcfg.get('name', 'tsem_sage')
+
+    if name == 'tsem_sage_interleaved':
+        # hypothesis 1(공간 집계 시점) 검증용 — TSEMSAGE와 생성자 시그니처가 다름
+        # (encoder_type/use_attention/use_spatial/decomp_* 없음, semantic_variant 직접 받음)이라
+        # 아래 공용 kw dict(encoder_type 등 TSEMSAGE 전용 키 필요)를 만들기 전에 먼저 분기한다.
+        ikw = dict(
+            hidden_dim=mcfg['hidden_dim'],
+            d_e=mcfg['d_e'],
+            T=T,
+            semantic_variant=mcfg.get('semantic_variant', 'full'),
+            raw_append=mcfg.get('raw_append', 'none'),
+            use_2hop=mcfg.get('use_2hop', True),
+            num_classes=mcfg['num_classes'],
+            dropout=mcfg['dropout'],
+            use_speed_head=(mcfg.get('use_speed_head', False)
+                            or cfg.get('loss', {}).get('speed_reg_weight', 0.0) > 0),
+        )
+        return TSEMSAGEInterleaved(**ikw)
+
     kw = dict(
         hidden_dim=mcfg['hidden_dim'],
         d_e=mcfg['d_e'],
@@ -120,11 +139,14 @@ def build_model(cfg: dict, T: int):
         use_attention=mcfg['use_attention'],
         use_2hop=mcfg.get('use_2hop', True),
         use_spatial=mcfg.get('use_spatial', True),
+        semantic_variant=mcfg.get('semantic_variant', 'full'),
         raw_append=mcfg.get('raw_append', 'none'),
         num_classes=mcfg['num_classes'],
         dropout=mcfg['dropout'],
         decomp_kernel=mcfg.get('decomp_kernel', 5),
         decomp_learnable=mcfg.get('decomp_learnable', True),
+        edge_temporal=mcfg.get('edge_temporal', False),
+        learnable_residual_dim=mcfg.get('learnable_residual_dim', 0),
         use_speed_head=(mcfg.get('use_speed_head', False)
                         or cfg.get('loss', {}).get('speed_reg_weight', 0.0) > 0),
     )
@@ -359,6 +381,12 @@ def main():
     parser.add_argument('--radius', type=float, default=None, help='이웃 반경 (기본 20.0)')
     parser.add_argument('--raw_append', type=str, default=None,
                         help="semantic에 추가할 raw 채널: none|pos|pos_dir|polar")
+    parser.add_argument('--semantic_variant', type=str, default=None,
+                        help="semantic 채널 구성: full(8D, 기본)|invariant(6D, Δρ·접선 제외 — "
+                             "comparison/ baseline과의 apples-to-apples 비교용)")
+    parser.add_argument('--edge_temporal', action='store_true',
+                        help="① hypothesis 1 저비용 검증: edge_proj(anchor 프레임만) 대신 "
+                             "TemporalEncoder(GRU)로 edge_seqs 전체 W프레임을 인코딩 (기본 False)")
     parser.add_argument('--decomp_kernel', type=int, default=None, help='low-pass 커널 크기 (기본 5)')
     parser.add_argument('--grad_clip', type=float, default=None,
                         help='grad clipping max_norm (기본 0=미사용, config train.grad_clip_norm)')
@@ -399,6 +427,10 @@ def main():
         cfg['graph']['radius'] = args.radius
     if args.raw_append is not None:
         cfg['model']['raw_append'] = args.raw_append
+    if args.semantic_variant is not None:
+        cfg['model']['semantic_variant'] = args.semantic_variant
+    if args.edge_temporal:
+        cfg['model']['edge_temporal'] = True
     if args.decomp_kernel is not None:
         cfg['model']['decomp_kernel'] = args.decomp_kernel
     if args.grad_clip is not None:

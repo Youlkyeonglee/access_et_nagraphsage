@@ -1,0 +1,67 @@
+# TSEM-SAGE spatial-temporal 교차(interleaved) 전용 설정 (2026-07-12)
+# hypothesis 1(공간 집계 시점) 검증 — 6D invariant(76.21%/74.78%, configs/tsem_sage_invariant_6d.yaml)가
+# HiVT(77.48%)·QCNet(77.97%)에 뒤지는 이유가 "spatial 집계를 anchor 1회만 하는 구조" 때문인지 확인.
+# 매 프레임 t마다 ETSAGELayer(spatial)를 먼저 적용해 공간인지 벡터 s_t를 만들고, 그 시퀀스를
+# GRU(시간 인코더)에 넣어 anchor 표현을 얻는다 — HiVT/QCNet의 시공간 교차 구조와 동일 원리
+# (models/tsem_sage.py::TSEMSAGEInterleaved 참조).
+# tsem_sage_invariant_6d.yaml과 라벨/loss/augmentation/학습 프로토콜 전부 동일, model.name +
+# 구조만 다름. aux head(logits_temporal/spatial)가 이 구조에선 main logits와 동일해 의미가
+# 없으므로 lambda_temporal/lambda_spatial은 0으로 끈다(kl_weight는 유지).
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_interleaved.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage_interleaved
+  semantic_variant: invariant   # v,a,j,ω,d_lat,κ만 (6D) — Δρ·접선 제외, 6d invariant와 동일
+  raw_append: none              # position도 미사용 — 완전 invariant, 6d invariant와 동일
+  hidden_dim: 128
+  d_e: 32
+  use_2hop: true
+  num_classes: 3
+  dropout: 0.3
+
+train:
+  # 2026-07-12: GPU 4개(DataParallel) 실측 결과 123.9s/epoch로 단일 GPU(92~96s/epoch)보다
+  # 오히려 30% 느림(모델이 작아 216,581 params — DataParallel 오버헤드가 이득을 상쇄하는 comparison/
+  # README.md의 기존 관찰과 일치) — 단일 GPU(batch 4096)로 되돌림.
+  batch_size: 4096
+  num_epochs: 300   # comparison/ 5개 baseline(HiVT/QCNet/CRAT-Pred/SIMPL/Forecast-MAE)과 동일 프로토콜
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.0   # aux head가 main logits와 동일 — 의미 없어서 끔
+  lambda_spatial: 0.0    # 동일 이유
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_interleaved

@@ -1,0 +1,65 @@
+# TSEM-SAGE §실험현황 "20260712 추가 실험계획" ③ — 용량 확대 (hidden_dim 128→192)
+# 6D invariant는 172K params인데 HiVT(512K)·QCNet(533K)는 약 3배 — 입력이 줄어든 만큼
+# hidden_dim도 줄어든 채로 방치돼 용량 병목일 수 있다는 가설 검증. d_e도 비례 확대(32→48).
+# 6D invariant(76.21%/74.78%, tsem_sage_invariant_6d)와 라벨/loss/augmentation/학습 프로토콜
+# 전부 동일, model.hidden_dim/d_e만 다름.
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_h192.yaml --gpus <N>
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  semantic_variant: invariant
+  raw_append: none
+  hidden_dim: 192   # ★ 128→192 (약 2.25배 파라미터)
+  d_e: 48           # ★ 32→48 (hidden_dim과 비례 확대)
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 300   # comparison/ 5개 baseline·6D invariant와 동일 프로토콜
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_h192

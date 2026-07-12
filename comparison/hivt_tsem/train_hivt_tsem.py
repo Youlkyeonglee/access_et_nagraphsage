@@ -26,6 +26,7 @@ import torch.nn as nn
 import yaml
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import CosineAnnealingLR, OneCycleLR
+from tqdm import tqdm
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT))
@@ -67,12 +68,22 @@ def train(cfg: dict):
         rotate_deg=acfg.get('rotate_deg', 0.0),
     )
     print(f'[HiVT-TSEM] augmentation (train split만 적용): {augment.describe()}')
+    # nn.DataParallel은 배치를 GPU 수만큼 쪼개 각자에 할당한다 — config의 batch_size를 그대로
+    # 쓰면 GPU당 실제 배치가 1/n_gpus로 줄어, 작은 모델(HiVT-adapted 512K)에서는 모델 복제·
+    # scatter/gather 오버헤드가 실제 연산량을 넘어서 GPU를 늘릴수록 오히려 느려진다(2026-07-11
+    # 실측: 4GPU가 1GPU보다 느림). GPU당 배치를 config 값으로 유지하도록 총 배치를 n_gpus배로
+    # 스케일한다 — OneCycleLR max_lr은 그대로 두되(배치가 커지며 사실상 더 안정적인 gradient
+    # 추정치를 얻으므로), 이 조정이 걱정되면 --gpus로 1개만 지정해 끄면 된다.
+    train_batch_size = tcfg['batch_size'] * max(n_gpus, 1)
+    if n_gpus > 1:
+        print(f'[HiVT-TSEM] {n_gpus}개 GPU 병렬 — GPU당 배치 {tcfg["batch_size"]} 유지 위해 '
+              f'총 배치 {tcfg["batch_size"]}→{train_batch_size}로 스케일')
     # HiVT 모델은 2-hop 이웃을 쓰지 않지만(README 참조), 데이터로더 캐시 스키마는
     # TSEM-SAGE와 100% 동일하게 유지해야 같은 캐시를 재사용할 수 있어 K_max2 그대로 요청한다
     # (모델 forward에서 nbr2_* 키는 그냥 무시됨).
     train_loader, val_loader, test_loader = build_tsem_dataloaders(
         csv_files, W=W, H=H, radius=gcfg['radius'], K_max=gcfg['K_max'], K_max2=gcfg['K_max2'],
-        batch_size=tcfg['batch_size'], train_ratio=cfg['data']['train_ratio'],
+        batch_size=train_batch_size, train_ratio=cfg['data']['train_ratio'],
         val_ratio=cfg['data']['val_ratio'], num_workers=tcfg['num_workers'],
         augment=augment if augment.enabled else None, stop_persist_delta=stop_delta,
     )
@@ -136,7 +147,8 @@ def train(cfg: dict):
         model.train()
         t0 = time.time()
         total_loss = n = 0
-        for batch in train_loader:
+        pbar = tqdm(train_loader, desc=f'[HiVT] Epoch {epoch:03d}', leave=False)
+        for batch in pbar:
             batch_gpu = {
                 k: v.to(device) if isinstance(v, torch.Tensor) else v
                 for k, v in batch.items()
@@ -158,6 +170,7 @@ def train(cfg: dict):
                 sched.step()
             total_loss += loss.item() * batch_gpu['y'].size(0)
             n += batch_gpu['y'].size(0)
+            pbar.set_postfix(loss=f'{total_loss / n:.4f}', lr=f'{opt.param_groups[0]["lr"]:.2e}')
 
         val_m, _ = evaluate_tsem(model, val_loader, device, class_names=list(CLASS_NAMES))
         elapsed = time.time() - t0

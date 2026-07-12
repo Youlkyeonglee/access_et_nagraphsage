@@ -1,0 +1,61 @@
+# TSEM-SAGE §실험현황 "20260712 추가 실험계획" ①+④ 조합 (W=20, gru)
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_8d_rot_w20_gru.yaml --gpus <N>
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 20
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  semantic_variant: invariant_rot   # ★ ①(8D: v,a,j,ω,d_lat,κ,cos_rot,sin_rot)를 기본 입력으로
+  raw_append: none
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_8d_rot_w20_gru

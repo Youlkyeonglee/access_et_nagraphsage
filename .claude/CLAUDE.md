@@ -3,10 +3,13 @@ conda activate tna_research
 
 # 데이터 경로
 - 연구실(로컬) 서버: `/home/oem/data/TII_data/` (Gongeoptap, DRIFT)
+- openDD (로터리 7곳, rounD 대체 외부검증 후보): `/home/oem/data/TII_data/opendd_dataset/` — 데이터 분석 결과는 `docs/TSEM_journal_design.html` "데이터 설계 > openDD" 참조, 학습 미착수
 - 학교 서버: `/home/oem/yklee/data/`
 - ⚠️ `configs/*.yaml`의 `data_dir`는 서버마다 다름 — **커밋/pull 시 이 필드 충돌 주의** (b9be26d에서 실제 발생)
 
-openDD 데이터경로: `/media/lee/8tb_Data/1tb_백업/1tb_Data/opendd_dataset/`, 172.30.1.84 서버
+172.30.1.84 서버
+계정: lee
+비밀번호: 0000
 
 # userEmail
 yklee00815@gmail.com
@@ -65,7 +68,7 @@ L = FocalLoss(logits,y)·unc_weight + λ_T·L_aux_temporal + λ_S·L_aux_spatial
 - `nohup` 실행 시 `python -u` 필수 (stdout 버퍼링)
 
 ## 확정된 핵심 발견 (재실험 불필요)
-1. **위치 암기 가설 3중 확증**: raw 절대좌표 +3.74%p는 로터리 단일 지점 암기. 교차 장소(DRIFT) 평가에서 position 모델 붕괴(LC recall 80%→0.3%). semantic은 상대적 장소 불변.
+1. **위치 암기 가설 확증(2026-07-12 정량 검증 추가)**: raw 절대좌표 +3.74%p는 로터리 단일 지점 암기. 교차 장소(DRIFT) 평가에서 position 모델 붕괴(LC recall 80%→0.3%). semantic은 상대적 장소 불변(단 Δρ·접선 2채널은 site-specific, §아래). 정량 검증 2건 완료: ①정적 좌표 격자 룩업(재학습 없음)은 60~64%대(Persist 수준)에 그쳐 신경망의 81.91%와 17~20%p 격차 — 단순 암기표로는 설명 안 됨. ④10D 체크포인트 추론 시 raw position 채널 고정 시 -17.36%p 하락(순수 운동학 채널은 거의 0) — semantic 속 `tangent`(site-specific) 단독 고정만으로도 -16.69%p로 거의 동급, 위치 정보가 raw+semantic 여러 채널에 분산 저장됨을 확인. 종합: 신경망이 얻는 초과성능(81.91%−64%=+18%p)이 정확히 위치 의존 몫과 일치 — "이 로터리에만 유효한 정교한 위치 활용법"이라는 결론. ②position-only 신경망(순수 좌표만으로 신경망이 어디까지 가는지) 학습 진행 중, 상세는 `docs/TSEM_journal_design.html` §데이터 설계 "위치 암기 검증①·④ 종합" 참조.
 2. **W×H 3×3 완전 단조**: W10>W20>W30(관측창 포화), H5>H10>H15(0.5초당 −2.8%p) → "W=10 충분, 성능은 H가 지배"
 3. **edge-temporal은 공업탑에서 구조적 무용** (정보중복·라벨 이웃무관·ego지배) — DRIFT에서만 성립(+3.6%p, p=0.0002). 장기지평/DRIFT에서만 edge 부활.
 4. **CSV acceleration은 부호 없는 |a|** — 감속 방향 정보 없음. a:=Δv 재정의는 미실행 ablation 후보.

@@ -1,0 +1,61 @@
+# STGCN-adapted 비교 실험 설정 — comparison/cratpred_tsem/config.yaml과
+# data/tsem/graph/train/loss/augment 항목을 값까지 동일하게 맞춰 공정 비교되도록 함.
+# model 항목만 STGCN 고유 하이퍼파라미터로 교체.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # STGCN 어댑터 자체는 2-hop 미사용(1-hop 완전연결 소그래프만 사용) — 파이프라인
+              # 호환을 위해 값만 동일하게 유지(다른 4개 어댑터와 동일 관례)
+
+model:
+  Kt: 3                          # 시간축 causal conv 커널 크기 — W=10이 짧아 원본(보통 3)을 그대로 사용
+  block_channels: [[16, 16, 16], [16, 16, 16]]   # 원본 기본 2-block 'TGTND TGTND' 채널 구성 축소판
+                                                  # (원 논문 PeMSD7 기본값 64/16/64 대비 축소 — 우리
+                                                  # 그래프가 N<=7로 훨씬 작아 CRAT-Pred(latent 64)보다도
+                                                  # 더 가벼운 채널로 충분)
+  droprate: 0.1
+  adj_sigma: 10.0                # Gaussian 거리 커널 sigma(m) — graph.radius(20m)의 절반 (model.py
+                                  # 설계 결정 2 참조)
+  num_classes: 3
+  bias: true
+
+train:
+  batch_size: 512
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: stgcn_tsem_w10_h10

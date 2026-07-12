@@ -1,0 +1,67 @@
+# TSEM-SAGE semantic 6D invariant 전용 설정 (2026-07-11)
+# comparison/ 5개 baseline(HiVT/QCNet/CRAT-Pred/SIMPL/Forecast-MAE)과의 apples-to-apples 비교용.
+# semantic 8D 중 로터리 중심(world 고정 상수) 참조 채널(Δρ, 접선)을 제외하고 v,a,j,ω,d_lat,κ 6채널만
+# 사용 — raw_append='none'과 함께 써서 position도 안 씀 → 완전 ego/rotation-invariant 입력.
+# 근거: comparison/README.md "semantic 8D 채널별 site-specific 여부 재점검 (2026-07-11)".
+# 10차-2(configs/tsem_sage_10th_2.yaml)와 라벨/loss/augmentation/학습 프로토콜 전부 동일,
+# model.semantic_variant='invariant' + model.raw_append='none'만 다름.
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  semantic_variant: invariant   # v,a,j,ω,d_lat,κ만 (6D) — Δρ·접선 제외
+  raw_append: none              # position도 미사용 — 완전 invariant
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 500
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d

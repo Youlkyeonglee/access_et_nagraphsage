@@ -1,0 +1,67 @@
+# TSEM-SAGE §실험현황 "20260712 추가 실험계획" ② — 학습 가능한 잔차 브랜치
+# SemanticDerivation(파라미터 0개, 고정 손공학 변환)이 압축 과정에서 버릴 수 있는 미세한 궤적
+# 정보를 raw speed·accel(위치·절대방향 무관, invariant-safe)에서 소형 MLP로 보강한다.
+# 6D invariant(76.21%/74.78%, tsem_sage_invariant_6d)와 라벨/loss/augmentation/학습 프로토콜
+# 전부 동일, model.learnable_residual_dim>0만 다름(고정 6D + 학습된 4D = 10D 입력이 되지만
+# 그중 4개가 학습 파라미터로 만들어진다는 점이 raw_append='pos' 10D와는 본질적으로 다름).
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_learnable.yaml --gpus <N>
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  semantic_variant: invariant       # 고정 6D(v,a,j,ω,d_lat,κ)는 그대로 유지
+  raw_append: none
+  learnable_residual_dim: 4         # ★ 유일한 변경점 — speed,accel 기반 학습형 잔차 4채널 추가
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 300   # comparison/ 5개 baseline·6D invariant와 동일 프로토콜
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_learnable

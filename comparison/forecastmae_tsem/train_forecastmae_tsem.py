@@ -29,6 +29,7 @@ import torch.nn as nn
 import yaml
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import CosineAnnealingLR, OneCycleLR
+from tqdm import tqdm
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT))
@@ -46,7 +47,7 @@ from train_tsem import (  # noqa: E402
 from model import TSEMMAEPretrain, TSEMMAEFinetune  # noqa: E402
 
 
-def _build_loaders(cfg: dict, batch_size: int, num_workers: int):
+def _build_loaders(cfg: dict, batch_size: int, num_workers: int, n_gpus: int = 1, tag: str = 'MAE'):
     W, H = cfg['tsem']['W'], cfg['tsem']['H']
     stop_delta = cfg['tsem'].get('stop_persist_delta', 2)
     csv_files = get_csv_files(cfg)
@@ -59,23 +60,42 @@ def _build_loaders(cfg: dict, batch_size: int, num_workers: int):
         rotate_deg=acfg.get('rotate_deg', 0.0),
     )
     label_dist = summarize_label_distribution(csv_files, W, H, stop_persist_delta=stop_delta)
+    # nn.DataParallel 배치 분할로 GPU당 배치가 줄어드는 문제 방지 — comparison/hivt_tsem 동일 조치.
+    train_batch_size = batch_size * max(n_gpus, 1)
+    if n_gpus > 1:
+        print(f'[{tag}] {n_gpus}개 GPU 병렬 — GPU당 배치 {batch_size} 유지 위해 '
+              f'총 배치 {batch_size}→{train_batch_size}로 스케일')
     train_loader, val_loader, test_loader = build_tsem_dataloaders(
         csv_files, W=W, H=H, radius=gcfg['radius'], K_max=gcfg['K_max'], K_max2=gcfg['K_max2'],
-        batch_size=batch_size, train_ratio=cfg['data']['train_ratio'],
+        batch_size=train_batch_size, train_ratio=cfg['data']['train_ratio'],
         val_ratio=cfg['data']['val_ratio'], num_workers=num_workers,
         augment=augment if augment.enabled else None, stop_persist_delta=stop_delta,
     )
     return train_loader, val_loader, test_loader, label_dist, W, H
 
 
+def _warn_multi_gpu_no_gain(n_gpus: int, tag: str) -> None:
+    """2026-07-11 실측(comparison/README.md 참조): 배치를 GPU 수만큼 스케일해도
+    Forecast-MAE-adapted는 DataParallel에서 이득이 없다 — 1GPU 74.3s/ep < 4GPU 79.0s/ep <
+    2GPU 85.4s/ep(가장 느림, 비단조). CRAT-Pred(120s→69.7s)와 정반대 패턴이라 배치 스케일링
+    만으로 해결이 안 되는 이 모델 고유의 문제(마스킹·복원 디코더의 오버헤드로 추정) — 그냥
+    1GPU 실행을 권장한다. 사용자가 --gpus로 여러 개를 명시하면 존중하되 경고만 띄운다."""
+    if n_gpus > 1:
+        print(f'[{tag}] ⚠️ 실측 결과 Forecast-MAE-adapted는 멀티 GPU(DataParallel)에서 이득이 없음 '
+              f'(1GPU 74.3s/ep < 4GPU 79.0s/ep < 2GPU 85.4s/ep, comparison/README.md 참조) — '
+              f'--gpus 0(단일 GPU)를 권장합니다. 지금은 {n_gpus}개로 계속 진행합니다.')
+
+
 def pretrain(cfg: dict):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     n_gpus = torch.cuda.device_count()
+    _warn_multi_gpu_no_gain(n_gpus, 'MAE-Pretrain')
     set_seed(cfg.get('seed', 42))
 
     tcfg = cfg['pretrain']
     print(f'[MAE-Pretrain] augmentation은 train split에 동일 적용 (마스킹 복원 loss만 사용, 레이블 미사용)')
-    train_loader, val_loader, _, _, W, H = _build_loaders(cfg, tcfg['batch_size'], tcfg['num_workers'])
+    train_loader, val_loader, _, _, W, H = _build_loaders(
+        cfg, tcfg['batch_size'], tcfg['num_workers'], n_gpus=n_gpus, tag='MAE-Pretrain')
 
     mcfg = cfg['model']
     raw_model = TSEMMAEPretrain(
@@ -104,7 +124,8 @@ def pretrain(cfg: dict):
         model.train()
         t0 = time.time()
         total_loss = n = 0
-        for batch in train_loader:
+        pbar = tqdm(train_loader, desc=f'[MAE-Pretrain] Epoch {epoch:03d}', leave=False)
+        for batch in pbar:
             batch_gpu = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
             opt.zero_grad(set_to_none=True)
             with autocast(enabled=use_amp):
@@ -122,11 +143,12 @@ def pretrain(cfg: dict):
             bs = batch_gpu['y'].size(0)
             total_loss += loss.item() * bs
             n += bs
+            pbar.set_postfix(recon_loss=f'{total_loss / n:.4f}', lr=f'{opt.param_groups[0]["lr"]:.2e}')
 
         model.eval()
         val_loss = val_n = 0
         with torch.no_grad():
-            for batch in val_loader:
+            for batch in tqdm(val_loader, desc=f'[MAE-Pretrain] Epoch {epoch:03d} val', leave=False):
                 batch_gpu = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
                 vloss = model(batch_gpu)
                 if vloss.dim() > 0:
@@ -150,11 +172,12 @@ def pretrain(cfg: dict):
 def finetune(cfg: dict, pretrained_ckpt: str = None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     n_gpus = torch.cuda.device_count()
+    _warn_multi_gpu_no_gain(n_gpus, 'MAE-Finetune')
     set_seed(cfg.get('seed', 42))
 
     tcfg = cfg['finetune']
     train_loader, val_loader, test_loader, label_dist, W, H = _build_loaders(
-        cfg, tcfg['batch_size'], tcfg['num_workers'])
+        cfg, tcfg['batch_size'], tcfg['num_workers'], n_gpus=n_gpus, tag='MAE-Finetune')
     print('[MAE-Finetune] train split state(t+H) 분포:', json.dumps(label_dist, indent=2))
 
     mcfg = cfg['model']
@@ -210,7 +233,8 @@ def finetune(cfg: dict, pretrained_ckpt: str = None):
         model.train()
         t0 = time.time()
         total_loss = n = 0
-        for batch in train_loader:
+        pbar = tqdm(train_loader, desc=f'[MAE-Finetune] Epoch {epoch:03d}', leave=False)
+        for batch in pbar:
             batch_gpu = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
             opt.zero_grad(set_to_none=True)
             sw = stop_uncertainty_weight(batch_gpu['stop_conf']) if use_uncertainty_weight else None
@@ -229,6 +253,7 @@ def finetune(cfg: dict, pretrained_ckpt: str = None):
                 sched.step()
             total_loss += loss.item() * batch_gpu['y'].size(0)
             n += batch_gpu['y'].size(0)
+            pbar.set_postfix(loss=f'{total_loss / n:.4f}', lr=f'{opt.param_groups[0]["lr"]:.2e}')
 
         val_m, _ = evaluate_tsem(model, val_loader, device, class_names=list(CLASS_NAMES))
         elapsed = time.time() - t0

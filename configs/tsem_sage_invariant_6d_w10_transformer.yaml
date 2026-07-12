@@ -1,0 +1,64 @@
+# TSEM-SAGE §실험현황 "20260712 추가 실험계획" ④ — W×encoder 그리드 (W=10, transformer)
+# GRU 기준(tsem_sage_invariant_6d.yaml, 76.21%/74.78%)과 encoder_type만 다른 짝.
+# W=10에서 GRU vs Transformer 차이가 얼마나 나는지가 기준점 — W=20/30과 비교해 "짧은
+# 시퀀스에서는 차이가 묻힌다"는 가설을 검증한다.
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_w10_transformer.yaml --gpus <N>
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  semantic_variant: invariant
+  raw_append: none
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: transformer   # ★ 유일한 변경점 — gru 기준(tsem_sage_invariant_6d.yaml)과 짝
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_w10_transformer

@@ -1,0 +1,69 @@
+# TSEM-SAGE ① edge-temporal 전용 설정 (2026-07-12) — 구현만, 학습은 아직 미실행(사용자 결정).
+# hypothesis 1(공간 집계 시점) 저비용 검증 축 — 구조 순서는 기존 TSEMSAGE와 동일("시간 먼저
+# 요약 → anchor에서 spatial 1회")로 두고, edge_proj(anchor 프레임만) 대신 edge_encoder
+# (TemporalEncoder/GRU)로 edge_seqs 전체 W프레임을 인코딩한다(models/tsem_sage.py의
+# model.edge_temporal=True). ②(TSEMSAGEInterleaved, 순서 자체를 뒤집는 버전)는 이미 학습 중 —
+# configs/tsem_sage_invariant_6d_interleaved.yaml 참조.
+# tsem_sage_invariant_6d.yaml과 라벨/loss/augmentation/학습 프로토콜 전부 동일,
+# model.edge_temporal: true만 다르다.
+# 실행(나중에 필요하면): python train_tsem.py --config configs/tsem_sage_invariant_6d_edgetemporal.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+
+model:
+  name: tsem_sage
+  semantic_variant: invariant   # v,a,j,ω,d_lat,κ만 (6D) — Δρ·접선 제외, 6d invariant와 동일
+  raw_append: none              # position도 미사용 — 완전 invariant, 6d invariant와 동일
+  edge_temporal: true           # ★ 이 config의 유일한 변경점 — edge를 전체 W프레임 GRU로 인코딩
+  hidden_dim: 128
+  d_e: 32
+  encoder_type: gru
+  use_attention: true
+  use_2hop: true
+  use_spatial: true
+  num_classes: 3
+  dropout: 0.3
+  decomp_kernel: 5
+  decomp_learnable: true
+
+train:
+  batch_size: 4096
+  num_epochs: 300   # comparison/ 5개 baseline과 동일 프로토콜
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.3
+  lambda_spatial: 0.3
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_edgetemporal
