@@ -417,6 +417,45 @@
     </div>
 
     <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤, 172.30.1.20 서버 GPU2/3) — 20260712 추가 실험계획 §3 ①+② · ①+③(h192) 실행 시작</div>
+      <ul class="dash">
+        <li>§1(GPU0-3, ①②③ 단독 4개)과 별도로 "①+②③④ 조합" 8개 중 <b>①+②</b>(8D+학습형잔차,
+        12D)·<b>①+③</b>(8D, hidden_dim 192) 2개를 172.30.1.20 서버 GPU2/3에 추가 배정, §1과 동일
+        캐시(<code>a165448538</code>) warm-load로 즉시 학습 시작: <a data-goto="experiments" data-anchor="exp-20260712-run-s3">§실행 기록 — §3 ①과의 조합 2개</a></li>
+        <li>실행 기록을 <code>results/20260712_11.md</code>에도 추가(§3 절 신설), 마스터 조합 표
+        상태 갱신: <a data-goto="experiments" data-anchor="exp-20260712-plan">§20260712 추가 실험계획</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤 21:00, 이 서버) — 20260712 추가 실험계획 §1 ①②③ 단독 4개 실행 시작(계획 변경: 학교서버(.11) 아닌 이 서버 GPU0-3)</div>
+      <ul class="dash">
+        <li>당초 학교 서버(192.168.1.11)에서 실행 예정이던 §1(①8D rot/②learnable잔차/③h192/③h256)을
+        이 서버 GPU 0-3(RTX 3090 24GB×4, 전부 프리 확인)에서 대신 실행 — 캐시 키
+        <code>58c806f17c</code> 공유(warm hit), 4개 모두 Epoch1 OOM 없이 통과: <a data-goto="experiments" data-anchor="exp-20260712-run-s1">§실행 기록 — §1 ①②③ 단독</a></li>
+        <li>§2 W×encoder 그리드 5개(W10/20/30 × gru/transformer)는 §1 종료 후 메모리 인지형
+        런처(<code>scratchpad/run_s2_grid.sh</code>)가 자동 투입하도록 예약: <a data-goto="experiments" data-anchor="exp-20260712-run-s2">§예약 — §2 W×encoder 그리드</a></li>
+        <li>실행 가이드 원본: <code>results/20260712_11.md</code>. 마스터 배지·표
+        갱신: <a data-goto="experiments" data-anchor="exp-20260712-plan">§20260712 추가 실험계획</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤, 학교 서버) — DCRNN·Forecast-MAE·SIMPL 3종, 로컬 대기 예약 대신 학교 서버(192.168.1.7)에서 병렬 실행 시작</div>
+      <ul class="dash">
+        <li>원래 로컬 서버에 STGCN/TGN/edge-temporal 종료 대기로 순차 예약(<code>scripts/queue_dcrnn_forecastmae.sh</code>,
+        <code>scripts/queue_simpl_after_edgetemporal.sh</code>)돼 있던 DCRNN·Forecast-MAE·SIMPL을,
+        로컬 GPU 0-3이 이미 꽉 차 있어 대기 없이 학교 서버 3개 GPU(0/1/2)에서 병렬 실행하는 것으로
+        전환 — 로컬 예약은 해제, 실행 가이드는 <code>results/20260712school_7.md</code>: <a data-goto="comparison" data-anchor="cmp-school-run">§DCRNN 절 학교 서버 실행 현황</a></li>
+        <li>세 config의 그래프/윈도우 설정(W10/H10/r20/K6-4)이 동일해 캐시 1회 생성 후 공유(DCRNN을
+        먼저 띄워 생성, 무충돌 재사용 확인) — train 575,686 / test 120,435 샘플</li>
+        <li>기동 직후 스냅샷: DCRNN Epoch 12(GPU0 35%), Forecast-MAE pretrain Epoch 13/50(GPU1 37%),
+        SIMPL Epoch 4(GPU2 93%/5.7GB) — 세 잡 모두 정상 학습, 에러 없음. 마스터 진행표
+        갱신: <a data-goto="comparison" data-anchor="comparison-overview">§개요 · 진행 상황</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
       <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤, 커밋 9539706·22c7eb7) — 20260712 추가 실험계획: 6D invariant 격차해소 4개 조치 + 조합 config 20개 준비, GitHub 푸시</div>
       <ul class="dash">
         <li>6D invariant(76.21%/74.78%)가 HiVT(77.48%)·QCNet(77.97%)에 뒤지는 원인 후보 4가지를
@@ -1397,16 +1436,16 @@ else:
         <tr class="hl"><td><b>QCNet</b> (CVPR 2023)</td>
           <td>✅ <b>300epoch 완료</b> — test acc 77.97% / F1 76.96%</td>
           <td><code>comparison/QCNet/</code>(원본), <code>comparison/qcnet_tsem/</code>(어댑터)</td></tr>
-        <tr><td><b>SIMPL</b> (RA-L 2024)</td><td>⏳ 구현+검증 완료, 300epoch 실행 대기</td>
+        <tr class="hl"><td><b>SIMPL</b> (RA-L 2024)</td><td>🔄 <b>학교 서버(192.168.1.7) GPU2에서 실행 중</b>(2026-07-12 시작, Epoch 4, batch 2048)</td>
           <td><code>comparison/SIMPL/</code>(원본), <code>comparison/simpl_tsem/</code>(어댑터)</td></tr>
-        <tr><td><b>Forecast-MAE</b> (ICCV 2023)</td>
-          <td>⏳ 구현+검증 완료, 300epoch 실행 대기(멀티 GPU 재벤치마크 필요 — 아래 참조)</td>
+        <tr class="hl"><td><b>Forecast-MAE</b> (ICCV 2023)</td>
+          <td>🔄 <b>학교 서버(192.168.1.7) GPU1에서 실행 중</b>(2026-07-12 시작, pretrain Epoch 13/50 → finetune 체인)</td>
           <td><code>comparison/forecast-mae/</code>(원본), <code>comparison/forecastmae_tsem/</code>(어댑터)</td></tr>
         <tr><td><b>STGCN</b> (IJCAI 2018)</td>
           <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
           <td><code>comparison/STGCN/</code>(원본, hazdzz/STGCN), <code>comparison/stgcn_tsem/</code>(어댑터)</td></tr>
-        <tr><td><b>DCRNN</b> (ICLR 2018)</td>
-          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+        <tr class="hl"><td><b>DCRNN</b> (ICLR 2018)</td>
+          <td>🔄 <b>학교 서버(192.168.1.7) GPU0에서 실행 중</b>(2026-07-12 시작, Epoch 12, ~20it/s)</td>
           <td><code>comparison/DCRNN/</code>(원본, chnsh/DCRNN_PyTorch), <code>comparison/dcrnn_tsem/</code>(어댑터)</td></tr>
         <tr><td><b>TGN</b> (ICML 2020 WS)</td>
           <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
@@ -2163,7 +2202,9 @@ python comparison/cratpred_tsem/train_cratpred_tsem.py \
     81.91%/F1 81.95%)와 같은 형식(<code>modules/tsem_eval.py</code> 출력)이라 바로 비교 가능하다.</p>
 
     <h3 id="comparison-simpl"><span class="ic">◆</span>SIMPL (IEEE RA-L 2024)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-amber" style="font-size:10px;">🔄 학교 서버 GPU2 실행 중 (2026-07-12)</span></h3>
+    <p class="small">학교 서버(192.168.1.7) GPU2에서 300epoch 실행 중(Epoch 4, batch 2048, ~1.5it/s) —
+    상세는 <a data-goto="comparison" data-anchor="cmp-school-run">§DCRNN 절 학교 서버 실행 현황</a> 참조.</p>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/HKUST-Aerial-Robotics/SIMPL"
     target="_blank" rel="noopener">github.com/HKUST-Aerial-Robotics/SIMPL</a> · 저장 위치
     <code>comparison/SIMPL/</code>(원본) · <code>comparison/simpl_tsem/</code>(어댑터)</p>
@@ -2253,7 +2294,11 @@ python comparison/simpl_tsem/train_simpl_tsem.py \
     81.91%/F1 81.95%)와 같은 형식(<code>modules/tsem_eval.py</code> 출력)이라 바로 비교 가능하다.</p>
 
     <h3 id="comparison-forecastmae"><span class="ic">◆</span>Forecast-MAE (ICCV 2023)
+      <span class="badge b-amber" style="font-size:10px;">🔄 학교 서버 GPU1 실행 중 (2026-07-12)</span>
       <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+    <p class="small">학교 서버(192.168.1.7) GPU1에서 pretrain→finetune 체인 실행 중(pretrain Epoch
+    13/50, recon_loss 하강 중) — 상세는 <a data-goto="comparison" data-anchor="cmp-school-run">§DCRNN
+    절 학교 서버 실행 현황</a> 참조.</p>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/jchengai/forecast-mae"
     target="_blank" rel="noopener">github.com/jchengai/forecast-mae</a> · 저장 위치
     <code>comparison/forecast-mae/</code>(원본) · <code>comparison/forecastmae_tsem/</code>(어댑터)</p>
@@ -2491,7 +2536,32 @@ python comparison/stgcn_tsem/train_stgcn_tsem.py \
     --experiment stgcn_tsem_w10_h10 --gpus 0,1,2,3</pre>
 
     <h3 id="comparison-dcrnn"><span class="ic">◆</span>DCRNN (ICLR 2018)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-amber" style="font-size:10px;">🔄 학교 서버 실행 중 (2026-07-12)</span></h3>
+    <div class="callout info" id="cmp-school-run">
+      <span class="ci">🖥️</span>
+      <div><b>학교 서버(192.168.1.7)에서 DCRNN·Forecast-MAE·SIMPL 3종 병렬 실행 중 (2026-07-12
+      시작, 결과: <code>results/20260712school_7.md</code>).</b> 로컬 GPU 0-3은 STGCN/TGN/Transformer
+      비교실험 + TSEM-SAGE ablation 3종(interleaved/position_only/edge-temporal)으로 이미 자리가
+      없어, 원래 로컬에 순차 대기 예약(<code>scripts/queue_dcrnn_forecastmae.sh</code>,
+      <code>scripts/queue_simpl_after_edgetemporal.sh</code>)돼 있던 이 3종을 대기 없이 학교
+      서버(4× RTX 2080 Ti 11GB, env <code>tna_research</code>, torch 2.7.0+cu126)에서 병렬로 돌리는
+      것으로 변경(로컬 예약은 해제함). 세 config가 그래프 설정(radius 20, K_max 6, K_max2 4,
+      W10/H10)이 동일해 캐시 1회 생성(DCRNN을 먼저 띄워 생성) 후 나머지 2종이 공유 —
+      키 <code>*_W10_H10_r20.0_K6-4_hybrid_tsem_f16ne_v4_tr0.7_vr0.15_58c806f17c</code>,
+      train 575,686 / test 120,435 샘플.</div>
+    </div>
+    <table>
+      <thead><tr><th>실험</th><th>GPU</th><th>PID</th><th>진행 상태(기동 직후 스냅샷)</th></tr></thead>
+      <tbody>
+        <tr><td>DCRNN</td><td>0</td><td>17121</td><td>Epoch 12 진행(~20 it/s, 1125 it/ep), GPU0 사용률 35%</td></tr>
+        <tr><td>Forecast-MAE(pretrain→finetune 체인)</td><td>1</td><td>25580</td>
+          <td>pretrain Epoch 13/50, recon_loss 하강 중, GPU1 사용률 37%</td></tr>
+        <tr><td>SIMPL</td><td>2</td><td>25685</td><td>Epoch 4 진행(batch 2048, ~1.5 it/s, 282 it/ep), GPU2 사용률 93%/5.7GB</td></tr>
+      </tbody>
+    </table>
+    <p class="small">세 잡 모두 정상 학습(에러 없음). 완료 시 <code>checkpoints/comparison/&lt;experiment&gt;/results.json</code>
+    + 로그 tail을 <a data-goto="comparison" data-anchor="comparison-overview">§개요 · 진행 상황</a> 표에 반영 예정 —
+    비교 기준은 TSEM-SAGE 10D 최종모델 test acc 81.97±0.14 / macro-F1 82.03±0.14.</p>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/chnsh/DCRNN_PyTorch"
     target="_blank" rel="noopener">github.com/chnsh/DCRNN_PyTorch</a>(Li, Yi, Shahabi &amp; Liu 원
     논문의 PyTorch 포트 — 저자 공식 구현은 TensorFlow뿐) · 저장 위치 <code>comparison/DCRNN/</code>
@@ -4884,7 +4954,7 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
     이후 실험 완료 시 이 페이지의 해당 행과 "논문 구조" 페이지의 상세 표를 함께 갱신할 것.</p>
 
     <h3 id="exp-20260712-plan"><span class="ic">◆</span>9. 20260712 추가 실험계획
-      <span class="badge b-green" style="font-size:10px;">✅ 코드·config 20개 준비+스모크 PASS · GitHub 푸시 완료 · 학교서버 실행 대기</span></h3>
+      <span class="badge b-amber" style="font-size:10px;">🔄 §1 ①②③ 단독 4개 로컬 GPU0-3 실행 중(21:00~) · §2 W×encoder 그리드 예약 · 나머지 학교서버(192.168.1.11) 대기</span></h3>
     <p class="sec-desc"><b>배경</b>: 6D invariant(76.21%/74.78%, <a data-goto="structure"
     data-anchor="cmp-6d-invariant-result">§구조</a>)가 CRAT-Pred(75.02%)는 이기지만 HiVT(77.48%)·
     QCNet(77.97%)에는 1~1.8%p 뒤진다. 이 격차의 원인 후보 4가지를 각각 독립 실험으로 분리해
@@ -4990,32 +5060,32 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
     <table>
       <thead><tr><th>조합</th><th>config</th><th>params(스모크)</th><th>상태</th></tr></thead>
       <tbody>
-        <tr><td>①단독</td><td><code>tsem_sage_invariant_8d_rot.yaml</code></td>
-          <td>173,619</td><td>✅ PASS</td></tr>
-        <tr><td>②단독</td><td><code>tsem_sage_invariant_6d_learnable.yaml</code></td>
-          <td>175,281</td><td>✅ PASS</td></tr>
-        <tr><td>③단독(h192)</td><td><code>tsem_sage_invariant_6d_h192.yaml</code></td>
-          <td>380,969</td><td>✅ PASS</td></tr>
-        <tr><td>③단독(h256)</td><td><code>tsem_sage_invariant_6d_h256.yaml</code></td>
-          <td>671,785</td><td>✅ PASS</td></tr>
+        <tr class="hl"><td>①단독</td><td><code>tsem_sage_invariant_8d_rot.yaml</code></td>
+          <td>173,619</td><td>🔄 GPU0 실행 중(2026-07-12 21:00~)</td></tr>
+        <tr class="hl"><td>②단독</td><td><code>tsem_sage_invariant_6d_learnable.yaml</code></td>
+          <td>175,281</td><td>🔄 GPU1 실행 중(2026-07-12 21:00~)</td></tr>
+        <tr class="hl"><td>③단독(h192)</td><td><code>tsem_sage_invariant_6d_h192.yaml</code></td>
+          <td>380,969</td><td>🔄 GPU2 실행 중(2026-07-12 21:00~)</td></tr>
+        <tr class="hl"><td>③단독(h256)</td><td><code>tsem_sage_invariant_6d_h256.yaml</code></td>
+          <td>671,785</td><td>🔄 GPU3 실행 중(2026-07-12 21:00~)</td></tr>
         <tr><td>④단독(W10,gru=기준)</td><td><code>tsem_sage_invariant_6d.yaml</code></td>
           <td>172,073</td><td>✅ 실측완료(76.21%/74.78%)</td></tr>
         <tr><td>④단독(W10,transformer)</td><td><code>tsem_sage_invariant_6d_w10_transformer.yaml</code></td>
-          <td>515,753</td><td>✅ PASS</td></tr>
+          <td>515,753</td><td>⏳ 예약(순위1, §1 종료 후 메모리인지형 런처가 자동 투입)</td></tr>
         <tr><td>④단독(W20,gru)</td><td><code>tsem_sage_invariant_6d_w20_gru.yaml</code></td>
-          <td>172,073</td><td>✅ PASS</td></tr>
+          <td>172,073</td><td>⏳ 예약(순위2, 신규 캐시 빌드)</td></tr>
         <tr><td>④단독(W20,transformer)</td><td><code>tsem_sage_invariant_6d_w20_transformer.yaml</code></td>
-          <td>515,753</td><td>✅ PASS</td></tr>
+          <td>515,753</td><td>⏳ 예약(순위3, ~24GB 경계)</td></tr>
         <tr><td>④단독(W30,gru)</td><td><code>tsem_sage_invariant_6d_w30_gru.yaml</code></td>
-          <td>172,073</td><td>✅ PASS</td></tr>
+          <td>172,073</td><td>⏳ 예약(순위4, 24GB 초과 가능→멀티GPU 후보)</td></tr>
         <tr><td>④단독(W30,transformer)</td><td><code>tsem_sage_invariant_6d_w30_transformer.yaml</code></td>
-          <td>515,753</td><td>✅ PASS</td></tr>
-        <tr class="hl"><td><b>①+②</b>(8D+학습형잔차4D=12D)</td>
+          <td>515,753</td><td>⏳ 예약(순위5, 24GB 초과 유력→멀티GPU 후보)</td></tr>
+        <tr class="hl" style="background:#fef3c7;"><td><b>①+②</b>(8D+학습형잔차4D=12D)</td>
           <td><code>tsem_sage_invariant_8d_rot_learnable.yaml</code></td>
-          <td>176,827</td><td>✅ PASS</td></tr>
-        <tr class="hl"><td><b>①+③</b>(8D, h192)</td>
+          <td>176,827</td><td>🔄 172.30.1.20 서버 GPU2 실행 중(2026-07-12)</td></tr>
+        <tr class="hl" style="background:#fef3c7;"><td><b>①+③</b>(8D, h192)</td>
           <td><code>tsem_sage_invariant_8d_rot_h192.yaml</code></td>
-          <td>383,283</td><td>✅ PASS</td></tr>
+          <td>383,283</td><td>🔄 172.30.1.20 서버 GPU3 실행 중(2026-07-12)</td></tr>
         <tr class="hl"><td><b>①+③</b>(8D, h256)</td>
           <td><code>tsem_sage_invariant_8d_rot_h256.yaml</code></td>
           <td>674,867</td><td>✅ PASS</td></tr>
@@ -5056,6 +5126,82 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
     돌리면 무엇이 기여했는지 해석 불가능해진다). 총 <b>20개 config</b>(단독 9 + ①과의 조합 8 +
     ①②③ 삼중 조합 2 + 기존 6D invariant 기준 1)가 준비 완료 상태 — 실행은 GPU 여유가 나는 대로
     §"실행 순서 원칙"에 따라 진행한다.</p>
+
+    <h4 id="exp-20260712-run-s1">실행 기록 — §1 ①②③ 단독 4개 (2026-07-12 21:00 시작, 이 서버 GPU 0-3)</h4>
+    <div class="callout info">
+      <span class="ci">🖥️</span>
+      <div><b>계획 변경: 학교 서버(192.168.1.11)가 아니라 이 서버(로컬, RTX 3090 24GB×4, 전부
+      프리)에서 실행 중</b>(상세 실행 로그: <code>results/20260712_11.md</code>). config의
+      <code>--gpus N</code> 인자는 <code>train_tsem.py</code> argparse에 없어 제거하고, 대신
+      <code>CUDA_VISIBLE_DEVICES=N</code>으로 GPU 1장씩 고정(고정 안 하면 <code>device_count&gt;1</code>
+      자동 <code>nn.DataParallel</code>로 4장 전부를 물어 job끼리 충돌). 4개 config가 캐시 키
+      <code>58c806f17c</code>를 공유(warm hit, train 575,686/val 119,901/test 120,435) — 콜드
+      빌드 레이스 회피 위해 GPU0을 먼저 띄운 뒤 나머지 3개를 순차 기동했다. <code>data_dir</code>은
+      로컬 경로로 이미 일치해 별도 수정 불필요.</div>
+    </div>
+    <table>
+      <thead><tr><th>GPU</th><th>실험</th><th>config</th><th>params</th><th>메모리(24GB 중)</th><th>로그</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>① 8D rot</td><td><code>tsem_sage_invariant_8d_rot.yaml</code></td>
+          <td>173,619</td><td>~16.1 GB</td><td><code>logs/tsem/train_invariant_8d_rot.log</code></td></tr>
+        <tr><td>1</td><td>② learnable 잔차 4D</td><td><code>tsem_sage_invariant_6d_learnable.yaml</code></td>
+          <td>175,281</td><td>~20.7 GB</td><td><code>logs/tsem/train_invariant_6d_learnable.log</code></td></tr>
+        <tr><td>2</td><td>③ hidden 192</td><td><code>tsem_sage_invariant_6d_h192.yaml</code></td>
+          <td>380,969</td><td>~23.8 GB(빠듯하나 안정)</td><td><code>logs/tsem/train_invariant_6d_h192.log</code></td></tr>
+        <tr><td>3</td><td>③ hidden 256</td><td><code>tsem_sage_invariant_6d_h256.yaml</code></td>
+          <td>671,785</td><td>~15.5 GB</td><td><code>logs/tsem/train_invariant_6d_h256.log</code></td></tr>
+      </tbody>
+    </table>
+    <p class="small">4개 모두 Epoch 1(검증 포함, 최대 메모리 할당 구간)을 OOM 없이 통과 —
+    메모리 안정 확인. 프로토콜은 6D invariant 기준과 동일(300 epoch, early stop patience=50,
+    ~78–94s/epoch) — 예상 최대 소요 ~6.7h(early stop 시 단축). 완료 시 이 표 아래 "최종 결과"
+    표와 위 조합 표 상태를 갱신 예정, 비교 기준은 6D invariant(76.21%/74.78%) 및
+    HiVT(77.48%/76.35%)·QCNet(77.97%/76.96%).</p>
+
+    <h4 id="exp-20260712-run-s2">예약 — §2 W×encoder 그리드 5개 (2026-07-12 21:15 예약, §1 종료 후 자동 실행)</h4>
+    <p>메모리 인지형 런처(<code>scratchpad/run_s2_grid.sh</code>, 백그라운드)가 §1의 GPU가 비면
+    (free≥21GB) 아래 순위(메모리 오름차순 예측)로 자동 투입하며 Epoch1 통과 여부로 메모리 fit을
+    실측 확인한다. W10-transformer는 §1 캐시(<code>58c806f17c</code>) 재사용, W20/W30은 각각
+    신규 캐시를 1회 빌드(~10–15분) — gru를 먼저 Epoch1까지 도달시킨 뒤 같은 캐시를 쓰는
+    transformer를 띄워 콜드 빌드 레이스를 방지한다. 24GB 단일 GPU를 초과하는 config는
+    <code>logs/tsem/s2_deferred.txt</code>에 기록해 추후 2-GPU(자동 <code>nn.DataParallel</code>)
+    조합으로 미룬다(실행 상태: <code>logs/tsem/s2_status.txt</code>).</p>
+    <table>
+      <thead><tr><th>순위</th><th>실험</th><th>W/encoder</th><th>캐시</th><th>예상 단일GPU 메모리</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>W10-transformer</td><td>10/tf</td><td>warm(§1 재사용)</td><td>~16–18GB ✅ 안전</td></tr>
+        <tr><td>2</td><td>W20-gru</td><td>20/gru</td><td>신규 빌드</td><td>~24GB 근처 ⚠️</td></tr>
+        <tr><td>3</td><td>W20-transformer</td><td>20/tf</td><td>warm(2번이 빌드)</td><td>24GB 경계 ⚠️</td></tr>
+        <tr><td>4</td><td>W30-gru</td><td>30/gru</td><td>신규 빌드</td><td>24GB 초과 가능 ⛔</td></tr>
+        <tr><td>5</td><td>W30-transformer</td><td>30/tf</td><td>warm(4번이 빌드)</td><td>24GB 초과 유력 ⛔</td></tr>
+      </tbody>
+    </table>
+    <p class="small">예측은 투입 순서 결정용일 뿐 — 실제 fit/초과 판정은 런처가 Epoch1/OOM으로
+    실측한다. §"①+②③④ 조합" 8개와 "①+②+③ 삼중 조합"(②단독 결과 확인 후 조건부) 2개는 §1·§2
+    종료 후 학교 서버(192.168.1.11) 또는 이 서버 여유분에서 이어서 실행 예정.</p>
+
+    <h4 id="exp-20260712-run-s3">실행 기록 — §3 ①과의 조합 2개 (2026-07-12, 172.30.1.20 서버 GPU2/3)</h4>
+    <p>§1(GPU0-3, ①②③ 단독 4개)과 별도로, "①+②③④ 조합" 중 <b>①+②</b>·<b>①+③(h192)</b> 2개를
+    <b>172.30.1.20 서버</b>(이 저장소가 위치한 서버) GPU2/3에 추가로 배정해 실행 중이다. §1과
+    동일하게 <code>CUDA_VISIBLE_DEVICES=N</code>으로 GPU 1장씩 고정, 캐시 키
+    <code>a165448538</code>(train 575,686/val 119,901/test 120,435)를 warm-load해 즉시 학습
+    시작(콜드 빌드 없음). 스모크테스트(랜덤 텐서 forward+backward+NaN)는 이미 PASS 상태라
+    바로 본 실행 투입.</p>
+    <table>
+      <thead><tr><th>GPU</th><th>실험</th><th>config</th><th>params</th><th>로그</th></tr></thead>
+      <tbody>
+        <tr><td>2</td><td>①+② (8D+학습형잔차4D=12D)</td>
+          <td><code>tsem_sage_invariant_8d_rot_learnable.yaml</code></td>
+          <td>176,827</td><td><code>logs/tsem/train_invariant_8d_rot_learnable.log</code></td></tr>
+        <tr><td>3</td><td>①+③ (8D, hidden_dim 192)</td>
+          <td><code>tsem_sage_invariant_8d_rot_h192.yaml</code></td>
+          <td>383,283</td><td><code>logs/tsem/train_invariant_8d_rot_h192.log</code></td></tr>
+      </tbody>
+    </table>
+    <p class="small">완료 시 <code>checkpoints/tsem/&lt;experiment&gt;/results.json</code> + 로그
+    tail을 이 절과 위 조합 표 상태에 반영 예정 — 비교 기준은 6D invariant(76.21%/74.78%) 및
+    HiVT(77.48%/76.35%)·QCNet(77.97%/76.96%). 상세 실행 기록: <code>results/20260712_11.md</code>
+    §"실행 기록 — §3 ①과의 조합 2개".</p>
   </div>
 
   <div class="page" id="page-abstract">
