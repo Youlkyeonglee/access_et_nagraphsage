@@ -417,6 +417,41 @@
     </div>
 
     <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤, 커밋 9539706·22c7eb7) — 20260712 추가 실험계획: 6D invariant 격차해소 4개 조치 + 조합 config 20개 준비, GitHub 푸시</div>
+      <ul class="dash">
+        <li>6D invariant(76.21%/74.78%)가 HiVT(77.48%)·QCNet(77.97%)에 뒤지는 원인 후보 4가지를
+        각각 독립 구현: ①상대 heading 회전량(<code>semantic_variant='invariant_rot'</code>, 8D)
+        ②학습 가능한 잔차 브랜치(<code>LearnableSemanticResidual</code>) ③hidden_dim 확대
+        ④<code>TemporalEncoder</code>에 <code>encoder_type='transformer'</code> 신규 구현 —
+        전부 opt-in, 기존 체크포인트 영향 없음: <a data-goto="experiments" data-anchor="exp-20260712-plan">§20260712 추가 실험계획</a></li>
+        <li>①을 ②③④ 각각과 조합한 실험(8개) + ①②③ 삼중 조합(2개, ②단독 결과 확인 후 실행
+        조건부)까지 총 config 20개, 전부 랜덤 텐서 forward+backward+NaN 스모크테스트 PASS</li>
+        <li>로컬 GPU 0-3이 이미 꽉 차 있어 학교 서버(192.168.1.11)에서 실행하기로 하고 커밋
+        <code>9539706</code>(18:54)으로 GitHub 푸시 — 이 과정에서 신규 clone STGCN/DCRNN/TGN
+        원본(500MB+, 자체 <code>.git</code> 포함)이 <code>.gitignore</code>에서 누락된 걸 발견해
+        수정 후 커밋. 실행 가이드: <code>results/20260712_11.md</code></li>
+        <li>커밋 <code>22c7eb7</code>(20:22)로 이 절 상태 배지 갱신("계획 수립"→"준비+푸시 완료")
+        추가 푸시</li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤) — 위치 암기 가설 정량 검증①·④ 완료 + 비교연구 신규 baseline 5종</div>
+      <ul class="dash">
+        <li>① 정적 좌표 격자 룩업/엔트로피 분석(<code>journal/position_memorization_entropy.py</code>,
+        재학습 없음) — 위치 룩업 정확도는 60~64%대(Persist 수준)에 그쳐 10D 신경망(81.91%)과
+        17~20%p 격차: <a data-goto="data" data-anchor="data-position-verify">§위치 암기 검증①·④ 종합</a></li>
+        <li>④ 10D 체크포인트 추론 시 채널 고정 ablation(<code>journal/position_freeze_ablation.py</code>,
+        재학습 없음) — raw position 고정 시 -17.36%p, semantic 속 <code>tangent</code>(site-specific)
+        단독 고정만으로도 -16.69%p로 거의 동급. 두 결과를 종합해 "신경망의 초과성능이 정확히
+        위치 의존 몫과 일치"한다는 결론 기록, CLAUDE.md §1도 동일 내용 갱신: 같은 섹션</li>
+        <li>비교연구에 STGCN(IJCAI 2018)·DCRNN(ICLR 2018)·TGN(ICML 2020 WS)·LSTM·Transformer
+        5종 어댑터 신규 구현 — 재구현 검증 8/8·4/4·5/5·3/3·4/4 PASS(STGCN·TGN에서 실버그 각
+        1건 발견·수정): <a data-goto="comparison" data-anchor="comparison-newbatch">§개요 · 신규 5종</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
       <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (오후) — hypothesis 1(공간 집계 시점) 검증: ①edge-temporal 구현(미실행), ②spatial-temporal 교차 학습 시작</div>
       <ul class="dash">
         <li>6D invariant가 HiVT·QCNet에 뒤지는 원인 가설 두 가지(① edge-temporal, ② spatial-temporal
@@ -4863,6 +4898,30 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
     "코드·config 준비 완료"절 및 <code>results/20260712_11.md</code> 참조). 학교 서버에서
     <code>git pull origin main</code> 후 바로 실행 가능한 상태 — 실측 결과가 나오는 대로 아래
     표와 §"코드·config 준비 완료" 절의 상태(✅ PASS → 실측 수치)를 갱신한다.</p>
+
+    <div class="callout" style="border-left:3px solid #7c3aed;background:#f5f3ff;padding:10px 14px;margin:10px 0;">
+      <b style="font-size:12px;">📝 갱신 이력 (2026-07-12, 이 문서 전체 — 시간순)</b>
+      <ol style="margin:8px 0 0 18px;padding:0;font-size:12.5px;line-height:1.85;color:#334155;">
+        <li><b>§비교 연구 "개요 · 신규 5종"</b> — STGCN·DCRNN·TGN·LSTM·Transformer 어댑터 5종
+          구현·검증(재구현 검증 8/8·4/4·5/5·3/3·4/4 PASS, STGCN·TGN에서 실버그 각 1건 발견·수정)
+          결과를 <code>comparison/README.md</code>와 함께 기록.</li>
+        <li><b>§데이터 설계 "위치 암기 검증①·④ 종합"</b> — ①정적 좌표 격자 룩업/엔트로피 분석
+          (<code>journal/position_memorization_entropy.py</code>) + ④10D 체크포인트 추론시
+          채널 고정 ablation(<code>journal/position_freeze_ablation.py</code>) 실행·결과 기록,
+          이어서 <code>CLAUDE.md</code> §1도 동일 내용으로 갱신.</li>
+        <li><b>§실험현황 "20260712 추가 실험계획"</b> 신설 — 6D invariant가 HiVT/QCNet에 뒤지는
+          격차를 좁히기 위한 4개 조치(①상대회전량 ②학습형잔차 ③용량확대 ④Transformer 인코더)와
+          조합 실험(①과 조합 8개, ①②③ 삼중 조합 2개) 설계·구현·config 20개 준비, 스모크테스트
+          전부 PASS.</li>
+        <li><b>커밋 <code>9539706</code> (18:54) — GitHub 푸시</b>: 위 1~3 전체(신규 baseline
+          5종 + 위치 암기 검증 도구 + 20260712 실험계획 코드/config 20개 + GPU 큐 스크립트 +
+          학교서버 실행가이드 <code>results/20260712_11.md</code>) 최초 푸시. 이 과정에서
+          새로 clone한 STGCN/DCRNN/TGN 원본(500MB+, 각자 자체 <code>.git</code> 포함)이
+          <code>.gitignore</code>에서 누락된 걸 발견해 커밋 전에 수정.</li>
+        <li><b>커밋 <code>22c7eb7</code> (20:22) — GitHub 푸시</b>: 이 절의 상태 배지를
+          "계획 수립·미실행"→"코드 준비+GitHub 푸시 완료·학교서버 실행 대기"로 갱신 반영.</li>
+      </ol>
+    </div>
 
     <table>
       <thead><tr><th>#</th><th>가설</th><th>조치</th><th>구현 방식</th><th>예정 config</th><th>상태</th></tr></thead>
