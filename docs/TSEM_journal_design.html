@@ -4849,13 +4849,20 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
     이후 실험 완료 시 이 페이지의 해당 행과 "논문 구조" 페이지의 상세 표를 함께 갱신할 것.</p>
 
     <h3 id="exp-20260712-plan"><span class="ic">◆</span>9. 20260712 추가 실험계획
-      <span class="badge" style="font-size:10px;">⏳ 계획 수립 — 코드 준비 중, 미실행</span></h3>
+      <span class="badge b-green" style="font-size:10px;">✅ 코드·config 20개 준비+스모크 PASS · GitHub 푸시 완료 · 학교서버 실행 대기</span></h3>
     <p class="sec-desc"><b>배경</b>: 6D invariant(76.21%/74.78%, <a data-goto="structure"
     data-anchor="cmp-6d-invariant-result">§구조</a>)가 CRAT-Pred(75.02%)는 이기지만 HiVT(77.48%)·
     QCNet(77.97%)에는 1~1.8%p 뒤진다. 이 격차의 원인 후보 4가지를 각각 독립 실험으로 분리해
     검증한다 — 전부 <b>site-specific 신호(raw position, Δρ, tangent)는 배제한 채</b> 진행해
     "위치 암기 없이 baseline을 이길 수 있는가"라는 2-트랙 서사(§구조·§기여3줄)를 지키면서
     구조·표현력만으로 격차를 좁히는 게 목표다.</p>
+    <p class="small"><b>2026-07-12 갱신 — GitHub 푸시 완료</b>: 로컬 서버 GPU 0-3이 이미 다른
+    실험(interleaved·position_only·edge-temporal·comparison Transformer)으로 꽉 차 있어, 이
+    실험 20개는 학교 서버(192.168.1.11)에서 진행하기로 하고 코드·config를 커밋
+    <code>9539706</code>으로 <code>origin/main</code>에 푸시했다(§실행 방법은 아래
+    "코드·config 준비 완료"절 및 <code>results/20260712_11.md</code> 참조). 학교 서버에서
+    <code>git pull origin main</code> 후 바로 실행 가능한 상태 — 실측 결과가 나오는 대로 아래
+    표와 §"코드·config 준비 완료" 절의 상태(✅ PASS → 실측 수치)를 갱신한다.</p>
 
     <table>
       <thead><tr><th>#</th><th>가설</th><th>조치</th><th>구현 방식</th><th>예정 config</th><th>상태</th></tr></thead>
