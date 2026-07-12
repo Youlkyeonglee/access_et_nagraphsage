@@ -4,7 +4,7 @@
 
 data:
   dataset: gongeoptap
-  data_dir: /home/oem/data/TII_data/
+  data_dir: /home/oem/yklee/data/
   train_ratio: 0.70
   val_ratio:   0.15
 
