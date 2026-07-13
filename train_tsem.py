@@ -121,6 +121,7 @@ def build_model(cfg: dict, T: int):
             hidden_dim=mcfg['hidden_dim'],
             d_e=mcfg['d_e'],
             T=T,
+            edge_dim=mcfg.get('edge_dim', 5),
             semantic_variant=mcfg.get('semantic_variant', 'full'),
             raw_append=mcfg.get('raw_append', 'none'),
             use_2hop=mcfg.get('use_2hop', True),
@@ -128,6 +129,11 @@ def build_model(cfg: dict, T: int):
             dropout=mcfg['dropout'],
             use_speed_head=(mcfg.get('use_speed_head', False)
                             or cfg.get('loss', {}).get('speed_reg_weight', 0.0) > 0),
+            # §exp-20260713-plan ①②③ — 전부 opt-in, 미지정 시 기존 동작과 100% 동일
+            num_ego_rounds=mcfg.get('num_ego_rounds', 1),
+            spatial_layer=mcfg.get('spatial_layer', 'gate'),
+            mha_num_heads=mcfg.get('mha_num_heads', 4),
+            temporal_encoder_type=mcfg.get('temporal_encoder_type', 'gru1'),
         )
         return TSEMSAGEInterleaved(**ikw)
 
@@ -135,6 +141,7 @@ def build_model(cfg: dict, T: int):
         hidden_dim=mcfg['hidden_dim'],
         d_e=mcfg['d_e'],
         T=T,
+        edge_dim=mcfg.get('edge_dim', 5),
         encoder_type=mcfg['encoder_type'],
         use_attention=mcfg['use_attention'],
         use_2hop=mcfg.get('use_2hop', True),
@@ -213,6 +220,7 @@ def train(cfg: dict):
         augment=augment if augment.enabled else None,
         stop_persist_delta=stop_delta,
         with_v_future=cfg['loss'].get('speed_reg_weight', 0.0) > 0,
+        edge_feat_variant=gcfg.get('edge_feat_variant', 'legacy'),
     )
 
     raw_model = build_model(cfg, T=W).to(device)
@@ -387,6 +395,11 @@ def main():
     parser.add_argument('--edge_temporal', action='store_true',
                         help="① hypothesis 1 저비용 검증: edge_proj(anchor 프레임만) 대신 "
                              "TemporalEncoder(GRU)로 edge_seqs 전체 W프레임을 인코딩 (기본 False)")
+    parser.add_argument('--edge_feat_variant', type=str, default=None,
+                        help="edge feature 구성: legacy(5D, 기본)|bearing(7D — rel_dx/rel_dz 제외, "
+                             "bearing cos/sinφ + Δheading cos/sinΔθ 추가)|fourier(15D — bearing 7D + "
+                             "dist Fourier 위치인코딩). config graph.edge_feat_variant, model.edge_dim도 "
+                             "각각 7/15로 맞출 것")
     parser.add_argument('--decomp_kernel', type=int, default=None, help='low-pass 커널 크기 (기본 5)')
     parser.add_argument('--grad_clip', type=float, default=None,
                         help='grad clipping max_norm (기본 0=미사용, config train.grad_clip_norm)')
@@ -431,6 +444,8 @@ def main():
         cfg['model']['semantic_variant'] = args.semantic_variant
     if args.edge_temporal:
         cfg['model']['edge_temporal'] = True
+    if args.edge_feat_variant is not None:
+        cfg.setdefault('graph', {})['edge_feat_variant'] = args.edge_feat_variant
     if args.decomp_kernel is not None:
         cfg['model']['decomp_kernel'] = args.decomp_kernel
     if args.grad_clip is not None:

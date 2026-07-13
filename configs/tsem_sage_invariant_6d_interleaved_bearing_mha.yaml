@@ -1,0 +1,66 @@
+# TSEM-SAGE §exp-20260713-plan ②b 공간 결합 multi-head 확장 — 단독 검증 (2026-07-13)
+# tsem_sage_invariant_6d_interleaved_bearing.yaml(baseline, edge=bearing 7D)에서 ETSAGELayer
+# (gate+단일 softmax weighted-sum)를 ETSAGEMultiHeadLayer(4헤드, 헤드별 독립 gate/msg/beta
+# concat 후 재투영)로 교체 — edge feature(bearing 7D)는 baseline과 동일, 결합 방식만 바꿔
+# ②a(fourier)와 분리 검증. et_nagraphsage.py::ETSAGELayer 원본은 무변경(조합으로만 구현).
+# 구현: models/tsem_sage.py::ETSAGEMultiHeadLayer, TSEMSAGEInterleaved(spatial_layer='mha').
+# baseline과 나머지 전부 동일, model.spatial_layer(gate→mha) + mha_num_heads만 다름.
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_interleaved_bearing_mha.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+  edge_feat_variant: bearing   # baseline과 동일 — 7D
+
+model:
+  name: tsem_sage_interleaved
+  semantic_variant: invariant
+  raw_append: none
+  edge_dim: 7
+  hidden_dim: 128
+  d_e: 32
+  use_2hop: true
+  num_classes: 3
+  dropout: 0.3
+  spatial_layer: mha   # ★ 이 config의 핵심 변경점 — 기본 gate
+  mha_num_heads: 4
+
+train:
+  batch_size: 4096
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.0
+  lambda_spatial: 0.0
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_interleaved_bearing_mha

@@ -6,10 +6,7 @@ conda activate tna_research
 - openDD (로터리 7곳, rounD 대체 외부검증 후보): `/home/oem/data/TII_data/opendd_dataset/` — 데이터 분석 결과는 `docs/TSEM_journal_design.html` "데이터 설계 > openDD" 참조, 학습 미착수
 - 학교 서버: `/home/oem/yklee/data/`
 - ⚠️ `configs/*.yaml`의 `data_dir`는 서버마다 다름 — **커밋/pull 시 이 필드 충돌 주의** (b9be26d에서 실제 발생)
-
-172.30.1.84 서버
-계정: lee
-비밀번호: 0000
+- 172.30.1.84 서버 접속 정보는 비공개 로컬 파일로 관리 — 저장소(GitHub 동기화 대상)에는 기록하지 않음.
 
 # userEmail
 yklee00815@gmail.com
@@ -109,6 +106,7 @@ L = FocalLoss(logits,y)·unc_weight + λ_T·L_aux_temporal + λ_S·L_aux_spatial
 - NAGraphSAGE 원본 (`/home/oem/graph_vehicle_v1/`) — 읽기 전용 참조.
 - 확정 라벨 정의(LC window, stop ±2) — 변경은 비교성 파괴, ablation으로만.
 - 기존 ET-NAGraphSAGE 계열 코드(`train.py`, `modules/data_manager.py`, `models/et_nagraphsage.py` 호출부) — TSEM은 병행 파일로 구현, 기본값으로 하위호환 유지.
+  - **적용 패턴(실례, 2026-07-13)**: edge feature에 bearing/Δheading을 추가할 때 `modules/data_manager.py::_compute_edge_feat`/`_recompute_edges`/`EDGE_DIM`(컨퍼런스 트랙과 공유)은 그대로 두고, `modules/data_manager_tsem.py`에 `_recompute_edges_bearing`(신규 함수, `EDGE_DIM_BEARING=7`)을 병행 구현 + `edge_feat_variant='legacy'|'bearing'` opt-in 플래그로 선택하게 함(기본값 `'legacy'`가 기존 동작과 100% 동일). 앞으로 공용 파일의 핵심 계산을 바꾸고 싶을 때는 이 방식(새 함수를 TSEM 전용 파일에 추가 + opt-in 플래그, 기본값은 항상 기존 동작 유지)을 기본으로 따를 것 — 공용 파일을 직접 고치면 이미 학습된 체크포인트·재현 결과가 깨질 수 있다.
 
 ## 5. 커밋 → 완료 처리
 - 커밋 메시지는 Conventional Commits 형식: `feat(scope): 설명`

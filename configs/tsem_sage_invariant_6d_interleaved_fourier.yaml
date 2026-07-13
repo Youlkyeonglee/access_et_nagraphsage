@@ -1,0 +1,64 @@
+# TSEM-SAGE §exp-20260713-plan ②a edge feature Fourier 확장 — 단독 검증 (2026-07-13)
+# tsem_sage_invariant_6d_interleaved_bearing.yaml(bearing 7D)의 dist 스칼라 1개를 HiVT/QCNet
+# 스타일 Fourier 위치 인코딩(4주파수×sin/cos=8채널)으로 확장한 15D 변형 — bearing/Δheading은
+# 그대로 두고 거리 표현력만 키운다. spatial_layer는 baseline과 동일(gate, 단일헤드) — ②b(mha)와
+# 분리해 "한 번에 하나씩만 바꿔 격리" 원칙 유지.
+# 구현: modules/data_manager_tsem.py::_recompute_edges_fourier (graph.edge_feat_variant: fourier).
+# baseline과 나머지 전부 동일, graph.edge_feat_variant(bearing→fourier) + model.edge_dim(7→15)만 다름.
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_interleaved_fourier.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+  edge_feat_variant: fourier   # ★ 이 config의 핵심 변경점 — 15D(bearing 7D + dist Fourier 8D)
+
+model:
+  name: tsem_sage_interleaved
+  semantic_variant: invariant
+  raw_append: none
+  edge_dim: 15   # ★ fourier 변형(15D)에 맞춤
+  hidden_dim: 128
+  d_e: 32
+  use_2hop: true
+  num_classes: 3
+  dropout: 0.3
+
+train:
+  batch_size: 4096
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.0
+  lambda_spatial: 0.0
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_interleaved_fourier

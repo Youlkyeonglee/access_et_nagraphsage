@@ -360,6 +360,7 @@
         <li><a data-page="experiments" data-anchor="exp-graph">그래프 구성·기타</a></li>
         <li><a data-page="experiments" data-anchor="exp-cross">교차 장소 (DRIFT)</a></li>
         <li><a data-page="experiments" data-anchor="exp-20260712-plan">▸ 20260712 추가 실험계획</a></li>
+        <li><a data-page="experiments" data-anchor="exp-20260713-plan">▸ 20260713 추가 실험계획</a></li>
       </ul>
     </li>
     <li class="toc-item">
@@ -414,6 +415,63 @@
       <code>&lt;a data-goto="&lt;page&gt;" data-anchor="&lt;id&gt;"&gt;</code> 링크. 새 h4를
       추가했다면 <b>그 h4 자체에 id를 붙여야</b> 여기서 정확히 링크할 수 있다(h3 없이 h4만
       추가하면 페이지 전체가 아니라 그 지점까지 스크롤됨 — 기존 h3 subsection 안에 있어도 됨).</div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">(172.30.1.20 서버) — ①+② · ①+③(h192/h256) · position_only 완료, ①+④ W×encoder 4개 중 3개 크래시</div>
+      <ul class="dash">
+        <li>①+②(76.37%/75.13%, best@185)·①+③h192(76.57%/75.27%, best@120)·①+③h256(76.51%/75.02%,
+        best@76) 전부 완료 — 6D invariant(76.21%/74.78%) 대비 전부 소폭 개선이지만 HiVT/QCNet
+        격차는 여전: <a data-goto="experiments" data-anchor="exp-20260712-run-s3">§실행 기록 —
+        §3 ①과의 조합 3개</a></li>
+        <li>position-only 신경망(raw position 2D만 입력) 300epoch 완료 — test acc
+        <b>81.39%</b>/F1 <b>81.70%</b>, 10D 최종모델(81.91~81.97%)과 0.5%p 이내로 수렴, 위치 암기
+        가설의 세 번째 독립 증거: <a data-goto="data" data-anchor="data-position-verify">§위치 암기
+        검증①·④ 종합</a></li>
+        <li>PID 감시 런처로 예약해둔 ①+④ W×encoder 4개 중 <b>3개가 Epoch1 전 크래시</b>
+        (W10-transformer: CUDA 커널 오류 / W20-gru: OOM / W30-gru: illegal memory access) —
+        W20-transformer만 GPU2에서 정상 실행 중, 나머지는 원인 조사·재시도 필요: <a data-goto="experiments" data-anchor="exp-20260712-run-s3-wgrid">§예약 — §3 ①+④ W×encoder 조합 4개</a></li>
+        <li>마스터 조합 표 상태 전체 갱신(완료 3행 실측치, 크래시 3행 ❌, 진행중 1행 🔄):
+        <a data-goto="experiments" data-anchor="exp-20260712-plan">§20260712 추가 실험계획</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤 22:23, 172.30.1.20 서버) — ①+④ W×encoder 조합 4개, PID 감시 런처로 GPU 0-3 예약</div>
+      <ul class="dash">
+        <li>GPU 0-3이 전부 ①+②·①+③(h192/h256)·position_only로 찬 상태라, "①+④(8D, W×encoder
+        그리드)" 조합 4개(W10-transformer/W20-gru/W20-transformer/W30-gru)를
+        <code>scratchpad/queue_s3_w_grid.sh</code>(PID 2509557)로 예약 — 각 GPU의 현재 job이
+        끝나는 즉시 자동 투입, W20 쌍은 캐시 공유로 인한 콜드빌드 레이스를 gru의 Epoch1 로그
+        확인으로 방지: <a data-goto="experiments" data-anchor="exp-20260712-run-s3-wgrid">§예약 —
+        §3 ①+④ W×encoder 조합 4개</a></li>
+        <li><code>results/20260712_11.md</code>에 GPU별 현재 점유 job/예약 job 매핑표 추가,
+        마스터 조합 표(①+④ 4행) 상태를 "⏳ 예약"으로 갱신: <a data-goto="experiments" data-anchor="exp-20260712-plan">§20260712 추가 실험계획</a></li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤, 172.30.1.20 서버 GPU0) — ①+③(8D, h256) 추가 실행, Epoch1 OOM 없음 확인</div>
+      <ul class="dash">
+        <li>GPU2/3(①+②, ①+③ h192)이 이미 실행 중인 상태에서 GPU0이 비어 있어
+        <code>tsem_sage_invariant_8d_rot_h256.yaml</code>(params 674,867)을 추가 배정 — 캐시
+        <code>a165448538</code> warm-load, Epoch 1 완료(loss=0.6601, val_acc=0.6127,
+        macro_f1=0.5756, 83.4s), GPU 메모리 15.3GB/24GB로 <b>OOM 없음</b> 확인: <a data-goto="experiments" data-anchor="exp-20260712-run-s3">§실행 기록 — §3 ①과의 조합 3개</a></li>
+        <li><code>results/20260712_11.md</code> §3 절과 조합 실험 표 상태 갱신(GPU0/2/3 3개
+        동시 실행 중으로).</li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">2026-07-12 (밤) — 5개 실험 300epoch 완료: hypothesis 1 검증(①edge-temporal·②interleaved) + 신규 baseline 3종(STGCN·TGN·Transformer)</div>
+      <ul class="dash">
+        <li>hypothesis 1(공간 집계 시점) 검증 두 갈래 완료 — ①edge-temporal(77.03%/75.73%,
+        best@148)·②interleaved(77.01%/76.04%, best@193) 둘 다 6D invariant(76.21%/74.78%)를
+        소폭 상회하나 HiVT(77.48%)·QCNet(77.97%) 격차는 못 메움: <a data-goto="comparison" data-anchor="cmp-h1-results">§① · ② 300-epoch 결과</a></li>
+        <li>신규 baseline 3종 300epoch 완료 — STGCN(74.81%/72.93%, best@155), TGN(76.00%/74.66%,
+        best@157, 6개 신규 baseline 중 최고), Transformer(75.50%/74.15%, best@226): <a data-goto="comparison" data-anchor="cmp-tgn-300ep">§TGN 300-epoch 결과</a></li>
+        <li>마스터 진행표(§비교 연구 개요) 5개 행 상태를 실측 수치로 갱신: <a data-goto="comparison" data-anchor="comparison-overview">§개요 · 진행 상황</a></li>
+      </ul>
     </div>
 
     <div class="card" style="margin-bottom:14px;">
@@ -1441,20 +1499,20 @@ else:
         <tr class="hl"><td><b>Forecast-MAE</b> (ICCV 2023)</td>
           <td>🔄 <b>학교 서버(192.168.1.7) GPU1에서 실행 중</b>(2026-07-12 시작, pretrain Epoch 13/50 → finetune 체인)</td>
           <td><code>comparison/forecast-mae/</code>(원본), <code>comparison/forecastmae_tsem/</code>(어댑터)</td></tr>
-        <tr><td><b>STGCN</b> (IJCAI 2018)</td>
-          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+        <tr class="hl"><td><b>STGCN</b> (IJCAI 2018)</td>
+          <td>✅ <b>300epoch 완료</b>(best@155) — test acc 74.81% / F1 72.93%</td>
           <td><code>comparison/STGCN/</code>(원본, hazdzz/STGCN), <code>comparison/stgcn_tsem/</code>(어댑터)</td></tr>
         <tr class="hl"><td><b>DCRNN</b> (ICLR 2018)</td>
           <td>🔄 <b>학교 서버(192.168.1.7) GPU0에서 실행 중</b>(2026-07-12 시작, Epoch 12, ~20it/s)</td>
           <td><code>comparison/DCRNN/</code>(원본, chnsh/DCRNN_PyTorch), <code>comparison/dcrnn_tsem/</code>(어댑터)</td></tr>
-        <tr><td><b>TGN</b> (ICML 2020 WS)</td>
-          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+        <tr class="hl"><td><b>TGN</b> (ICML 2020 WS)</td>
+          <td>✅ <b>300epoch 완료</b>(best@157) — test acc 76.00% / F1 74.66%</td>
           <td><code>comparison/TGN/</code>(원본, twitter-research/tgn), <code>comparison/tgn_tsem/</code>(어댑터)</td></tr>
         <tr><td><b>LSTM</b> (원본 repo 없음 — 대조군)</td>
           <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
           <td><code>comparison/lstm_tsem/</code>(어댑터만)</td></tr>
-        <tr><td><b>Transformer</b> (원본 repo 없음 — 대조군)</td>
-          <td>⏳ 구현+검증 완료(2026-07-12), 300epoch 실행 대기</td>
+        <tr class="hl"><td><b>Transformer</b> (원본 repo 없음 — 대조군)</td>
+          <td>✅ <b>300epoch 완료</b>(best@226) — test acc 75.50% / F1 74.15%</td>
           <td><code>comparison/transformer_tsem/</code>(어댑터만)</td></tr>
       </tbody>
     </table>
@@ -1774,25 +1832,49 @@ else:
     <p>6D invariant가 HiVT·QCNet에 뒤지는 이유를 "TSEM-SAGE가 spatial 집계를 anchor 프레임에서
     딱 1번만 한다"는 구조적 차이로 설명할 수 있는지 검증하는 두 갈래. 도식은 Obsidian
     <code>Drawing 2026-07-12 spatial-temporal 검증.excalidraw.md</code> 참조.</p>
-    <p><b>① edge-temporal — ✅ 구현 완료, 학습은 보류(사용자 결정).</b> 구조 순서(시간 먼저
+    <p><b>① edge-temporal — ✅ 300epoch 학습 완료 (2026-07-12).</b> 구조 순서(시간 먼저
     요약 → anchor에서 spatial 1회)는 그대로 두고, edge 표현만 바꾼다.
     <code>models/tsem_sage.py::TSEMSAGE</code>에 <code>edge_temporal: bool = False</code>
     (opt-in, 기본값 유지로 하위호환) 추가 — 켜지면 기존 <code>edge_proj</code>(Linear, anchor
     프레임만) 대신 <code>_encode_edges()</code>가 <code>TemporalEncoder</code>(GRU,
     et_nagraphsage.py와 동일 모듈 재사용)로 edge_seqs 전체 W프레임을 인코딩한다. 전용 config
     <code>configs/tsem_sage_invariant_6d_edgetemporal.yaml</code>(6D invariant와 동일,
-    <code>edge_temporal: true</code>만 다름). 실제 데이터로더로 forward+backward 정합성 검증
-    완료(NaN 없음, params 172,073→175,657 — GRU 엣지 인코더만큼 증가,
-    <code>edge_temporal=False</code>는 기존과 파라미터 수 완전히 동일해 하위호환 확인됨).
-    <b>학습은 미실행.</b></p>
-    <p><b>② spatial-temporal 교차 — 🔄 학습 진행 중.</b> 파이프라인 순서 자체를 뒤집는다.
-    <code>models/tsem_sage.py</code>에 <code>TSEMSAGEInterleaved</code> 신설 — 매 프레임 t마다
-    먼저 <code>ETSAGELayer</code>(spatial)로 공간인지 벡터 s_t를 만들고, 시퀀스 s_1..s_W를
-    GRU(시간 인코더)에 넣어 anchor 표현을 얻는다(HiVT의 AAEncoder→TemporalEncoder, QCNet의
-    시공간 attention 교대 반복과 동일 원리). 전용 config
+    <code>edge_temporal: true</code>만 다름), params 175,657.</p>
+    <p><b>② spatial-temporal 교차 — ✅ 300epoch 학습 완료 (2026-07-12).</b> 파이프라인 순서 자체를
+    뒤집는다. <code>models/tsem_sage.py</code>에 <code>TSEMSAGEInterleaved</code> 신설 — 매
+    프레임 t마다 먼저 <code>ETSAGELayer</code>(spatial)로 공간인지 벡터 s_t를 만들고, 시퀀스
+    s_1..s_W를 GRU(시간 인코더)에 넣어 anchor 표현을 얻는다(HiVT의 AAEncoder→TemporalEncoder,
+    QCNet의 시공간 attention 교대 반복과 동일 원리). 전용 config
     <code>configs/tsem_sage_invariant_6d_interleaved.yaml</code>(6D invariant와 라벨/loss/
-    augmentation 전부 동일, 구조만 다름), 1-epoch 스모크 통과(94.5s/epoch, NaN 없음, params
-    216,581).</p>
+    augmentation 전부 동일, 구조만 다름), params 216,581.</p>
+
+    <h4 id="cmp-h1-results">① · ② 300-epoch 결과 (2026-07-12, 이 서버에서 직접 실행)</h4>
+    <table>
+      <thead><tr><th>지표</th><th>① edge-temporal</th><th>② interleaved</th>
+        <th>6D invariant(기준)</th><th>HiVT</th><th>QCNet</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td><b>77.03%</b></td><td><b>77.01%</b></td>
+          <td>76.21%</td><td>77.48%</td><td>77.97%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td><b>75.73%</b></td><td><b>76.04%</b></td>
+          <td>74.78%</td><td>76.35%</td><td>76.96%</td></tr>
+        <tr><td>best epoch (early stop)</td><td>148 (198 중단)</td><td>193 (243 중단)</td>
+          <td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>stop recall/precision</td><td>93.49% / 79.29%</td><td>91.33% / 79.70%</td>
+          <td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>lane_change recall/precision</td><td>69.08% / 71.77%</td><td>72.21% / 71.33%</td>
+          <td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>normal recall/precision</td><td>65.88% / 76.97%</td><td>66.35% / 76.89%</td>
+          <td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="small"><b>결론</b>: 둘 다 6D invariant 기준선(76.21%/74.78%)을 소폭 상회(①
+    +0.82%p/+0.95%p, ② +0.80%p/+1.26%p)하지만, <b>HiVT(77.48%/76.35%)·QCNet(77.97%/76.96%)의
+    격차를 메우지는 못했다</b> — "spatial 집계 시점(anchor 1회 vs 매 프레임 교차)"도 "edge
+    표현의 시간 정보량(anchor snapshot vs 전체 W프레임 GRU)"도 격차의 주된 원인이 아니라는 뜻.
+    ①·②는 서로 다른 구조 변경인데도 성능이 거의 동일(77.0% 근방)하다는 점도 흥미롭다 — 두
+    변경 모두 "구조를 정교화"하는 방향인데 비슷한 상한에 수렴하는 걸 보면, 격차의 진짜 원인은
+    구조가 아니라 §20260712 추가 실험계획에서 다루는 <b>표현력/입력 신호</b>(①상대회전량/②학습형
+    잔차/③용량/④인코더 종류) 쪽에 더 가깝다는 간접 증거로 읽힌다.</p>
     <p class="small"><b>2026-07-12 정정 ①(epoch 수):</b> 최초 <code>num_epochs: 500</code>
     (TSEM-SAGE 자체 실험 관례)으로 실행했으나, comparison/ 5개 baseline과 직접 비교하는 실험이라
     300epoch/patience 50 프로토콜로 통일해야 한다는 지적을 받아 config를 300으로 고치고
@@ -2493,7 +2575,7 @@ python comparison/forecastmae_tsem/train_forecastmae_tsem.py \
     이상 없으면 300-epoch(patience 50) 본 실행 예정.</p>
 
     <h3 id="comparison-stgcn"><span class="ic">◆</span>STGCN (IJCAI 2018)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-green" style="font-size:10px;">✅ 300epoch 완료 (2026-07-12)</span></h3>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/hazdzz/STGCN" target="_blank"
     rel="noopener">github.com/hazdzz/STGCN</a>(Yu, Yin &amp; Zhu 원 논문의 순수 PyTorch 재구현,
     <code>torch_geometric</code> 의존 없음) · 저장 위치 <code>comparison/STGCN/</code>(원본) ·
@@ -2534,6 +2616,25 @@ python comparison/stgcn_tsem/test_model.py
 python comparison/stgcn_tsem/train_stgcn_tsem.py \
     --config comparison/stgcn_tsem/config.yaml \
     --experiment stgcn_tsem_w10_h10 --gpus 0,1,2,3</pre>
+
+    <h4 id="cmp-stgcn-300ep">✅ 실제 300-epoch 학습 완료 (2026-07-12, 이 서버에서 직접 실행)</h4>
+    <p>early stop epoch 205(best epoch 155, val_acc=0.7625). <code>checkpoints/comparison/stgcn_tsem_w10_h10/</code>
+    기준 최종 test 결과:</p>
+    <table>
+      <thead><tr><th>지표</th><th>STGCN(300ep)</th><th>Persist baseline</th><th>10차-2(TSEM-SAGE 최종)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td><b>74.81%</b></td><td>63.17%</td><td>81.91%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td><b>72.93%</b></td><td>50.55%</td><td>81.95%</td></tr>
+        <tr><td>stop recall/precision</td><td>95.74% / 77.54%</td><td>—</td><td>—</td></tr>
+        <tr><td>lane_change recall/precision</td><td>65.12% / 66.68%</td><td>—</td><td>—</td></tr>
+        <tr><td>normal recall/precision</td><td>60.47% / 75.63%</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Persist 대비 accuracy +11.64%p, macro-F1 +22.38%p. 6개 신규 baseline 중
+    최경량(7,827 params)인데도 CRAT-Pred(75.02%/72.84%)와 거의 동급 — "그래프 conv 자체가
+    관계 정보를 담는다"는 원 설계가 저용량으로도 준수하게 동작함을 보여준다. 다만 신규 5종 중
+    가장 낮은 stop recall 외 지표 조합으로, 명시적 edge feature 없이 인접행렬만으로는 lane_change/
+    normal 구분에서 HiVT/QCNet류보다 뒤처진다.</p>
 
     <h3 id="comparison-dcrnn"><span class="ic">◆</span>DCRNN (ICLR 2018)
       <span class="badge b-amber" style="font-size:10px;">🔄 학교 서버 실행 중 (2026-07-12)</span></h3>
@@ -2602,7 +2703,7 @@ python comparison/dcrnn_tsem/train_dcrnn_tsem.py \
     --experiment dcrnn_tsem_w10_h10 --gpus 0,1,2,3</pre>
 
     <h3 id="comparison-tgn"><span class="ic">◆</span>TGN (ICML 2020 Workshop)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-green" style="font-size:10px;">✅ 300epoch 완료 (2026-07-12)</span></h3>
     <p class="sec-desc">원본: <a class="doclink" href="https://github.com/twitter-research/tgn"
     target="_blank" rel="noopener">github.com/twitter-research/tgn</a>(Rossi et al., Twitter
     Research, Apache 2.0) · 저장 위치 <code>comparison/TGN/</code>(원본) ·
@@ -2650,6 +2751,24 @@ python comparison/tgn_tsem/train_tgn_tsem.py \
     --config comparison/tgn_tsem/config.yaml \
     --experiment tgn_tsem_w10_h10 --gpus 0,1,2,3</pre>
 
+    <h4 id="cmp-tgn-300ep">✅ 실제 300-epoch 학습 완료 (2026-07-12, 이 서버에서 직접 실행)</h4>
+    <p>early stop epoch 207(best epoch 157, val_acc=0.7741). <code>checkpoints/comparison/tgn_tsem_w10_h10/</code>
+    기준 최종 test 결과:</p>
+    <table>
+      <thead><tr><th>지표</th><th>TGN(300ep)</th><th>Persist baseline</th><th>10차-2(TSEM-SAGE 최종)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td><b>76.00%</b></td><td>63.17%</td><td>81.91%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td><b>74.66%</b></td><td>50.55%</td><td>81.95%</td></tr>
+        <tr><td>stop recall/precision</td><td>93.21% / 78.54%</td><td>—</td><td>—</td></tr>
+        <tr><td>lane_change recall/precision</td><td>68.79% / 69.80%</td><td>—</td><td>—</td></tr>
+        <tr><td>normal recall/precision</td><td>63.84% / 76.14%</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Persist 대비 accuracy +12.83%p, macro-F1 +24.11%p. STGCN(74.81%)·
+    Transformer(75.50%)보다 높고 CRAT-Pred(75.02%)도 상회 — 6개 신규 baseline 중 최고 성능.
+    <code>edge_seqs</code> 5D를 그대로 message function 입력으로 쓰는 유일한 신규 baseline이라는
+    점과 무관하지 않아 보인다(명시적 edge feature가 없는 STGCN/DCRNN보다 우위).</p>
+
     <h3 id="comparison-lstm"><span class="ic">◆</span>LSTM (원본 repo 없음 — 아키텍처 대조군)
       <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
     <p class="sec-desc">저장 위치 <code>comparison/lstm_tsem/</code>(어댑터만, 원본 clone 없음)</p>
@@ -2686,7 +2805,7 @@ python comparison/lstm_tsem/train_lstm_tsem.py \
     --experiment lstm_tsem_w10_h10 --gpus 0,1,2,3</pre>
 
     <h3 id="comparison-transformer"><span class="ic">◆</span>Transformer (원본 repo 없음 — 아키텍처 대조군)
-      <span class="badge b-green" style="font-size:10px;">✅ 구현+검증 완료</span></h3>
+      <span class="badge b-green" style="font-size:10px;">✅ 300epoch 완료 (2026-07-12)</span></h3>
     <p class="sec-desc">저장 위치 <code>comparison/transformer_tsem/</code>(어댑터만, 원본 clone
     없음)</p>
     <h4>설계 메모 — LSTM과의 대조쌍</h4>
@@ -2719,6 +2838,24 @@ python comparison/transformer_tsem/test_model.py
 python comparison/transformer_tsem/train_transformer_tsem.py \
     --config comparison/transformer_tsem/config.yaml \
     --experiment transformer_tsem_w10_h10 --gpus 0,1,2,3</pre>
+
+    <h4 id="cmp-transformer-300ep">✅ 실제 300-epoch 학습 완료 (2026-07-12, 이 서버에서 직접 실행)</h4>
+    <p>early stop epoch 276(best epoch 226, val_acc=0.7709). <code>checkpoints/comparison/transformer_tsem_w10_h10/</code>
+    기준 최종 test 결과:</p>
+    <table>
+      <thead><tr><th>지표</th><th>Transformer(300ep)</th><th>LSTM(대조쌍)</th><th>10차-2(TSEM-SAGE 최종)</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Accuracy</td><td><b>75.50%</b></td><td>⏳ 실행 대기</td><td>81.91%</td></tr>
+        <tr class="hl"><td>Macro-F1</td><td><b>74.15%</b></td><td>⏳ 실행 대기</td><td>81.95%</td></tr>
+        <tr><td>stop recall/precision</td><td>93.88% / 78.72%</td><td>—</td><td>—</td></tr>
+        <tr><td>lane_change recall/precision</td><td>72.04% / 66.26%</td><td>—</td><td>—</td></tr>
+        <tr><td>normal recall/precision</td><td>60.54% / 77.02%</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="small">공간 상호작용 모듈이 전혀 없는(masked mean-pooling만) 순수 시간축-only
+    모델인데도 Persist(63.17%/50.55%) 대비 +12.33%p/+23.60%p, STGCN(74.81%)도 근소하게 상회 —
+    "이 과제에서 시간축 표현력만으로 어디까지 가는가"의 상한선을 보여준다. LSTM(동일 조건, 시간
+    인코더만 차이) 결과가 나오면 GRU/LSTM 계열 대비 attention 계열의 순수 이득을 직접 비교한다.</p>
     <p class="small">신규 5종의 상세 설계 근거(원 논문 파일 대응 관계, 재구현 검증 코드 전문)는
     각 <code>comparison/&lt;model&gt;_tsem/model.py</code> 상단 docstring과
     <code>comparison/README.md</code>에 동일 내용이 더 상세히 기록돼 있다.</p>
@@ -2870,6 +3007,88 @@ python comparison/transformer_tsem/train_transformer_tsem.py \
       </tbody>
     </table>
 
+    <h4>노드(시계열)·엣지(공간) 입력 구성 — 현재 지원되는 전체 옵션 (2026-07-13 기록)</h4>
+    <p>raw 6D <code>[pos_x, pos_z, speed, dir_x, dir_z, accel]</code>는 <b>계산 재료(입력)일 뿐,
+    모델이 최종적으로 보는 값이 아니다</b> — <code>models/tsem_semantic_derivation.py::SemanticDerivation</code>
+    (<code>semantic_variant</code>)가 이 raw 6D에서 v,a,d_lat 등 파생값을 계산한 <b>결과만</b> 노드
+    입력으로 내보낸다. 노드 입력은 이 결과 + <code>raw_append</code> + <code>learnable_residual_dim</code>
+    조합으로, 엣지 입력은 <code>modules/data_manager_tsem.py</code>(<code>edge_feat_variant</code>)로
+    결정된다. 전부 opt-in이라 기본값(<code>full</code>/<code>none</code>/<code>0</code>/<code>legacy</code>)은
+    기존 실험과 100% 동일하게 동작한다.</p>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>"raw 6D에서 출발"이 "위치값이 모델에 들어간다"는 뜻은 아니다.</b>
+      <code>semantic_variant='invariant'</code>(6D: v,a,j,ω,d_lat,κ)는 pos_x,pos_z를 v·d_lat 등을
+      계산하는 데만 쓰고 <b>결과값에서 완전히 제거</b>한다(<code>tsem_semantic_derivation.py:82-85</code>
+      확인: pos_x,pos_z를 그대로 반환하는 건 <code>variant='position_only'</code>일 때뿐). raw
+      위치가 최종 입력에 <b>그대로</b> 남는 경우는 (1) <code>raw_append='pos'</code>(10차-2가 실제
+      쓰는 조합, <code>node_seq[...,0:2]</code>를 가공 없이 concat)와 (2)
+      <code>semantic_variant='position_only'</code> 뿐이다 — 이게 바로
+      <a data-goto="data" data-anchor="data-overview">§왜 세계좌표 입력이 "위치 암기"가 되는가</a>에서
+      말하는 지점이다.</div>
+    </div>
+
+    <p class="small"><b>노드(시계열) — <code>model.semantic_variant</code></b></p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>variant</th><th>채널 구성</th><th>차원</th><th>site-specific?</th><th>용도</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><code>full</code>(기본)</td><td>v,a,j,ω,d_lat,κ,Δρ,접선</td><td>8D</td>
+          <td>Δρ·접선만 그렇다(로터리 중심 world 상수 참조)</td><td>9차, 10차 계열의 semantic 축</td></tr>
+        <tr><td><code>invariant</code></td><td>v,a,j,ω,d_lat,κ</td><td>6D</td><td>아니다(완전 invariant)</td>
+          <td>comparison/ 5개 baseline과 apples-to-apples 비교(6D invariant, 76.21%/74.78%)</td></tr>
+        <tr><td><code>position_only</code></td><td>pos_x, pos_z (raw, 가공 없음)</td><td>2D</td>
+          <td>그렇다(세계좌표 그대로)</td><td>위치 암기 검증② — 운동학 정보 0으로 신경망이 정적 룩업보다
+          얼마나 잘하는지 측정</td></tr>
+        <tr><td><code>invariant_rot</code></td><td>invariant 6D + cos(Δheading),sin(Δheading)
+          (윈도우 시작 시점 대비 누적 회전량)</td><td>8D</td><td>아니다(윈도우 자기 시작점 기준이라 invariant)</td>
+          <td>ω(순간 회전 "속도")와 상호보완적인 회전 "변위" 채널 추가 실험</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>bearing은 이 표에 없다 — 구조적으로 있을 수 없다.</b>
+      <code>SemanticDerivation</code>의 입력은 <code>node_seq [...,T,6]</code>, 즉 <b>차량 한 대
+      자신의</b> raw 궤적뿐이다. bearing(이웃이 나를 기준으로 어디 있는가)은 정의상 두 차량(ego·이웃)의
+      위치를 동시에 알아야 계산되는 <b>관계(pairwise) 값</b>이라, 한 번에 한 대만 처리하는 이 함수
+      안에는 애초에 들어갈 수 없다 — 아래 엣지(공간) 표의 <code>edge_feat_variant='bearing'</code>에
+      있다.</div>
+    </div>
+    <p class="small"><b>이름 주의 — "Δheading"이 두 가지다.</b> 위 <code>invariant_rot</code>의
+    cos/sin(Δheading)은 <b>같은 차량</b>의 "지금 heading" vs "윈도우 시작 시점(h0) heading" 차이
+    (자기 궤적의 누적 회전량, 시간축 비교)다. 반면 아래 엣지(공간) 표의 bearing과 함께 있는
+    cos Δθ,sin Δθ는 <b>ego 차량 vs 이웃 차량</b>의 heading 차이(같은 시점 t에서 두 대 비교)로,
+    이름은 같지만 물리적으로 다른 값이다 — 전자는 "내가 그동안 얼마나 꺾었나", 후자는 "지금 이웃과
+    내가 얼마나 다른 방향을 보고 있나".</p>
+    <p class="small"><b>추가 채널(노드)</b> — <code>model.raw_append</code>: <code>none</code>(기본)
+    / <code>pos</code>(position_x/z 원본 2D 추가) / <code>pos_dir</code>(position+direction 4D 추가)
+    / <code>polar</code>(로터리 중심 기준 [ρ,sinθ,cosθ] 3D 추가, "구조 참조 위치"). <code>model.learnable_residual_dim</code>
+    (기본 0) — 0보다 크면 <code>LearnableSemanticResidual</code>(speed·accel만 입력받는 소형 MLP)이
+    그 채널 수만큼 학습된 잔차를 semantic에 concat(고정 손공학이 버리는 미세 정보 보강용, position·절대방향
+    무관이라 invariant-safe).</p>
+
+    <p class="small"><b>엣지(공간) — <code>graph.edge_feat_variant</code> (2026-07-13 신설)</b></p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>variant</th><th>채널 구성</th><th>차원</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><code>legacy</code>(기본)</td>
+          <td>rel_speed, rel_accel, rel_dx, rel_dz, dist</td><td>5D</td>
+          <td>rel_dx/rel_dz = 두 차량 heading 벡터의 단순 차(방향 정보 아님) — 기존 모든 실험과 동일</td></tr>
+        <tr><td><code>bearing</code></td>
+          <td>rel_speed, rel_accel, dist, <b>cos φ, sin φ</b>(bearing), <b>cos Δθ, sin Δθ</b>(Δheading)</td>
+          <td>7D</td><td><b>rel_dx/rel_dz 제외</b> — atan2 없이 내적/외적으로 직접 계산
+          (<code>modules/data_manager_tsem.py::_recompute_edges_bearing</code>). 근거·도식·시계열
+          예시는 <a data-goto="data" data-anchor="data-neighbor">§이웃·그래프 구성 "③"</a> 참조</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small"><b>현재 채택된 최종 모델(10차-2)의 실제 조합</b>: <code>semantic_variant='full'</code>
+    + <code>raw_append='pos'</code>(→10D 노드) + <code>edge_feat_variant='legacy'</code>(5D 엣지,
+    변경 없음) — 위 표의 다른 조합들은 전부 hypothesis 검증용 병행 실험이며 10차-2 자체를 대체하지
+    않는다.</p>
+
     <h4>왜 세계좌표(world-absolute position) 입력이 "위치 암기"가 되는가 (2026-07-12 기록)</h4>
     <p>10차-2(TSEM-SAGE 최종 채택 모델)는 semantic 8D 외에 raw position 2D(<code>raw_append='position'</code>,
     세계좌표 그대로)를 추가로 쓴다. 이 채널이 같은 장소(공업탑) 테스트에서 <b>+3.74%p</b>의 성능
@@ -2912,13 +3131,14 @@ python comparison/transformer_tsem/train_transformer_tsem.py \
     "위치 암기 가설 3중 확증"에도 기록돼 있다 — 논문 서사는 site-specific(10D, 이 로터리 한정 최고
     성능) / transferable(semantic 8D 또는 polar 11D, 장소 불변) 2-트랙으로 구성된다.</p>
 
-    <h3 id="data-position-verify"><span class="ic">◆</span>위치 암기 검증① · ④ 종합 (2026-07-12)
-      <span class="badge b-green" style="font-size:10px;">✅ ①④ 완료 · ⏳ ② 진행 중</span></h3>
+    <h3 id="data-position-verify"><span class="ic">◆</span>위치 암기 검증① · ② · ④ 종합 (2026-07-12~13)
+      <span class="badge b-green" style="font-size:10px;">✅ ①②④ 전부 완료</span></h3>
     <p class="sec-desc">위 DRIFT 교차 장소 붕괴는 <b>간접 증거</b>(다른 장소에서 실패하는 걸 보고
-    암기였다고 역추론)다. 이를 더 직접적으로 확인하기 위해 서로 독립적인 방법론 두 가지를
-    추가로 검증했다 — 하나는 <b>모델 없이 데이터 자체</b>로(①), 하나는 <b>이미 학습된 체크포인트를
-    추론 시점에 조작</b>해서(④). 세 번째(②, position-only 신경망을 처음부터 학습)는 현재 GPU1에서
-    학습 중이라 수렴하는 대로 이 절에 추가한다.</p>
+    암기였다고 역추론)다. 이를 더 직접적으로 확인하기 위해 서로 독립적인 방법론 세 가지를
+    추가로 검증했다 — <b>모델 없이 데이터 자체</b>로(①), <b>position-only 신경망을 처음부터
+    학습</b>해서(②), <b>이미 학습된 체크포인트를 추론 시점에 조작</b>해서(④). 세 방법 모두 같은
+    결론(신경망은 정적 룩업보다 훨씬 잘하지만, 그 초과분이 정확히 위치 의존분과 일치)으로
+    수렴한다.</p>
 
     <h4>① 정적 좌표 격자 룩업 — 재학습 없이 데이터의 성질만으로</h4>
     <p>anchor 위치를 격자(0.5~5m)로 쪼개 셀별 라벨 엔트로피를 재고, train 셀의 다수결 라벨을
@@ -2937,6 +3157,28 @@ python comparison/transformer_tsem/train_transformer_tsem.py \
     <p class="small">→ <b>결론①</b>: "위치와 라벨이 강하게 얽혀있다"는 사실 자체는 데이터 차원에서
     확인되지만, 그 연관은 단순 룩업으로 뽑아낼 수 있는 수준(~64%)을 크게 넘는다 — 신경망이 얻는
     이득은 "좌표를 그대로 읽는" 단순 메커니즘이 아니라는 뜻이다.</p>
+
+    <h4>② position-only 신경망 — semantic 없이 raw position 2D만으로 처음부터 학습</h4>
+    <p>①이 "정적 룩업"의 상한을, ④가 "이미 학습된 10D 체크포인트에서 위치를 가렸을 때"의 하락폭을
+    보여준다면, ②는 그 사이의 빈칸 — <b>"신경망 구조 자체(spatial+temporal)는 그대로 두고, 입력을
+    raw position 2채널(pos_x, pos_z)만으로 제한하면 gradient descent가 어디까지 도달하는가"</b>를
+    직접 확인한다(<code>configs/tsem_sage_position_only.yaml</code>, semantic 8채널 없이 위치
+    2채널만 입력). 2026-07-13 완료 — 300epoch 완주(best@268, val_acc=0.8341).</p>
+    <table>
+      <thead><tr><th>모델</th><th>입력</th><th>test accuracy</th><th>test macro-F1</th></tr></thead>
+      <tbody>
+        <tr><td>① 정적 좌표 룩업(재학습 없음)</td><td>위치(다수결표)</td><td>60~64%대</td><td>—</td></tr>
+        <tr class="hl" style="background:#ecfdf5;"><td><b>② position-only 신경망(처음부터 학습)</b></td>
+          <td>raw position 2D만</td><td><b>81.39%</b></td><td><b>81.70%</b></td></tr>
+        <tr><td>6D invariant(semantic만, 위치 없음)</td><td>semantic 6D</td><td>76.21%</td><td>74.78%</td></tr>
+        <tr><td>10D 최종모델(semantic+position)</td><td>semantic 8D+position 2D</td><td>81.91~81.97%</td><td>81.95~82.03%</td></tr>
+      </tbody>
+    </table>
+    <p class="small">→ <b>결론②</b>: 위치 2채널만 넣고 처음부터 학습해도 정적 룩업(~64%) 대비
+    <b>+17~21%p</b>를 만들어내고, semantic 8채널까지 더한 10D 최종모델과는 <b>0.5%p 이내</b>로
+    수렴한다 — 심지어 semantic 6D invariant(76.21%)보다도 5%p 이상 높다. 즉 "신경망이 좌표에서
+    뽑아낼 수 있는 정보"는 ①의 단순 다수결표보다 훨씬 많고, 그 대부분을 위치 2채널만으로도 이미
+    확보할 수 있다는 뜻 — semantic 채널(운동학)이 주는 추가 정보량은 상대적으로 작다.</p>
 
     <h4>④ 10D 체크포인트 — 추론 시 특정 입력값만 상수로 바꿔 넣고 성능 비교</h4>
     <p>재학습 없이 <code>tsem_sage_w10_h10_sem_pos_10d/best.pt</code>(10차-2, epoch 130, test
@@ -3027,27 +3269,33 @@ python comparison/transformer_tsem/train_transformer_tsem.py \
     하나만으로도 raw position과 맞먹는 손실이 난다. 즉 <b>"위치 정보"는 raw 2D 채널과 semantic의
     Δρ·접선 채널 여러 경로에 분산 저장돼 있다.</b></p>
 
-    <h4>①④ 종합 결론 (②는 수렴 후 갱신 예정)</h4>
+    <h4>①②④ 종합 결론</h4>
     <blockquote>
       <b>①이 보여주는 것</b>: 정적 좌표만으로는(모델 없이 단순 다수결 룩업) Persist baseline
       수준(~64%)에 그친다 — "이 좌표에서는 이 라벨"이라는 단순 정답표 암기만으로는 신경망의
       81.91%를 설명할 수 없다.<br><br>
-      <b>④가 보여주는 것</b>: 그럼에도 이미 학습된 신경망은 추론 시 위치 정보(raw 채널 + semantic
+      <b>②가 보여주는 것</b>: 그런데 같은 위치 2채널을, 룩업이 아니라 <b>신경망 구조로 처음부터
+      학습</b>시키면 81.39%까지 올라간다 — ①과 정확히 같은 입력 정보량(raw position)인데
+      "다수결표냐 gradient descent냐"만 바뀌었을 뿐인데 +17~21%p 차이가 난다. 즉 신경망의 초과
+      성능은 "위치 정보 자체가 몰래 더 들어가서"가 아니라 <b>같은 위치 정보를 훨씬 정교하게
+      활용하는 능력</b>에서 온다는 걸 직접 학습으로 증명한다.<br><br>
+      <b>④가 보여주는 것</b>: 이미 학습된 10D 신경망은 추론 시 위치 정보(raw 채널 + semantic
       속 site-specific 채널)를 강하게 참조한다 — 이 의존을 끊으면 정확히 ①의 정적 룩업 수준
       (63~65%대)으로 떨어진다는 점이 특히 시사적이다(우연이 아니라 <b>"신경망이 위치에 의존하지
       않을 때 도달하는 성능 = 위치만으로 도달 가능한 정적 성능"과 정확히 일치</b>).<br><br>
-      <b>종합</b>: 신경망은 "좌표를 그대로 읽는" 단순 룩업보다 훨씬 정교한 무언가(궤적 형태·이웃
-      배치까지 결합한 패턴 매칭)를 하고 있지만, 그 정교한 추론이 만들어내는 초과 성능(81.91%
-      → 정적 룩업 64% 대비 +18%p)은 <b>정확히 위치를 없애면 사라지는 몫과 일치</b>한다. 다시 말해
-      신경망이 학습한 "정교한 무언가"의 상당 부분이 <b>바로 그 위치 정보를 정교하게 활용하는
-      방법</b>이었다는 뜻이다 — DRIFT 교차 장소 붕괴(LC recall 80%→0.3%)와 함께 놓고 보면, 이
-      정교한 활용법은 <b>이 로터리 하나에만 유효한, 전이 불가능한 형태의 암기</b>라는 결론이
-      일관되게 뒷받침된다.
+      <b>종합</b>: 세 실험이 삼각측량처럼 같은 결론을 가리킨다 — 신경망은 "좌표를 그대로 읽는"
+      단순 룩업보다 훨씬 정교한 무언가(궤적 형태·이웃 배치까지 결합한 패턴 매칭)를 하고 있고
+      (①vs②), 그 정교한 추론이 만들어내는 초과 성능은 <b>정확히 위치를 없애면 사라지는 몫과
+      일치</b>한다(④). 다시 말해 신경망이 학습한 "정교한 무언가"의 상당 부분이 <b>바로 그 위치
+      정보를 정교하게 활용하는 방법</b>이었다는 뜻이다 — DRIFT 교차 장소 붕괴(LC recall
+      80%→0.3%)와 함께 놓고 보면, 이 정교한 활용법은 <b>이 로터리 하나에만 유효한, 전이 불가능한
+      형태의 암기</b>라는 결론이 일관되게 뒷받침된다.
     </blockquote>
-    <p class="small">⏳ <b>②(position-only 신경망, semantic 채널 없이 raw position 2D만 입력)</b>이
-    GPU1에서 학습 중이다(<code>configs/tsem_sage_position_only.yaml</code>) — "신경망이 위치만
-    가지고도 궤적 형태를 학습해 정적 룩업(64%)보다 훨씬 높은 성능에 도달하는지"가 마지막 조각이다.
-    수렴하는 대로(300epoch 또는 patience 50) 이 절에 결과를 추가한다.</p>
+    <p class="small">참고로 semantic 채널(운동학, 위치 없음)만으로는 6D invariant가 76.21%에
+    그친다 — position-only(81.39%)가 이보다 5%p 이상 높다는 건, 이 과제에서 "언제 멈추고/차선을
+    바꾸는지"를 예측하는 데 <b>운동학 정보보다 위치 정보 쪽의 기여가 더 크다</b>는 뜻이기도 하다
+    (다만 10D 최종모델이 semantic+position 결합으로 81.91~81.97%까지 더 올라가는 걸 보면 둘은
+    상호보완적이지, 위치가 semantic을 완전히 대체하는 건 아니다).</p>
 
     <h3 id="data-sampling"><span class="ic">◆</span>샘플 구성 — W · H · split</h3>
     <table>
@@ -3202,7 +3450,11 @@ python comparison/transformer_tsem/train_transformer_tsem.py \
         <tr><td>이웃 반경 (radius)</td><td>20.0m</td></tr>
         <tr><td>1-hop 최대 이웃 수 (K_max)</td><td>6</td></tr>
         <tr><td>2-hop 최대 이웃 수 (K_max2)</td><td>4</td></tr>
-        <tr><td>edge feature</td><td>5D — [rel_speed, rel_accel, rel_dir, distance] 등 (<code>_compute_edge_feat</code>)</td></tr>
+        <tr><td>edge feature</td><td>기본(<code>legacy</code>) 5D — [rel_speed, rel_accel, rel_dx, rel_dz, distance]
+          (<code>_compute_edge_feat</code>/<code>_recompute_edges</code>). 2026-07-13부터
+          <code>edge_feat_variant='bearing'</code>(7D, bearing+Δheading, rel_dx/rel_dz 제외)도
+          opt-in으로 선택 가능 — 아래 "③" 및 <a data-goto="data" data-anchor="data-overview">§데이터셋 개요</a>
+          "노드·엣지 입력 구성" 참조</td></tr>
       </tbody>
     </table>
 
@@ -3280,6 +3532,214 @@ nbr_mask[:n_real] = 1.0   # t 시점 실제 이웃 수만 1</pre>
       <li><b>프레임별 presence mask</b> <code>m[ki,ti]∈{0,1}</code> — 시계열 attention이 0 패딩 프레임 무시 (개선 여지)</li>
       <li><b>meta 통계</b>: <code>n_neighbors</code>, 평균 유효 프레임 비율 — 분석·보고용 (캐시 경로엔 현재 누락, §구현검증 참고)</li>
     </ul>
+
+    <h4>③ edge feature에 방위각(bearing)이 빠져 있다 <span class="badge b-green">✅ 구현 완료 (2026-07-13), 학습은 미실행</span></h4>
+    <p>현재 edge feature(<code>modules/data_manager.py:170-181</code> <code>_compute_edge_feat</code>)는
+    <code>[rel_speed, rel_accel, rel_dx, rel_dz, dist]</code> 5D다 — <code>rel_dx, rel_dz</code>는
+    두 차량의 <b>heading 벡터 차이</b>(<code>dst[3]-src[3], dst[4]-src[4]</code>)이고 <code>dist</code>는
+    <b>거리 크기(스칼라)</b>일 뿐이다. <b>"그 차가 나를 기준으로 어느 방향에 있는가"(방위각/bearing)를
+    담는 채널이 구조적으로 없다.</b></p>
+
+    <figure>
+    <svg viewBox="0 0 720 300" class="svg-mono" role="img" aria-label="방위각 부재로 인한 앞/뒤 구분 불가">
+      <!-- 왼쪽: 이웃이 앞에 있는 경우 -->
+      <g>
+        <text x="170" y="24" font-size="12" font-weight="700" fill="#1e293b" text-anchor="middle">경우 A — 이웃이 앞</text>
+        <line x1="170" y1="230" x2="170" y2="60" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <circle cx="170" cy="230" r="9" fill="#2563eb"/>
+        <path d="M170 220 L170 195" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrEgo)"/>
+        <text x="170" y="252" font-size="10.5" fill="#2563eb" text-anchor="middle" font-weight="700">ego</text>
+        <circle cx="170" cy="90" r="9" fill="#16a34a"/>
+        <path d="M170 80 L170 55" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrNbr)"/>
+        <text x="170" y="42" font-size="10.5" fill="#16a34a" text-anchor="middle" font-weight="700">이웃 j</text>
+        <text x="205" y="165" font-size="10" fill="#667085" text-anchor="start">dist=20m</text>
+      </g>
+      <!-- 오른쪽: 이웃이 뒤에 있는 경우 -->
+      <g>
+        <text x="550" y="24" font-size="12" font-weight="700" fill="#1e293b" text-anchor="middle">경우 B — 이웃이 뒤</text>
+        <line x1="550" y1="230" x2="550" y2="60" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <circle cx="550" cy="90" r="9" fill="#2563eb"/>
+        <path d="M550 80 L550 55" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrEgo)"/>
+        <text x="550" y="42" font-size="10.5" fill="#2563eb" text-anchor="middle" font-weight="700">ego</text>
+        <circle cx="550" cy="230" r="9" fill="#16a34a"/>
+        <path d="M550 220 L550 195" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrNbr)"/>
+        <text x="550" y="252" font-size="10.5" fill="#16a34a" text-anchor="middle" font-weight="700">이웃 j</text>
+        <text x="585" y="165" font-size="10" fill="#667085" text-anchor="start">dist=20m</text>
+      </g>
+      <defs>
+        <marker id="arrEgo" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#2563eb"/></marker>
+        <marker id="arrNbr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#16a34a"/></marker>
+      </defs>
+      <line x1="360" y1="20" x2="360" y2="280" stroke="#e4e7ec" stroke-width="1"/>
+      <rect x="60" y="270" width="600" height="26" rx="4" fill="#fef2f2" stroke="#dc2626"/>
+      <text x="360" y="287" font-size="10.5" fill="#b91c1c" text-anchor="middle">같은 heading(둘 다 위쪽), 같은 dist=20m → 지금 edge feature 5D는 A와 B에서 완전히 동일한 값</text>
+    </svg>
+    <figcaption>그림 C. 이웃이 <b>바로 앞</b>이든(경우 A) <b>바로 뒤</b>든(경우 B), heading이 같고 거리가 같으면
+    <code>rel_speed·rel_accel·rel_dx·rel_dz·dist</code> 5개 값이 완전히 똑같다 — 방위각 채널이 없어서
+    구조적으로 구분 불가능. 차선변경(gap-acceptance)에서는 "앞에 공간이 있는가"와 "뒤에서 빠르게
+    다가오는가"가 정반대 의미라 이 구분이 핵심적이다.</figcaption>
+    </figure>
+
+    <table>
+      <thead><tr><th>제안 채널</th><th>정의</th><th>왜 dist·rel_dx/rel_dz로 대체 안 되는가</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>bearing φ</b> = atan2(dst_z−src_z, dst_x−src_x) − src_heading</td>
+          <td><code>cos φ, sin φ</code> 2채널 — "이웃이 ego 기준 어느 방향에 있는가"</td>
+          <td><code>dist</code>는 크기뿐, 방향 정보 0. <code>rel_dx/rel_dz</code>는 "이웃이 어디 있는가"가
+          아니라 "이웃이 어느 쪽을 보고 있는가"(heading 차이) — 완전히 다른 물리량</td></tr>
+        <tr><td>Δheading(cos/sin)</td><td><code>cos(Δθ), sin(Δθ)</code>로 재인코딩</td>
+          <td>현재 <code>rel_dx,rel_dz</code>(두 unit heading 벡터의 선형 차)는 각도차가 클수록 선형
+          해석이 깨짐(주기성 없음) — HiVT·QCNet·SIMPL 전부 각도차를 cos/sin쌍으로 인코딩하는 이유</td></tr>
+      </tbody>
+    </table>
+
+    <h4>예시 — 그림 C(경우 A/B)에 신규 채널을 적용하면</h4>
+    <p class="small">설정: ego는 원점 (0,0)에서 +z 방향(heading 90°)을 보고 있고, 이웃 j는 20m 거리·ego와
+    같은 heading(90°) — 유일한 차이는 j가 ego <b>앞</b>(A, 위치 (0,+20))인지 <b>뒤</b>(B, 위치
+    (0,−20))인지뿐이다. bearing φ = atan2(Δz,Δx) − ego_heading. A: atan2(20,0)−90°=<b>0°</b>
+    → (cos φ,sin φ)=(1,0). B: atan2(−20,0)−90°=<b>−180°</b> → (cos φ,sin φ)=(−1,0).
+    Δheading = j_heading − ego_heading = 90°−90°=<b>0°</b>(A·B 둘 다 동일, 이웃이 ego와 같은 방향으로
+    가고 있다는 설정이라서) → (cos Δθ,sin Δθ)=(1,0) 고정.</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th></th><th>rel_speed</th><th>rel_accel</th><th>rel_dx</th><th>rel_dz</th><th>dist</th>
+        <th class="hl">cos φ (신규)</th><th class="hl">sin φ (신규)</th>
+        <th>cos Δθ (신규)</th><th>sin Δθ (신규)</th></tr></thead>
+      <tbody>
+        <tr><td><b>경우 A(앞)</b></td><td>0</td><td>0</td><td>0</td><td>0</td><td>20</td>
+          <td class="hl"><b>1.00</b></td><td class="hl">0.00</td><td>1.00</td><td>0.00</td></tr>
+        <tr><td><b>경우 B(뒤)</b></td><td>0</td><td>0</td><td>0</td><td>0</td><td>20</td>
+          <td class="hl"><b>−1.00</b></td><td class="hl">0.00</td><td>1.00</td><td>0.00</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">기존 5개 값(rel_speed~dist)은 A·B에서 <b>완전히 동일</b>하지만, 신규 채널 중
+    <b>bearing(cos φ, sin φ)만 +1 vs −1로 정반대</b>로 갈려 "이웃이 앞이냐 뒤냐"를 구분해준다.
+    <b>Δheading(cos Δθ, sin Δθ)은 이 예시에선 A·B가 똑같다</b> — 두 이웃 다 ego와 같은 방향으로
+    가고 있다고 설정했기 때문이다. 이건 결함이 아니라 <b>bearing과 Δheading이 서로 다른, 독립적인
+    정보</b>라는 뜻이다: bearing="이웃이 나를 기준으로 어디 있는가"(위치), Δheading="이웃이 나와
+    같은 방향인가 마주 오는가/가로지르는가"(상대 진행방향). 예를 들어 "바로 앞에서 같은 방향으로
+    가는 차"와 "바로 앞에서 마주 오는 차"는 bearing은 같지만(둘 다 앞) Δheading이 0°와 180°로
+    갈려서 구분된다 — 두 채널 다 필요한 이유다.</p>
+
+    <h4>예시 — 프레임이 지나며 값이 어떻게 변하는가 (시계열 변화량)</h4>
+    <p class="small">위 예시는 정적인 한 순간의 스냅샷이었다. 실제로는 W프레임에 걸쳐 <b>이 두 값이
+    어떻게 변해가는지</b>가 시간 인코더에 들어가는 진짜 신호다 — 두 시나리오로 계산했다.</p>
+
+    <p class="small"><b>(a) bearing φ — 이웃이 뒤에서 앞으로 추월</b>: 이웃은 옆 차선(dx=4m 고정)에서
+    종방향 위치 dz만 −12→−6→0→6→12로 이동(ego는 원점·heading 90° 고정).</p>
+    <figure>
+    <svg viewBox="0 0 420 380" class="svg-mono" role="img" aria-label="이웃 추월 시 bearing 스윕">
+      <line x1="150" y1="260" x2="150" y2="60" stroke="#e4e7ec" stroke-width="1" stroke-dasharray="2 3"/>
+      <circle cx="150" cy="260" r="9" fill="#2563eb"/>
+      <path d="M150 250 L150 210" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrEgoB)"/>
+      <text x="150" y="282" font-size="10.5" fill="#2563eb" text-anchor="middle" font-weight="700">ego</text>
+      <line x1="270" y1="330" x2="270" y2="190" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <path d="M150 260 L270 330" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrBearing)"/>
+      <path d="M150 260 L270 260" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arrBearing)"/>
+      <path d="M150 260 L270 190" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrBearing)"/>
+      <circle cx="270" cy="330" r="6" fill="#dc2626"/>
+      <circle cx="270" cy="295" r="5" fill="#94a3b8"/>
+      <circle cx="270" cy="260" r="6" fill="#7c3aed"/>
+      <circle cx="270" cy="225" r="5" fill="#94a3b8"/>
+      <circle cx="270" cy="190" r="6" fill="#16a34a"/>
+      <text x="284" y="333" font-size="10" fill="#dc2626">t−4 (뒤) cos φ=−0.95</text>
+      <text x="284" y="298" font-size="9.5" fill="#667085">t−3, cos φ=−0.83</text>
+      <text x="284" y="264" font-size="10" fill="#7c3aed">t−2 (옆) cos φ=0.00</text>
+      <text x="284" y="228" font-size="9.5" fill="#667085">t−1, cos φ=0.83</text>
+      <text x="284" y="193" font-size="10" fill="#16a34a">t (앞) cos φ=0.95</text>
+      <defs>
+        <marker id="arrEgoB" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#2563eb"/></marker>
+        <marker id="arrBearing" markerWidth="6" markerHeight="6" refX="4.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#94a3b8"/></marker>
+      </defs>
+      <text x="210" y="358" font-size="10.5" fill="#334155" text-anchor="middle">ego→이웃 방향(빨강→보라→초록)이 뒤→옆→앞으로 회전 — cos φ가 이 회전을 그대로 수치화</text>
+    </svg>
+    <figcaption>그림 D. 옆 차선에서 추월하는 이웃 — ego에서 이웃으로 향하는 방향(화살표)이 프레임마다
+    뒤(빨강)→옆(보라)→앞(초록)으로 회전하고, cos φ가 −0.95→0.00→0.95로 이를 그대로 따라간다.</figcaption>
+    </figure>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>t</th><th>dz(종방향)</th><th>φ</th><th class="hl">cos φ</th><th class="hl">sin φ</th></tr></thead>
+      <tbody>
+        <tr><td>t−4</td><td>−12 (뒤)</td><td>−161.6°</td><td class="hl">−0.95</td><td class="hl">−0.32</td></tr>
+        <tr><td>t−3</td><td>−6</td><td>−146.3°</td><td class="hl">−0.83</td><td class="hl">−0.56</td></tr>
+        <tr><td>t−2</td><td>0 (옆)</td><td>−90.0°</td><td class="hl">0.00</td><td class="hl">−1.00</td></tr>
+        <tr><td>t−1</td><td>+6</td><td>−33.7°</td><td class="hl">0.83</td><td class="hl">−0.56</td></tr>
+        <tr><td>t</td><td>+12 (앞)</td><td>−18.4°</td><td class="hl">0.95</td><td class="hl">−0.32</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">cos φ가 −0.95→0.00→+0.95로 <b>매끄럽게 스윕</b> — "뒤에서 접근해 옆을 지나 앞으로
+    나간다"는 추월 과정이 그대로 수치로 드러난다. sin φ는 옆을 지날 때(−1.00) 가장 크게 꺾여
+    "지금 딱 옆에 있다"는 순간을 표시한다.</p>
+
+    <p class="small"><b>(b) Δheading — ego가 차선변경을 위해 살짝 조향했다가 복귀</b>: 이웃은
+    직진(heading 90° 고정), ego heading만 90°→95°→100°→95°→90°로 변화.</p>
+    <figure>
+    <svg viewBox="0 0 420 260" class="svg-mono" role="img" aria-label="차선변경 조향 시 Δheading 변화">
+      <circle cx="310" cy="220" r="7" fill="#334155"/>
+      <path d="M310 220 L310 120" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrNbrB)"/>
+      <text x="310" y="106" font-size="10" fill="#667085" text-anchor="middle">이웃 heading(직진, 90° 고정)</text>
+      <path d="M310 220 L310 130" stroke="#16a34a" stroke-width="2" marker-end="url(#arrEgoT)"/>
+      <path d="M310 220 L340.8 135.4" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrEgoT2)"/>
+      <path d="M310 220 L367.9 151.1" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrEgoT3)"/>
+      <path d="M 340 175 A 50 50 0 0 1 348 165" stroke="#94a3b8" stroke-width="1" fill="none"/>
+      <text x="115" y="30" font-size="12" font-weight="700" fill="#1e293b">t−4/t: 0°</text>
+      <text x="115" y="50" font-size="11" fill="#16a34a">(ego 직진 정렬)</text>
+      <text x="90" y="80" font-size="12" font-weight="700" fill="#7c3aed">t−3/t−1: −5°</text>
+      <text x="70" y="180" font-size="12" font-weight="700" fill="#dc2626">t−2(정점): −10°</text>
+      <text x="70" y="198" font-size="11" fill="#dc2626">sin Δθ=−0.174 (최대 조향)</text>
+      <defs>
+        <marker id="arrNbrB" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#94a3b8"/></marker>
+        <marker id="arrEgoT" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#16a34a"/></marker>
+        <marker id="arrEgoT2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#7c3aed"/></marker>
+        <marker id="arrEgoT3" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#dc2626"/></marker>
+      </defs>
+      <text x="210" y="245" font-size="10.5" fill="#334155" text-anchor="middle">(각도는 시각적으로 과장 — 실제 5°/10°를 4배 확대 표시, 라벨은 실제값)</text>
+    </svg>
+    <figcaption>그림 E. ego heading(초록→보라→빨강)이 이웃의 고정 직진 방향(회색 점선)에서 점점
+    벌어졌다가(조향 정점 t−2) 다시 모아진다 — sin Δθ가 0→−0.174→0으로 이 조향의 시작·정점·복귀를
+    그대로 따라간다.</figcaption>
+    </figure>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>t</th><th>ego heading</th><th>Δθ</th><th>cos Δθ</th><th class="hl">sin Δθ</th></tr></thead>
+      <tbody>
+        <tr><td>t−4</td><td>90°</td><td>0°</td><td>1.00</td><td class="hl">0.00</td></tr>
+        <tr><td>t−3</td><td>95°</td><td>−5°</td><td>0.996</td><td class="hl">−0.087</td></tr>
+        <tr><td>t−2</td><td>100°</td><td>−10°</td><td>0.985</td><td class="hl">−0.174</td></tr>
+        <tr><td>t−1</td><td>95°</td><td>−5°</td><td>0.996</td><td class="hl">−0.087</td></tr>
+        <tr><td>t</td><td>90°</td><td>0°</td><td>1.00</td><td class="hl">0.00</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">sin Δθ가 0→−0.174→0으로 <b>봉우리 모양</b>을 그리며 조향의 시작-정점-복귀를 그대로
+    담는다 — 작은 각도에서는 sin Δθ가 라디안 값과 거의 같아서(선형 근사) 시계열 인코더가 "지금 얼마나
+    꺾고 있는가"를 거의 직접적으로 읽을 수 있다.</p>
+
+    <p class="small"><b>근거 요약</b>(§관련 대화 2026-07-13): (1) 방위각 부재로 "앞/뒤/옆" 구분이 원리적으로
+    불가능 — gap-acceptance가 핵심인 lane_change 라벨엔 구조적 결손. (2) heading 벡터의 단순 뺄셈은
+    각도차를 표현하는 방식으로 약함(비주기적) — cos/sin 인코딩이 표준. (3) 우리를 앞서는 HiVT
+    (<a data-goto="comparison" data-anchor="comparison-hivt">§HiVT</a>)·QCNet
+    (<a data-goto="comparison" data-anchor="comparison-qcnet">§QCNet</a>)이 실제로 방위각·Δheading을
+    명시적으로 쓴다 — 이론뿐 아니라 경험적으로도 뒷받침됨.</p>
+
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>구현 완료 (2026-07-13).</b> 공용 <code>modules/data_manager.py::_compute_edge_feat</code>/
+      <code>_recompute_edges</code>는 ET-NAGraphSAGE 컨퍼런스 트랙과 공유·수정 금지(CLAUDE.md §4)라
+      그대로 두고, <code>modules/data_manager_tsem.py</code>에 <b>병행 함수</b>
+      <code>_recompute_edges_bearing</code>(<code>EDGE_DIM_BEARING=7</code>)를 신설 —
+      <code>dist, cos φ, sin φ, cos Δθ, sin Δθ</code>(<b>rel_dx/rel_dz는 제외</b>, atan2 없이
+      내적/외적으로 직접 계산해 wrap-around 문제 자체가 없음). <code>graph.edge_feat_variant:
+      'legacy'|'bearing'</code> opt-in 플래그로 선택(기본값 <code>'legacy'</code>는 기존 실험과
+      완전 동일 — 하위호환). 손계산 4케이스(뒤/옆/앞+마주오는차/결측) 전부 정확히 일치, 실제
+      데이터로더+모델 forward/backward 스모크 통과. 전용 config
+      <code>configs/tsem_sage_invariant_6d_interleaved_bearing.yaml</code>(② spatial-temporal
+      교차 + ③ bearing 결합, <code>model.edge_dim: 7</code>)까지 준비됐으나
+      <b>학습은 아직 실행하지 않았다</b>.</div>
+    </div>
+
     <h3 id="data-argoverse"><span class="ic">◆</span>Argoverse 1·2 — 외부 검증 데이터셋 <span class="badge b-green">2026-07-10 전수 분석 완료</span></h3>
     <p>Gongeoptap 단일 로케이션(로터리)이라는 한계에 대한 리뷰어 방어용 <b>외부 검증(external validation)</b> 후보.
     원격 서버 <code>lee@172.30.1.84:/media/lee/8tb_Data/</code>에 원본 보유. 결론: <b>Argoverse 2 채택 권장,
@@ -5080,27 +5540,32 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
           <td>172,073</td><td>⏳ 예약(순위4, 24GB 초과 가능→멀티GPU 후보)</td></tr>
         <tr><td>④단독(W30,transformer)</td><td><code>tsem_sage_invariant_6d_w30_transformer.yaml</code></td>
           <td>515,753</td><td>⏳ 예약(순위5, 24GB 초과 유력→멀티GPU 후보)</td></tr>
-        <tr class="hl" style="background:#fef3c7;"><td><b>①+②</b>(8D+학습형잔차4D=12D)</td>
+        <tr class="hl"><td><b>①+②</b>(8D+학습형잔차4D=12D)</td>
           <td><code>tsem_sage_invariant_8d_rot_learnable.yaml</code></td>
-          <td>176,827</td><td>🔄 172.30.1.20 서버 GPU2 실행 중(2026-07-12)</td></tr>
-        <tr class="hl" style="background:#fef3c7;"><td><b>①+③</b>(8D, h192)</td>
+          <td>176,827</td><td>✅ 완료(best@185) — test acc <b>76.37%</b> / F1 <b>75.13%</b></td></tr>
+        <tr class="hl"><td><b>①+③</b>(8D, h192)</td>
           <td><code>tsem_sage_invariant_8d_rot_h192.yaml</code></td>
-          <td>383,283</td><td>🔄 172.30.1.20 서버 GPU3 실행 중(2026-07-12)</td></tr>
+          <td>383,283</td><td>✅ 완료(best@120) — test acc <b>76.57%</b> / F1 <b>75.27%</b></td></tr>
         <tr class="hl"><td><b>①+③</b>(8D, h256)</td>
           <td><code>tsem_sage_invariant_8d_rot_h256.yaml</code></td>
-          <td>674,867</td><td>✅ PASS</td></tr>
-        <tr class="hl"><td><b>①+④</b>(8D, W10, transformer)</td>
+          <td>674,867</td><td>✅ 완료(best@76) — test acc <b>76.51%</b> / F1 <b>75.02%</b></td></tr>
+        <tr class="hl" style="background:#fee2e2;"><td><b>①+④</b>(8D, W10, transformer)</td>
           <td><code>tsem_sage_invariant_8d_rot_w10_transformer.yaml</code></td>
-          <td>516,275</td><td>✅ PASS</td></tr>
-        <tr class="hl"><td><b>①+④</b>(8D, W20, gru)</td>
+          <td>516,275</td><td>❌ GPU0에서 실행 시도 후 <b>CUDA 커널 오류로 크래시</b>("invalid
+          configuration argument", Epoch1 도달 전) — 원인 미확인, 재시도 필요</td></tr>
+        <tr class="hl" style="background:#fee2e2;"><td><b>①+④</b>(8D, W20, gru)</td>
           <td><code>tsem_sage_invariant_8d_rot_w20_gru.yaml</code></td>
-          <td>173,619</td><td>✅ PASS</td></tr>
-        <tr class="hl"><td><b>①+④</b>(8D, W20, transformer)</td>
+          <td>173,619</td><td>❌ GPU1에서 실행 시도 후 <b>OOM으로 크래시</b>(backward에서 8.71GiB
+          요청, forward만으로 이미 15.4GB 점유 — W20 캐시는 생성됨, batch_size 축소 후 재시도 필요)</td></tr>
+        <tr class="hl" style="background:#fef3c7;"><td><b>①+④</b>(8D, W20, transformer)</td>
           <td><code>tsem_sage_invariant_8d_rot_w20_transformer.yaml</code></td>
-          <td>516,275</td><td>✅ PASS</td></tr>
-        <tr class="hl"><td><b>①+④</b>(8D, W30, gru)</td>
+          <td>516,275</td><td>🔄 GPU2 실행 중(2026-07-13, W20-gru 캐시는 이미 생성돼 있어 즉시
+          warm-load — W20-gru 크래시로 원래 대기 조건이 성립 안 해 수동으로 투입)</td></tr>
+        <tr class="hl" style="background:#fee2e2;"><td><b>①+④</b>(8D, W30, gru)</td>
           <td><code>tsem_sage_invariant_8d_rot_w30_gru.yaml</code></td>
-          <td>173,619</td><td>✅ PASS</td></tr>
+          <td>173,619</td><td>❌ GPU3에서 실행 시도 후 <b>CUDA illegal memory access로 크래시</b>
+          (<code>models/et_nagraphsage.py</code> 2-hop 레이어 forward 중 — W30 캐시는 생성됨,
+          OOM이 아니라 실제 인덱싱 버그일 가능성, 코드 조사 필요)</td></tr>
         <tr class="hl"><td><b>①+④</b>(8D, W30, transformer)</td>
           <td><code>tsem_sage_invariant_8d_rot_w30_transformer.yaml</code></td>
           <td>516,275</td><td>✅ PASS</td></tr>
@@ -5180,28 +5645,155 @@ v̂_i = head_speed(h_out)   # 최종 표현(공간 집계 이후)에 붙는 Line
     실측한다. §"①+②③④ 조합" 8개와 "①+②+③ 삼중 조합"(②단독 결과 확인 후 조건부) 2개는 §1·§2
     종료 후 학교 서버(192.168.1.11) 또는 이 서버 여유분에서 이어서 실행 예정.</p>
 
-    <h4 id="exp-20260712-run-s3">실행 기록 — §3 ①과의 조합 2개 (2026-07-12, 172.30.1.20 서버 GPU2/3)</h4>
-    <p>§1(GPU0-3, ①②③ 단독 4개)과 별도로, "①+②③④ 조합" 중 <b>①+②</b>·<b>①+③(h192)</b> 2개를
-    <b>172.30.1.20 서버</b>(이 저장소가 위치한 서버) GPU2/3에 추가로 배정해 실행 중이다. §1과
-    동일하게 <code>CUDA_VISIBLE_DEVICES=N</code>으로 GPU 1장씩 고정, 캐시 키
-    <code>a165448538</code>(train 575,686/val 119,901/test 120,435)를 warm-load해 즉시 학습
-    시작(콜드 빌드 없음). 스모크테스트(랜덤 텐서 forward+backward+NaN)는 이미 PASS 상태라
-    바로 본 실행 투입.</p>
+    <h4 id="exp-20260712-run-s3">실행 기록 — §3 ①과의 조합 3개 (2026-07-12, 172.30.1.20 서버 GPU0/2/3)</h4>
+    <p>§1(GPU0-3, ①②③ 단독 4개)과 별도로, "①+②③④ 조합" 중 <b>①+②</b>·<b>①+③(h192)</b>·
+    <b>①+③(h256)</b> 3개를 <b>172.30.1.20 서버</b>(이 저장소가 위치한 서버) GPU2/3/0에 추가로
+    배정해 실행 중이다. §1과 동일하게 <code>CUDA_VISIBLE_DEVICES=N</code>으로 GPU 1장씩 고정,
+    캐시 키 <code>a165448538</code>(train 575,686/val 119,901/test 120,435)를 warm-load해 즉시
+    학습 시작(콜드 빌드 없음). 스모크테스트(랜덤 텐서 forward+backward+NaN)는 이미 PASS 상태라
+    바로 본 실행 투입. h256(GPU0)은 <b>Epoch 1 완료로 메모리 안전 확인됨</b>(아래 표 참조).</p>
     <table>
-      <thead><tr><th>GPU</th><th>실험</th><th>config</th><th>params</th><th>로그</th></tr></thead>
+      <thead><tr><th>GPU</th><th>실험</th><th>config</th><th>params</th><th>메모리(24GB 중)</th><th>로그</th></tr></thead>
       <tbody>
         <tr><td>2</td><td>①+② (8D+학습형잔차4D=12D)</td>
           <td><code>tsem_sage_invariant_8d_rot_learnable.yaml</code></td>
-          <td>176,827</td><td><code>logs/tsem/train_invariant_8d_rot_learnable.log</code></td></tr>
+          <td>176,827</td><td>—</td><td><code>logs/tsem/train_invariant_8d_rot_learnable.log</code></td></tr>
         <tr><td>3</td><td>①+③ (8D, hidden_dim 192)</td>
           <td><code>tsem_sage_invariant_8d_rot_h192.yaml</code></td>
-          <td>383,283</td><td><code>logs/tsem/train_invariant_8d_rot_h192.log</code></td></tr>
+          <td>383,283</td><td>—</td><td><code>logs/tsem/train_invariant_8d_rot_h192.log</code></td></tr>
+        <tr><td>0</td><td>①+③ (8D, hidden_dim 256)</td>
+          <td><code>tsem_sage_invariant_8d_rot_h256.yaml</code></td>
+          <td>674,867</td><td>~15.3GB(Epoch1, OOM 없음 확인)</td><td><code>logs/tsem/train_invariant_8d_rot_h256.log</code></td></tr>
       </tbody>
     </table>
     <p class="small">완료 시 <code>checkpoints/tsem/&lt;experiment&gt;/results.json</code> + 로그
     tail을 이 절과 위 조합 표 상태에 반영 예정 — 비교 기준은 6D invariant(76.21%/74.78%) 및
     HiVT(77.48%/76.35%)·QCNet(77.97%/76.96%). 상세 실행 기록: <code>results/20260712_11.md</code>
     §"실행 기록 — §3 ①과의 조합 2개".</p>
+
+    <h4 id="exp-20260712-run-s3-wgrid">예약 — §3 ①+④ W×encoder 조합 4개 (2026-07-12 22:23 예약, PID 감시 런처)</h4>
+    <p>위 3개(GPU0/2/3)가 여전히 각 GPU를 점유 중이라, "①+④(8D, W×encoder 그리드)" 조합 4개를
+    <b>PID 감시 런처</b>(<code>scratchpad/queue_s3_w_grid.sh</code>, PID 2509557 백그라운드)로
+    예약했다 — GPU마다 현재 job의 메인 PID가 종료되는 즉시(+15초 여유) 배정된 다음 job을 자동
+    투입한다. W20 쌍(gru/transformer)은 캐시 키가 같으므로, <b>W20-transformer는 GPU 확보뿐
+    아니라 W20-gru 로그에 <code>Epoch 001</code>이 찍힐 때까지 추가로 기다려</b> 콜드 빌드
+    레이스를 방지한다. 상태 로그: <code>logs/tsem/s3_wgrid_status.txt</code>.</p>
+    <table>
+      <thead><tr><th>GPU</th><th>현재 실행 중(종료 대기)</th><th>예약된 실험</th><th>config</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>①+③ h256</td><td>①+④ W10-transformer</td>
+          <td><code>tsem_sage_invariant_8d_rot_w10_transformer.yaml</code></td>
+          <td>§1 W10 캐시(<code>a165448538</code>) 재사용, 레이스 없음</td></tr>
+        <tr><td>1</td><td>position_only</td><td>①+④ W20-gru</td>
+          <td><code>tsem_sage_invariant_8d_rot_w20_gru.yaml</code></td>
+          <td>신규 W20 캐시 최초 생성(~10-15분)</td></tr>
+        <tr><td>2</td><td>①+② learnable</td><td>①+④ W20-transformer</td>
+          <td><code>tsem_sage_invariant_8d_rot_w20_transformer.yaml</code></td>
+          <td>GPU 확보 + W20-gru의 <code>Epoch 001</code> 로그까지 대기</td></tr>
+        <tr><td>3</td><td>①+③ h192</td><td>①+④ W30-gru</td>
+          <td><code>tsem_sage_invariant_8d_rot_w30_gru.yaml</code></td>
+          <td>신규 W30 캐시 최초 생성, 단독이라 레이스 없음</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><b>2026-07-13 갱신 — 4개 중 3개 크래시.</b> W10-transformer(CUDA 커널 오류
+      "invalid configuration argument")·W20-gru(OOM, backward에서 8.71GiB 요청 실패)·
+      W30-gru(<code>et_nagraphsage.py</code> 2-hop 레이어에서 illegal memory access) 전부
+      Epoch1 도달 전 종료. W20/W30 캐시는 크래시 전에 이미 완성돼 재사용 가능. W20-transformer만
+      GPU2에서 정상 실행 중(원래 "W20-gru의 Epoch1 로그까지 대기" 조건이 크래시로 영영 성립 안
+      해, PID 감시 서브셸을 kill하고 수동으로 투입). 재시도는 배치 크기 축소(OOM)·W30
+      2-hop 인덱싱 조사(illegal memory access)·transformer 커널 오류 원인 확인이 선행돼야
+      한다 — 아직 미착수.</div>
+    </div>
+    <p class="small">상세: <code>results/20260712_11.md</code> §"예약 — §3 ①+④ W×encoder
+    조합 4개".</p>
+
+    <h3 id="exp-20260713-plan"><span class="ic">◆</span>10. 20260713 추가 실험계획
+      <span class="badge b-blue" style="font-size:10px;">🧩 구현·스모크 완료, 실행은 사용자 지시 대기</span></h3>
+    <p class="sec-desc"><b>배경</b>: <code>tsem_sage_invariant_6d_interleaved_bearing</code>
+    (②spatial-temporal 교차 + ③bearing/Δheading edge, 2026-07-13 학습 중/완료)의
+    <code>TSEMSAGEInterleaved</code> 구조를 코드 리뷰하며 발견한 3가지 표현력 병목을 각각
+    독립 실험으로 분리해 검증한다 — 전부 <b>opt-in 플래그</b>(기본값은 기존과 100% 동일)로
+    구현해 이미 학습된 <code>interleaved</code>/<code>interleaved_bearing</code> 체크포인트의
+    재현성을 깨지 않는다.</p>
+    <table>
+      <thead><tr><th>#</th><th>병목</th><th>제안</th><th>구현 위치</th></tr></thead>
+      <tbody>
+        <tr><td><b>①</b></td>
+          <td>메시지 패싱이 2-hop→1-hop→ego, 딱 2단 압축으로 끝남 — 반복 정제·residual 없음</td>
+          <td><code>num_ego_rounds</code>(기본 1) — ego 표현만 <code>layer_1hop_extra</code>
+          (독립 가중치 ETSAGELayer, 라운드 수−1개)로 잔차 재정제. <code>h_nbr_t</code>는 고정,
+          ego만 여러 번 이웃을 다시 참조</td>
+          <td><code>models/tsem_sage.py::TSEMSAGEInterleaved.__init__/forward</code></td></tr>
+        <tr><td><b>②a</b></td>
+          <td>edge feature의 <code>dist</code>가 스칼라 1개뿐 — 거리 스케일 세밀 구분 불가</td>
+          <td><code>edge_feat_variant: 'fourier'</code>(15D) — bearing 7D는 유지, <code>dist</code>를
+          HiVT/QCNet 스타일 Fourier 위치 인코딩(4주파수×sin/cos=8채널, <code>radius=20.0</code>
+          기준 정규화)으로 확장</td>
+          <td><code>modules/data_manager_tsem.py::_recompute_edges_fourier</code></td></tr>
+        <tr><td><b>②b</b></td>
+          <td><code>ETSAGELayer</code>가 gate+단일 softmax weighted-sum뿐 — HiVT/QCNet의
+          multi-head attention보다 표현력 낮음</td>
+          <td><code>spatial_layer: 'mha'</code> — <code>ETSAGELayer</code>(원본 무변경)를
+          <code>mha_num_heads</code>(기본 4)개 독립 인스턴스화해 concat 후 재투영</td>
+          <td><code>models/tsem_sage.py::ETSAGEMultiHeadLayer</code></td></tr>
+        <tr><td><b>③</b></td>
+          <td>시간 인코더가 1층 GRU, 마지막 hidden state만 사용 — s_1..s_W 요약 능력이 얕음</td>
+          <td><code>temporal_encoder_type: 'gru_attn'</code> — <code>node_encoder</code>/
+          <code>edge_encoder</code>에서 이미 검증된 <code>TemporalEncoder</code>(GRU +
+          attention pooling)를 재사용. "GRU 채택 확정" 결정과 배치되지 않는 최소 변경</td>
+          <td><code>models/temporal_encoder.py::TemporalEncoder</code>(기존 클래스 재사용)</td></tr>
+      </tbody>
+    </table>
+    <p class="small">모두 <code>models/et_nagraphsage.py</code>(ET-NAGraphSAGE 컨퍼런스 트랙과
+    공유·수정 금지, CLAUDE.md §4)는 무변경 — <code>ETSAGELayer</code>는 그대로 두고
+    <code>ETSAGEMultiHeadLayer</code>로 조합(compose)만 해 병행 구현했다.</p>
+
+    <h4 id="exp-20260713-configs">코드·config 준비 완료 — 스모크테스트 결과</h4>
+    <div class="callout tip">
+      <span class="ci">✅</span>
+      <div><b>4개 모두 forward+backward+NaN 체크 PASS</b>(랜덤 텐서, B=4/K1=6/K2=4/T=10).
+      baseline(<code>interleaved_bearing</code>) 파라미터 216,581과 비교해 ①ego3는
+      +116K(라운드별 독립 가중치 2개 추가), ②b mha는 +34K(4헤드 concat+재투영), ②a
+      fourier·③ gru_attn은 거의 무증가(edge_dim만 7→15, 또는 attention proj 1개 추가) —
+      ②a/②b는 파라미터 증가가 작아 "표현력 확장이 파라미터 수 증가로 설명되는지" 해석이
+      비교적 깔끔하다(①·③④ h192/h256처럼 파라미터가 HiVT/QCNet 규모까지 커지는 것과 대조).</div>
+    </div>
+    <div style="overflow-x:auto;"><table>
+      <thead><tr><th>실험</th><th>config</th><th>params</th><th>baseline 대비</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>baseline (②+③ 구판, 참조용)</td>
+          <td><code>tsem_sage_invariant_6d_interleaved_bearing.yaml</code></td>
+          <td>216,581</td><td>—</td>
+          <td>🔄 실행 중(PID 2917111, GPU0, 2026-07-13 11:39~)</td></tr>
+        <tr><td><b>①</b> num_ego_rounds=3</td>
+          <td><code>tsem_sage_invariant_6d_interleaved_bearing_ego3.yaml</code></td>
+          <td>332,679</td><td>+116,098</td><td>✅ PASS(스모크) — 미실행</td></tr>
+        <tr><td><b>②a</b> edge_feat_variant=fourier(15D)</td>
+          <td><code>tsem_sage_invariant_6d_interleaved_fourier.yaml</code></td>
+          <td>216,901</td><td>+320</td><td>✅ PASS(스모크) — 미실행</td></tr>
+        <tr><td><b>②b</b> spatial_layer=mha</td>
+          <td><code>tsem_sage_invariant_6d_interleaved_bearing_mha.yaml</code></td>
+          <td>250,635</td><td>+34,054</td><td>✅ PASS(스모크) — 미실행</td></tr>
+        <tr><td><b>③</b> temporal_encoder_type=gru_attn</td>
+          <td><code>tsem_sage_invariant_6d_interleaved_bearing_gruattn.yaml</code></td>
+          <td>216,773</td><td>+192</td><td>✅ PASS(스모크) — 미실행</td></tr>
+        <tr class="hl" style="background:#fef3c7;"><td><b>①+②a+②b+③</b> 삼중 조합
+          <span class="small">— ⏳ 개별 결과 확인 후 조건부 실행</span></td>
+          <td><code>tsem_sage_invariant_6d_interleaved_full_combo.yaml</code></td>
+          <td>401,043</td><td>+184,462</td><td>✅ PASS(스모크) — 실행 보류(§하네스 원칙
+          "한 번에 하나씩만 바꿔 격리")</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small"><b>실행 순서 제안</b>(비용·리스크 오름차순): <b>③ → ②a/②b → ①</b>.
+    ③은 기존 검증된 <code>TemporalEncoder</code> 재사용이라 리스크 최소, ②a/②b는 파라미터
+    증가가 작아 해석이 깔끔, ①은 계산 비용(T=10 루프 안에서 라운드 배증)과 파라미터 증가가
+    가장 커 마지막 순위로 권장. 비교 기준은 baseline(<code>interleaved_bearing</code>,
+    완료 시 수치 갱신) 및 <a data-goto="structure" data-anchor="cmp-6d-invariant-result">6D
+    invariant(76.21%/74.78%)</a>·<a data-goto="structure"
+    data-anchor="cmp-hivt-300ep">HiVT(77.48%/76.35%)</a>·<a data-goto="structure"
+    data-anchor="cmp-qcnet-300ep">QCNet(77.97%/76.96%)</a>.</p>
   </div>
 
   <div class="page" id="page-abstract">

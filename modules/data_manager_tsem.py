@@ -51,6 +51,139 @@ CACHE_ROOT = os.path.join(
     'tsem',
 )
 
+EDGE_DIM_BEARING = 7  # [rel_speed, rel_accel, dist, cos φ, sin φ, cos Δθ, sin Δθ] — rel_dx/rel_dz 제외
+
+def _recompute_edges_bearing(node_seq: np.ndarray, nbr_node_seqs: np.ndarray,
+                              nbr2_node_seqs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """TSEM 전용 edge feature (2026-07-13) — bearing(cos φ,sin φ) + Δheading(cos Δθ,sin Δθ) 포함,
+    rel_dx/rel_dz(heading 벡터 단순 차, 방향 정보 없음) 제외. modules/data_manager.py::_recompute_edges와
+    별도 구현 — 그 파일은 ET-NAGraphSAGE 컨퍼런스 트랙과 공유·수정 금지(CLAUDE.md §4)라 TSEM 전용
+    opt-in으로 병행 구현한다. 도식·근거: docs/TSEM_journal_design.html §data-neighbor "③ edge feature에
+    방위각(bearing)이 빠져 있다".
+
+    bearing: rel_pos=(dst_x-src_x, dst_z-src_z)를 src의 heading(dir_x,dir_z, 단위벡터 가정)
+    기준 로컬 프레임으로 투영 — atan2 없이 내적/외적만으로 cos φ, sin φ를 직접 얻는다
+    (φ의 wrap-around 문제 자체가 발생하지 않음).
+      cos φ = (rel_pos · src_dir) / dist,  sin φ = (src_dir × rel_pos) / dist
+    Δheading: 두 heading 단위벡터의 내적/외적 = cos/sin(Δθ) (product-to-sum 항등식, atan2 불필요).
+      cos Δθ = dst_dir · src_dir,  sin Δθ = src_dir × dst_dir
+    """
+    ns = node_seq.astype(np.float32)          # [T,6]
+    nbr = nbr_node_seqs.astype(np.float32)      # [K,T,6]
+
+    def _edges(src, dst):                       # [...,6],[...,6] → [...,7]
+        rs = dst[..., 2] - src[..., 2]
+        ra = dst[..., 5] - src[..., 5]
+        rx = dst[..., 0] - src[..., 0]
+        rz = dst[..., 1] - src[..., 1]
+        dist = np.sqrt(rx ** 2 + rz ** 2)
+        dist_safe = dist + 1e-8
+
+        src_dx, src_dz = src[..., 3], src[..., 4]
+        src_norm = np.sqrt(src_dx ** 2 + src_dz ** 2) + 1e-8
+        sdx, sdz = src_dx / src_norm, src_dz / src_norm   # src heading 단위벡터
+
+        dst_dx, dst_dz = dst[..., 3], dst[..., 4]
+        dst_norm = np.sqrt(dst_dx ** 2 + dst_dz ** 2) + 1e-8
+        ddx, ddz = dst_dx / dst_norm, dst_dz / dst_norm   # dst heading 단위벡터
+
+        cos_phi = (rx * sdx + rz * sdz) / dist_safe        # rel_pos·src_dir / |rel_pos|
+        sin_phi = (sdx * rz - sdz * rx) / dist_safe        # src_dir×rel_pos / |rel_pos|
+        cos_dtheta = ddx * sdx + ddz * sdz                  # dst_dir·src_dir
+        sin_dtheta = sdx * ddz - sdz * ddx                  # src_dir×dst_dir
+
+        return np.stack(
+            [rs, ra, dist, cos_phi, sin_phi, cos_dtheta, sin_dtheta], axis=-1
+        ).astype(np.float32)
+
+    src1 = np.broadcast_to(ns[None], nbr.shape)                 # [K,T,6]
+    edge_seqs = _edges(src1, nbr)                                # [K,T,7]
+    edge_seqs *= (np.abs(nbr).sum(-1, keepdims=True) > 0)        # 결측 0 유지
+
+    if nbr2_node_seqs is not None and nbr2_node_seqs.size:
+        nbr2 = nbr2_node_seqs.astype(np.float32)                # [K,K2,T,6]
+        src2 = np.broadcast_to(nbr[:, None], nbr2.shape)        # [K,K2,T,6]
+        nbr2_edge_seqs = _edges(src2, nbr2)                      # [K,K2,T,7]
+        nbr2_edge_seqs *= (np.abs(nbr2).sum(-1, keepdims=True) > 0)
+    else:
+        nbr2_edge_seqs = np.zeros((nbr.shape[0], 0, nbr.shape[1], EDGE_DIM_BEARING),
+                                  dtype=np.float32)
+    return edge_seqs, nbr2_edge_seqs
+
+
+EDGE_DIM_FOURIER_NUM_FREQ = 4
+EDGE_DIM_FOURIER = 7 + 2 * EDGE_DIM_FOURIER_NUM_FREQ  # 15 = bearing 7D + dist Fourier(4주파수×sin/cos)
+_FOURIER_DIST_SCALE = 20.0  # graph.radius(20.0) 기준 정규화 — 관측 가능한 최대 거리로 스케일 맞춤
+
+
+def _recompute_edges_fourier(node_seq: np.ndarray, nbr_node_seqs: np.ndarray,
+                              nbr2_node_seqs: np.ndarray,
+                              num_freq: int = EDGE_DIM_FOURIER_NUM_FREQ) -> Tuple[np.ndarray, np.ndarray]:
+    """TSEM 전용 edge feature (2026-07-13) — _recompute_edges_bearing(7D)에 dist의 Fourier
+    위치 인코딩(HiVT/QCNet 스타일, sin/cos 다중 주파수)을 추가한 15D 변형. bearing/Δheading은
+    그대로 두고 스칼라 dist 하나만 표현력을 확장 — "raw dist 하나로는 거리 스케일을 세밀하게
+    구분 못 할 수 있다"는 §data-neighbor "③" 가설의 연장. modules/data_manager.py는 여전히
+    미접촉(CLAUDE.md §4 patttern 그대로 따름).
+
+    dist_norm = dist / radius(20.0),  주파수 f_k = 2^k (k=0..num_freq-1)
+    fourier(dist) = [sin(2π f_0 dist_norm), cos(2π f_0 dist_norm), ..., sin(2π f_{K-1} dist_norm), cos(...)]
+    """
+    ns = node_seq.astype(np.float32)
+    nbr = nbr_node_seqs.astype(np.float32)
+    freqs = (2.0 ** np.arange(num_freq)).astype(np.float32)  # [K]
+
+    def _edges(src, dst):
+        rs = dst[..., 2] - src[..., 2]
+        ra = dst[..., 5] - src[..., 5]
+        rx = dst[..., 0] - src[..., 0]
+        rz = dst[..., 1] - src[..., 1]
+        dist = np.sqrt(rx ** 2 + rz ** 2)
+        dist_safe = dist + 1e-8
+
+        src_dx, src_dz = src[..., 3], src[..., 4]
+        src_norm = np.sqrt(src_dx ** 2 + src_dz ** 2) + 1e-8
+        sdx, sdz = src_dx / src_norm, src_dz / src_norm
+
+        dst_dx, dst_dz = dst[..., 3], dst[..., 4]
+        dst_norm = np.sqrt(dst_dx ** 2 + dst_dz ** 2) + 1e-8
+        ddx, ddz = dst_dx / dst_norm, dst_dz / dst_norm
+
+        cos_phi = (rx * sdx + rz * sdz) / dist_safe
+        sin_phi = (sdx * rz - sdz * rx) / dist_safe
+        cos_dtheta = ddx * sdx + ddz * sdz
+        sin_dtheta = sdx * ddz - sdz * ddx
+
+        dist_norm = dist / _FOURIER_DIST_SCALE               # [...]
+        angle = 2.0 * np.pi * dist_norm[..., None] * freqs   # [...,K]
+        fourier = np.concatenate([np.sin(angle), np.cos(angle)], axis=-1)  # [...,2K]
+
+        base = np.stack(
+            [rs, ra, dist, cos_phi, sin_phi, cos_dtheta, sin_dtheta], axis=-1
+        ).astype(np.float32)
+        return np.concatenate([base, fourier.astype(np.float32)], axis=-1)
+
+    src1 = np.broadcast_to(ns[None], nbr.shape)
+    edge_seqs = _edges(src1, nbr)
+    edge_seqs *= (np.abs(nbr).sum(-1, keepdims=True) > 0)
+
+    if nbr2_node_seqs is not None and nbr2_node_seqs.size:
+        nbr2 = nbr2_node_seqs.astype(np.float32)
+        src2 = np.broadcast_to(nbr[:, None], nbr2.shape)
+        nbr2_edge_seqs = _edges(src2, nbr2)
+        nbr2_edge_seqs *= (np.abs(nbr2).sum(-1, keepdims=True) > 0)
+    else:
+        nbr2_edge_seqs = np.zeros((nbr.shape[0], 0, nbr.shape[1], EDGE_DIM_FOURIER),
+                                  dtype=np.float32)
+    return edge_seqs, nbr2_edge_seqs
+
+
+_EDGE_FN_BY_VARIANT = {
+    'legacy': _recompute_edges,
+    'bearing': _recompute_edges_bearing,
+    'fourier': _recompute_edges_fourier,
+}
+
+
 _CACHE_KEYS = [
     'node_seq', 'nbr_node_seqs', 'edge_seqs', 'nbr_mask',
     'nbr2_node_seqs', 'nbr2_edge_seqs', 'nbr2_mask', 'y', 'y_persist', 'stop_conf',
@@ -245,6 +378,7 @@ class TSEMFutureStateDataset(Dataset):
         augment_seed: int = 12345,
         stop_persist_delta: int = 2,
         with_v_future: bool = False,
+        edge_feat_variant: str = 'legacy',
     ):
         self.W = W
         self.H = H
@@ -259,6 +393,14 @@ class TSEMFutureStateDataset(Dataset):
         self.ego_relative = ego_relative
         assert neighbor_mode in ('hybrid', 'count', 'radius')
         self.neighbor_mode = neighbor_mode
+        # edge feature 변형 (2026-07-13): 'legacy'(기본, 하위호환)는 기존 _recompute_edges(5D,
+        # rel_dx/rel_dz 포함) 그대로. 'bearing'은 _recompute_edges_bearing(7D, bearing cos/sinφ +
+        # Δheading cos/sinΔθ, rel_dx/rel_dz 제외) — docs/TSEM_journal_design.html §data-neighbor
+        # "③ edge feature에 방위각이 빠져 있다" 참조. 'fourier'는 bearing 7D + dist Fourier
+        # 위치인코딩(15D, _recompute_edges_fourier) — §exp-20260713-plan ②. 모델 쪽
+        # edge_dim(config model.edge_dim)을 각각 7/15로 맞춰야 shape이 맞는다.
+        assert edge_feat_variant in ('legacy', 'bearing', 'fourier')
+        self.edge_feat_variant = edge_feat_variant
         # 9차 (2026-07-08): augmentation은 train split에만 적용, val/test는 항상 원본 그대로
         self.augment = augment if (augment is not None and split == 'train') else None
         self._augment_seed = augment_seed
@@ -440,7 +582,8 @@ class TSEMFutureStateDataset(Dataset):
                     node_seq, nbr_node_seqs, nbr_mask, nbr2_node_seqs, nbr2_mask,
                     rng=self._get_aug_rng(),
                 )
-            edge_seqs, nbr2_edge_seqs = _recompute_edges(
+            edge_fn = _EDGE_FN_BY_VARIANT[self.edge_feat_variant]
+            edge_seqs, nbr2_edge_seqs = edge_fn(
                 node_seq, nbr_node_seqs, nbr2_node_seqs
             )
             csv_path, ego_id, window_frames, future_frame = self.samples[idx]
@@ -477,7 +620,8 @@ class TSEMFutureStateDataset(Dataset):
                     s['nbr2_node_seqs'], s['nbr2_mask'], rng=self._get_aug_rng(),
                 )
             )
-        edge_seqs, nbr2_edge_seqs = _recompute_edges(
+        edge_fn = _EDGE_FN_BY_VARIANT[self.edge_feat_variant]
+        edge_seqs, nbr2_edge_seqs = edge_fn(
             s['node_seq'], s['nbr_node_seqs'], s['nbr2_node_seqs']
         )
         tensor_keys = [k for k in _CACHE_KEYS_STORED if k not in ('y', 'y_persist', 'stop_conf')]
@@ -655,6 +799,7 @@ def build_tsem_dataloaders(
     augment: 'TsemAugment' = None,
     stop_persist_delta: int = 2,
     with_v_future: bool = False,
+    edge_feat_variant: str = 'legacy',
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     kwargs = dict(
         W=W, H=H, radius=radius, K_max=K_max, K_max2=K_max2,
@@ -662,6 +807,7 @@ def build_tsem_dataloaders(
         neighbor_mode=neighbor_mode, ego_relative=ego_relative,
         verbose=verbose, use_cache=use_cache, augment=augment,
         stop_persist_delta=stop_persist_delta, with_v_future=with_v_future,
+        edge_feat_variant=edge_feat_variant,
     )
     train_ds = TSEMFutureStateDataset(csv_files, split='train', **kwargs)
     val_ds = TSEMFutureStateDataset(csv_files, split='val', **kwargs)

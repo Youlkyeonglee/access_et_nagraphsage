@@ -1,0 +1,66 @@
+# TSEM-SAGE §exp-20260713-plan ③ 시간 인코더 강화(attention pooling) — 단독 검증 (2026-07-13)
+# tsem_sage_invariant_6d_interleaved_bearing.yaml(baseline)의 self.temporal_encoder(nn.GRU 1층,
+# 마지막 hidden state만 사용)를 TemporalEncoder(GRU + attention pooling, node_encoder/
+# edge_encoder에서 이미 검증된 조합 재사용)로 교체 — "GRU 채택 확정" 결정과 배치되지 않는
+# 최소 변경. s_1..s_W 전체에 attention-weighted sum을 적용해 anchor 표현을 얻는다.
+# 구현: models/temporal_encoder.py::TemporalEncoder(기존 클래스 재사용, 신규 코드 없음),
+# models/tsem_sage.py::TSEMSAGEInterleaved(temporal_encoder_type='gru_attn').
+# baseline과 나머지 전부 동일, model.temporal_encoder_type(gru1→gru_attn)만 다름.
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_interleaved_bearing_gruattn.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+  edge_feat_variant: bearing   # baseline과 동일 — 7D
+
+model:
+  name: tsem_sage_interleaved
+  semantic_variant: invariant
+  raw_append: none
+  edge_dim: 7
+  hidden_dim: 128
+  d_e: 32
+  use_2hop: true
+  num_classes: 3
+  dropout: 0.3
+  temporal_encoder_type: gru_attn   # ★ 이 config의 핵심 변경점 — 기본 gru1
+
+train:
+  batch_size: 4096
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.0
+  lambda_spatial: 0.0
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_interleaved_bearing_gruattn

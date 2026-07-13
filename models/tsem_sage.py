@@ -249,6 +249,27 @@ class TSEMNAGraphSAGEAdapted(TSEMSAGE):
     super().__init__(**kwargs)
 
 
+class ETSAGEMultiHeadLayer(nn.Module):
+  """TSEM 전용 multi-head 확장 (2026-07-13, §exp-20260713-plan ②) — ETSAGELayer
+  (models/et_nagraphsage.py, gate+단일 softmax, 원본 코드 무변경)를 헤드 수만큼 독립
+  인스턴스화해 concat 후 재투영. HiVT/QCNet의 multi-head attention에 대응하는 표현력
+  확장이 목표 — et_nagraphsage.py를 직접 고치지 않고 조합(compose)만으로 구현해
+  CLAUDE.md §4 "공용 파일 수정 금지" 원칙을 지킨다.
+  """
+
+  def __init__(self, in_dim: int, out_dim: int, d_e: int, num_heads: int = 4, dropout: float = 0.3):
+    super().__init__()
+    assert out_dim % num_heads == 0, f'out_dim({out_dim})이 num_heads({num_heads})의 배수여야 함'
+    head_dim = out_dim // num_heads
+    self.heads = nn.ModuleList(
+        [ETSAGELayer(in_dim, head_dim, d_e, dropout) for _ in range(num_heads)])
+    self.out_proj = nn.Linear(out_dim, out_dim)
+
+  def forward(self, h_ego, h_nbr, e_temp, nbr_mask):
+    outs = [head(h_ego, h_nbr, e_temp, nbr_mask) for head in self.heads]
+    return self.out_proj(torch.cat(outs, dim=-1))
+
+
 class TSEMSAGEInterleaved(nn.Module):
   """2026-07-12 hypothesis 1(공간 집계 시점) 검증용 — spatial-temporal 순서를 뒤집은 변형.
 
@@ -280,6 +301,10 @@ class TSEMSAGEInterleaved(nn.Module):
       num_classes: int = 3,
       dropout: float = 0.3,
       use_speed_head: bool = False,
+      num_ego_rounds: int = 1,
+      spatial_layer: str = 'gate',
+      mha_num_heads: int = 4,
+      temporal_encoder_type: str = 'gru1',
   ):
     super().__init__()
     self.T = T
@@ -300,12 +325,32 @@ class TSEMSAGEInterleaved(nn.Module):
     self.edge_proj = nn.Sequential(
         nn.Linear(edge_dim, d_e), nn.ReLU(), nn.Dropout(dropout))
 
+    # ② 공간 결합 방식 (2026-07-13, §exp-20260713-plan ②): 'gate'(기본, ETSAGELayer 그대로)
+    # | 'mha'(ETSAGEMultiHeadLayer, 헤드별 독립 gate/msg/beta concat) — 기본값은 기존과 100% 동일.
+    assert spatial_layer in ('gate', 'mha')
+    self.spatial_layer = spatial_layer
+    layer_cls = (lambda: ETSAGELayer(hidden_dim, hidden_dim, d_e, dropout)) if spatial_layer == 'gate' \
+        else (lambda: ETSAGEMultiHeadLayer(hidden_dim, hidden_dim, d_e, mha_num_heads, dropout))
     if use_2hop:
-      self.layer_2hop = ETSAGELayer(hidden_dim, hidden_dim, d_e, dropout)
-    self.layer_1hop = ETSAGELayer(hidden_dim, hidden_dim, d_e, dropout)
+      self.layer_2hop = layer_cls()
+    self.layer_1hop = layer_cls()
 
-    # 프레임별 공간인지 벡터 s_1..s_W를 시간축으로 요약 — 프로젝트 확정 결론(GRU 채택)을 따름.
-    self.temporal_encoder = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
+    # ① 메시지 패싱 라운드 확장 (2026-07-13, §exp-20260713-plan ①) — ego 표현만 잔차로 재정제.
+    # num_ego_rounds=1(기본)이면 layer_1hop_extra가 비어 forward가 기존과 완전히 동일한 경로를 탐.
+    assert num_ego_rounds >= 1
+    self.num_ego_rounds = num_ego_rounds
+    self.layer_1hop_extra = nn.ModuleList([layer_cls() for _ in range(num_ego_rounds - 1)])
+
+    # ③ 시간 인코더 강화 (2026-07-13, §exp-20260713-plan ③): 'gru1'(기본, 기존 nn.GRU 1층 그대로)
+    # | 'gru_attn'(TemporalEncoder, GRU 전체 hidden states에 attention pooling — node_encoder/
+    # edge_encoder에서 이미 검증된 조합 재사용, "GRU 채택 확정" 결정과 배치되지 않음).
+    assert temporal_encoder_type in ('gru1', 'gru_attn')
+    self.temporal_encoder_type = temporal_encoder_type
+    if temporal_encoder_type == 'gru1':
+      self.temporal_encoder = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
+    else:
+      self.temporal_encoder = TemporalEncoder(
+          hidden_dim, hidden_dim, encoder_type='gru', use_attention=True, dropout=dropout)
 
     self.classifier = nn.Linear(hidden_dim, num_classes)
     self.head_speed = nn.Linear(hidden_dim, 1) if use_speed_head else None
@@ -360,11 +405,16 @@ class TSEMSAGEInterleaved(nn.Module):
         ).reshape(B, K1, -1) * nbr_mask.unsqueeze(-1)
 
       s_t = self.layer_1hop(h_ego_t, h_nbr_t, e1_t, nbr_mask)  # [B,hidden] — spatial @ t
+      for extra_layer in self.layer_1hop_extra:                # ① 잔차 다중 라운드 (기본 비어있음)
+        s_t = s_t + extra_layer(s_t, h_nbr_t, e1_t, nbr_mask)
       s_list.append(s_t)
 
     s_seq = torch.stack(s_list, dim=1)          # [B,T,hidden]
-    _, h_n = self.temporal_encoder(s_seq)       # h_n: [1,B,hidden]
-    h_final = h_n.squeeze(0)                    # [B,hidden] — anchor 표현
+    if self.temporal_encoder_type == 'gru1':
+      _, h_n = self.temporal_encoder(s_seq)     # h_n: [1,B,hidden]
+      h_final = h_n.squeeze(0)                  # [B,hidden] — anchor 표현
+    else:
+      h_final = self.temporal_encoder(s_seq)    # [B,hidden] — TemporalEncoder(attention pooling)
 
     logits = self.classifier(h_final)
     if not return_aux:

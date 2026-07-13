@@ -1,0 +1,68 @@
+# TSEM-SAGE §exp-20260713-plan ①+②+③ 삼중 조합 — 예약, 개별 결과 확인 전까지 실행 보류 (2026-07-13)
+# "한 번에 하나씩만 바꿔 격리"(하네스 원칙) — ego3(①)·fourier(②a)·mha(②b)·gru_attn(③) 개별
+# 결과가 나오기 전까지는 실행하지 않는다. 개별 중 유의미한 개선(4-seed std 0.14 기준)을 보인
+# 조합만 골라 여기 값을 갱신 후 실행할 것 — 아래는 "전부 켰을 때"의 최대 조합 초기값이며
+# ②a/②b는 동시 사용 가능(edge_dim 15 + spatial_layer mha).
+# 실행 전 체크리스트: ①②③ 각 단독 config의 results.json 확인 → 유효한 것만 선택 → 이 파일의
+# model 섹션을 수정 → 실행.
+# 실행(준비 완료 후): python train_tsem.py --config configs/tsem_sage_invariant_6d_interleaved_full_combo.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+  edge_feat_variant: fourier   # ②a — 15D
+
+model:
+  name: tsem_sage_interleaved
+  semantic_variant: invariant
+  raw_append: none
+  edge_dim: 15
+  hidden_dim: 128
+  d_e: 32
+  use_2hop: true
+  num_classes: 3
+  dropout: 0.3
+  num_ego_rounds: 3            # ①
+  spatial_layer: mha           # ②b
+  mha_num_heads: 4
+  temporal_encoder_type: gru_attn   # ③
+
+train:
+  batch_size: 4096
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.0
+  lambda_spatial: 0.0
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_interleaved_full_combo

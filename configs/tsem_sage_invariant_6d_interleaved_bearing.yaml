@@ -1,0 +1,67 @@
+# TSEM-SAGE ②(spatial-temporal 교차) + ③(bearing/Δheading edge) 결합 전용 설정 (2026-07-13)
+# ②만 적용한 결과(77.01%/76.04%, tsem_sage_invariant_6d_interleaved.yaml)에 edge feature를
+# bearing(cos φ,sin φ) + Δheading(cos Δθ,sin Δθ)로 교체 — rel_dx/rel_dz(방향 정보 없는 heading
+# 벡터 단순 차)는 제외. 근거·도식·시계열 예시: docs/TSEM_journal_design.html §data-neighbor
+# "③ edge feature에 방위각(bearing)이 빠져 있다".
+# 구현: modules/data_manager_tsem.py::_recompute_edges_bearing (graph.edge_feat_variant: bearing),
+# modules/data_manager.py(공용, ET-NAGraphSAGE 컨퍼런스 트랙과 공유·수정 금지)는 건드리지 않음 —
+# TSEM 전용 병행 함수로 opt-in 구현(하위호환: edge_feat_variant 기본값 'legacy'는 기존과 완전 동일).
+# tsem_sage_invariant_6d_interleaved.yaml과 나머지 전부 동일, graph.edge_feat_variant +
+# model.edge_dim(5→7)만 다름.
+# 실행: python train_tsem.py --config configs/tsem_sage_invariant_6d_interleaved_bearing.yaml --gpus 0
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4
+  edge_feat_variant: bearing   # ★ 이 config의 핵심 변경점 — 7D(rel_speed,rel_accel,dist,cosφ,sinφ,cosΔθ,sinΔθ)
+
+model:
+  name: tsem_sage_interleaved
+  semantic_variant: invariant   # v,a,j,ω,d_lat,κ만 (6D) — Δρ·접선 제외, 6d invariant와 동일
+  raw_append: none              # position도 미사용 — 완전 invariant, 6d invariant와 동일
+  edge_dim: 7                   # ★ bearing 변형(7D)에 맞춤 — 기본값 5와 다름
+  hidden_dim: 128
+  d_e: 32
+  use_2hop: true
+  num_classes: 3
+  dropout: 0.3
+
+train:
+  batch_size: 4096   # 단일 GPU 기준 — 2026-07-12 4-GPU 실측(오히려 30% 느림) 교훈 반영, GPU 0만 사용
+  num_epochs: 300    # comparison/ 5개 baseline과 동일 프로토콜
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  lambda_temporal: 0.0   # aux head가 main logits와 동일 — 의미 없어서 끔 (interleaved와 동일 이유)
+  lambda_spatial: 0.0
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/tsem/
+experiment: tsem_sage_invariant_6d_interleaved_bearing
