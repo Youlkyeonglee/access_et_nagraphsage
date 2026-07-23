@@ -1,0 +1,61 @@
+# HiVT-adapted — 입력-통제 ablation(raw_append='pos') — comparison/hivt_tsem/config.yaml과
+# data/graph/train/loss/augment 항목 전부 동일, model.raw_append만 'pos'로 변경.
+#
+# 목적: TSEM-SAGE raw_append='pos'(10D 최종모델)와 동일한 world-absolute 원시 좌표 2채널을
+# HiVT-adapted에도 주입해, "TSEM-SAGE 10D의 우위가 구조 때문인지 site-specific 신호 때문인지"를
+# 분리하는 입력-통제 ablation(docs/TSEM_journal_design.html:1710-1712, :2467 "여전히 옵션으로
+# 남아있다"의 실행). model.py 상단 docstring "입력-통제 ablation — raw_append" 참조.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # HiVT 모델 자체는 2-hop 미사용(README 참조) — 데이터로더 호환을 위해 값만 유지
+
+model:
+  embed_dim: 64
+  num_heads: 8
+  num_temporal_layers: 4
+  num_global_layers: 3
+  dropout: 0.1
+  num_classes: 3
+  raw_append: pos   # world-absolute position_x/z 2채널 추가(node_dim 6->8) — TSEM-SAGE 10D와 동일 신호
+
+train:
+  batch_size: 2048
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: hivt_tsem_pos_w10_h10

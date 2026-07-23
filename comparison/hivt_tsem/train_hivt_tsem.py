@@ -93,8 +93,10 @@ def train(cfg: dict):
         W=W, K=gcfg['K_max'], embed_dim=mcfg['embed_dim'], num_heads=mcfg['num_heads'],
         num_temporal_layers=mcfg['num_temporal_layers'], num_global_layers=mcfg['num_global_layers'],
         dropout=mcfg['dropout'], num_classes=mcfg['num_classes'],
+        raw_append=mcfg.get('raw_append', 'none'),
     ).to(device)
-    print(f'모델: HiVT-adapted  params={raw_model.count_parameters():,}')
+    print(f"모델: HiVT-adapted  raw_append={mcfg.get('raw_append', 'none')}  "
+          f'params={raw_model.count_parameters():,}')
     model = raw_model
     if n_gpus > 1:
         print(f'[HiVT-TSEM] {n_gpus}개 GPU 사용 (nn.DataParallel)')

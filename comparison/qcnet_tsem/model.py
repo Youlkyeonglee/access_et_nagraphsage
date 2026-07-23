@@ -28,6 +28,22 @@ HiVT-adapted와의 핵심 차이(설계 철학 자체가 다름, comparison/READ
     항상 0으로 퇴화) — 대신 [motion 크기, motion-heading 각도, speed, accel]로 대체(개수는 4D 유지,
     speed·accel은 우리 데이터의 진짜 독립 신호).
   - agent-type 카테고리 임베딩 제거 — 우리 데이터는 전부 같은 타입(차량)이라 불필요.
+
+## 입력-통제 ablation — raw_append (2026-07-24 추가)
+
+QCNet-adapted는 원래 절대좌표를 한 번도 직접 쓰지 않고 쌍별 상대거리/각도(rel_pos, angle)만
+쓰는 회전-불변 설계다(위 "핵심 차이" 참조). TSEM-SAGE 10D(raw_append='pos')/11D(raw_append='polar')
+위치암기 논의를 이 baseline에도 동일 조건으로 이식해, "TSEM-SAGE의 우위가 구조 때문인지
+site-specific 신호(raw_append='pos'와 동일 신호)만으로도 재현되는지"를 분리하는 입력-통제
+ablation 옵션이다. HiVT-adapted(comparison/hivt_tsem/model.py)와 동일한 옵션명·의미.
+
+  - raw_append='none' (기본값, 기존 동작과 100% 동일): x_a_feat 4D 그대로.
+  - raw_append='pos': 매 (node,time) 슬롯의 world-absolute 원시 좌표(position_x, position_z)를
+    x_a_feat에 2채널 추가(4D->6D) — TSEM-SAGE raw_append='pos'(10D)와 동일 신호.
+  - raw_append='polar': 로터리 중심 world 고정 상수(CENTER=(72.86,-13.45), models/
+    tsem_semantic_derivation.py::SemanticDerivation.CENTER_X/CENTER_Z와 동일 값) 기준
+    [ρ, sinθ, cosθ] 3채널 추가(4D->7D) — TSEM-SAGE raw_append='polar'(11D, "구조 참조 위치")와
+    동일 신호. FourierEmbedding은 input_dim만 늘리면 그대로 확장되므로 추가 구조 변경 불필요.
 """
 from __future__ import annotations
 
@@ -177,10 +193,15 @@ class QCNetTSEMAdapted(nn.Module):
       - edge_index_a2a : 같은 시점의 서로 다른 노드끼리(공간축 self-attention, a2a_radius로 거리 제한)
     """
 
+    # 로터리 중심 world 고정 상수 — models/tsem_semantic_derivation.py::SemanticDerivation의
+    # CENTER_X/CENTER_Z와 동일 값(공업탑 전용). raw_append='polar' 계산에만 쓰인다.
+    _CENTER_X = 72.86
+    _CENTER_Z = -13.45
+
     def __init__(self, W: int = 10, K: int = 6, hidden_dim: int = 64, num_heads: int = 8,
                  head_dim: int = 8, num_layers: int = 3, num_freq_bands: int = 32,
                  time_span: Optional[int] = None, a2a_radius: float = 20.0, dropout: float = 0.1,
-                 num_classes: int = 3):
+                 num_classes: int = 3, raw_append: str = 'none'):
         super().__init__()
         self.W = W
         self.K = K
@@ -188,8 +209,12 @@ class QCNetTSEMAdapted(nn.Module):
         self.hidden_dim = hidden_dim
         self.time_span = time_span if time_span is not None else (W - 1)
         self.a2a_radius = a2a_radius
+        assert raw_append in ('none', 'pos', 'polar')
+        self.raw_append = raw_append
+        extra_dim = {'none': 0, 'pos': 2, 'polar': 3}[raw_append]
 
-        self.x_a_emb = FourierEmbedding(input_dim=4, hidden_dim=hidden_dim, num_freq_bands=num_freq_bands)
+        self.x_a_emb = FourierEmbedding(input_dim=4 + extra_dim, hidden_dim=hidden_dim,
+                                         num_freq_bands=num_freq_bands)
         self.r_t_emb = FourierEmbedding(input_dim=4, hidden_dim=hidden_dim, num_freq_bands=num_freq_bands)
         self.r_a2a_emb = FourierEmbedding(input_dim=3, hidden_dim=hidden_dim, num_freq_bands=num_freq_bands)
         self.t_attn_layers = nn.ModuleList([
@@ -227,7 +252,7 @@ class QCNetTSEMAdapted(nn.Module):
         self.register_buffer('_NT', torch.tensor(NT))
 
     def _build_flat(self, batch: dict):
-        """batch -> (x_a[NTtot,4], pos[NTtot,2], head_vec[NTtot,2], head_angle[NTtot], t_val[NTtot],
+        """batch -> (x_a[NTtot,4+extra_dim], pos[NTtot,2], head_vec[NTtot,2], head_angle[NTtot], t_val[NTtot],
         valid[NTtot], edge_index_t[2,Et], edge_index_a2a[2,Ea])"""
         device = batch['node_seq'].device
         B = batch['node_seq'].size(0)
@@ -257,6 +282,19 @@ class QCNetTSEMAdapted(nn.Module):
         motion_angle = angle_between_2d_vectors(head_vec, motion)
         x_a_feat = torch.stack([motion_norm, motion_angle, speed, accel], dim=-1)  # [NTtot,4]
         x_a_feat = torch.where(valid.unsqueeze(-1), x_a_feat, torch.zeros_like(x_a_feat))
+
+        if self.raw_append != 'none':
+            # 위치-통제 ablation 채널 — raw_flat(world-absolute, 정렬/회전 없음) 기준.
+            if self.raw_append == 'pos':
+                extra = pos  # [NTtot,2] world-absolute 그대로
+            else:  # 'polar'
+                cx = pos[:, 0:1] - self._CENTER_X
+                cz = pos[:, 1:2] - self._CENTER_Z
+                rho = torch.sqrt(cx * cx + cz * cz + 1e-12)
+                theta = torch.atan2(cz, cx)
+                extra = torch.cat([rho, torch.sin(theta), torch.cos(theta)], dim=-1)
+            extra = torch.where(valid.unsqueeze(-1), extra, torch.zeros_like(extra))
+            x_a_feat = torch.cat([x_a_feat, extra], dim=-1)  # [NTtot,4+extra_dim]
 
         head_angle = torch.atan2(head_vec[:, 1], head_vec[:, 0])
         head_angle = torch.where(valid, head_angle, torch.zeros_like(head_angle))

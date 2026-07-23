@@ -1,0 +1,60 @@
+# HiVT-adapted — 입력-통제 ablation(raw_append='polar') — comparison/hivt_tsem/config.yaml과
+# data/graph/train/loss/augment 항목 전부 동일, model.raw_append만 'polar'로 변경.
+#
+# 목적: TSEM-SAGE raw_append='polar'(11D, "구조 참조 위치" novelty — 로터리 중심 기준
+# [ρ,sinθ,cosθ])와 동일한 site-specific 신호를 HiVT-adapted에도 주입하는 입력-통제 ablation.
+# config_pos.yaml(raw 절대좌표 버전)과 짝을 이루는 실험 — model.py 상단 docstring 참조.
+
+data:
+  dataset: gongeoptap
+  data_dir: /home/oem/data/TII_data/
+  train_ratio: 0.70
+  val_ratio:   0.15
+
+tsem:
+  W: 10
+  H: 10
+  stop_persist_delta: 2
+
+graph:
+  radius: 20.0
+  K_max:  6
+  K_max2: 4   # HiVT 모델 자체는 2-hop 미사용(README 참조) — 데이터로더 호환을 위해 값만 유지
+
+model:
+  embed_dim: 64
+  num_heads: 8
+  num_temporal_layers: 4
+  num_global_layers: 3
+  dropout: 0.1
+  num_classes: 3
+  raw_append: polar   # 로터리 중심 기준 [ρ,sinθ,cosθ] 3채널 추가(node_dim 6->9) — TSEM-SAGE 11D와 동일 신호
+
+train:
+  batch_size: 2048
+  num_epochs: 300
+  lr: 0.001
+  weight_decay: 1.0e-5
+  scheduler: onecycle
+  num_workers: 4
+  early_stop_patience: 50
+  grad_clip_norm: 5.0
+  use_amp: true
+
+loss:
+  type: focal
+  gamma: 2.0
+  use_class_weights: true
+  class_weight_power: 0.7
+  kl_weight: 0.1
+  use_uncertainty_weight: true
+
+augment:
+  noise_std: 1.0
+  neighbor_dropout_p: 0.1
+  frame_dropout_p: 0.1
+  rotate_deg: 0.0
+
+seed: 42
+save_dir: ./checkpoints/comparison/
+experiment: hivt_tsem_polar_w10_h10

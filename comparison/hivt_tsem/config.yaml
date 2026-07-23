@@ -25,6 +25,8 @@ model:
   num_global_layers: 3
   dropout: 0.1
   num_classes: 3
+  raw_append: none   # none(기본, 원 논문 invariance 그대로) | pos | polar — model.py 상단 docstring
+                     # "입력-통제 ablation" 참조. 위치암기 비교용 변형은 config_pos.yaml/config_polar.yaml.
 
 train:
   batch_size: 2048     # 원본 HiVT 그래프 연산 특성상 4096은 메모리 부담 커서 512로 축소(공정성은

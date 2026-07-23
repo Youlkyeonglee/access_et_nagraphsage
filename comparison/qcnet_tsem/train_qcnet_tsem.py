@@ -84,8 +84,10 @@ def train(cfg: dict):
         head_dim=mcfg['head_dim'], num_layers=mcfg['num_layers'], num_freq_bands=mcfg['num_freq_bands'],
         time_span=mcfg.get('time_span'), a2a_radius=mcfg.get('a2a_radius', gcfg['radius']),
         dropout=mcfg['dropout'], num_classes=mcfg['num_classes'],
+        raw_append=mcfg.get('raw_append', 'none'),
     ).to(device)
-    print(f'모델: QCNet-adapted  params={raw_model.count_parameters():,}')
+    print(f"모델: QCNet-adapted  raw_append={mcfg.get('raw_append', 'none')}  "
+          f'params={raw_model.count_parameters():,}')
     model = raw_model
     if n_gpus > 1:
         print(f'[QCNet-TSEM] {n_gpus}개 GPU 사용 (nn.DataParallel)')

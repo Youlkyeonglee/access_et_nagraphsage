@@ -1,5 +1,9 @@
-# QCNet-adapted 비교 실험 설정 — comparison/hivt_tsem/config.yaml과 data/graph/train/loss/augment
-# 항목을 동일하게 맞춰 공정 비교되도록 함. model 항목만 QCNet 고유 하이퍼파라미터로 교체.
+# QCNet-adapted — 입력-통제 ablation(raw_append='polar') — comparison/qcnet_tsem/config.yaml과
+# data/graph/train/loss/augment 항목 전부 동일, model.raw_append만 'polar'로 변경.
+#
+# 목적: TSEM-SAGE raw_append='polar'(11D, "구조 참조 위치" novelty — 로터리 중심 기준
+# [ρ,sinθ,cosθ])와 동일한 site-specific 신호를 QCNet-adapted에도 주입하는 입력-통제 ablation.
+# config_pos.yaml(raw 절대좌표 버전)과 짝을 이루는 실험 — model.py 상단 docstring 참조.
 
 data:
   dataset: gongeoptap
@@ -27,8 +31,7 @@ model:
   a2a_radius: 20.0      # graph.radius와 동일 — 이미 KNN으로 걸러진 이웃이라 사실상 항상 통과
   dropout: 0.1
   num_classes: 3
-  raw_append: none   # none(기본, 절대좌표 미사용) | pos | polar — model.py 상단 docstring
-                     # "입력-통제 ablation" 참조. 위치암기 비교용 변형은 config_pos.yaml/config_polar.yaml.
+  raw_append: polar   # 로터리 중심 기준 [ρ,sinθ,cosθ] 3채널 추가(x_a_feat 4D->7D) — TSEM-SAGE 11D와 동일 신호
 
 train:
   batch_size: 2048
@@ -46,9 +49,8 @@ loss:
   gamma: 2.0
   use_class_weights: true
   class_weight_power: 0.7
-  kl_weight: 0.1              # 10차-2(TSEM-SAGE 최종 채택) 레시피와 동일 — 아키텍처 무관하게
-                               # logits에만 걸리므로 baseline에도 동일 적용 (2026-07-11 수정)
-  use_uncertainty_weight: true  # stop_conf(샘플 속성)에만 걸림 — 마찬가지로 동일 적용
+  kl_weight: 0.1
+  use_uncertainty_weight: true
 
 augment:
   noise_std: 1.0
@@ -58,4 +60,4 @@ augment:
 
 seed: 42
 save_dir: ./checkpoints/comparison/
-experiment: qcnet_tsem_w10_h10
+experiment: qcnet_tsem_polar_w10_h10

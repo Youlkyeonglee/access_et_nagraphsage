@@ -16,6 +16,24 @@ HiVT-adapted — TSEM-SAGE 비교용 재구현
   - node_dim 2 -> 6 (pos_disp 2 + speed 1 + dir 2 + accel 1), 회전은 pos/dir 쌍에만 적용
   - num_modes(다중 미래 가설) 제거 — 회귀 전용 개념
   - 2-hop 이웃 미사용, edge_dim=2(rel_pos)만 사용 — 원본 설계 그대로
+
+## 입력-통제 ablation — raw_append (2026-07-24 추가)
+
+이 어댑터는 기본적으로(raw_append='none') scene 1회 정렬(ego anchor 위치·헤딩 기준 center+rotate)로
+얻은 순수 상대 좌표만 쓴다 — 원 논문 HiVT의 translation+rotation invariance 그대로. TSEM-SAGE 쪽의
+10D(raw_append='pos')/11D(raw_append='polar') 위치암기 논의(docs/TSEM_journal_design.html §데이터
+설계 "위치 암기 검증")를 baseline에도 동일 조건으로 적용해, "TSEM-SAGE의 우위가 구조 때문인지
+site-specific 신호 때문인지"를 분리하기 위한 입력-통제 ablation 옵션이다.
+
+  - raw_append='none' (기본값, 기존 동작과 100% 동일): 추가 채널 없음, node_dim=6.
+  - raw_append='pos': 매 프레임의 world-absolute 원시 좌표(position_x, position_z, center/rotate
+    적용 전 raw 값)를 그대로 2채널 추가 — TSEM-SAGE의 raw_append='pos'(10D)와 동일 신호.
+  - raw_append='polar': 로터리 중심 world 고정 상수(CENTER=(72.86,-13.45), models/
+    tsem_semantic_derivation.py::SemanticDerivation.CENTER_X/CENTER_Z와 동일 값) 기준
+    [ρ, sinθ, cosθ] 3채널 추가 — TSEM-SAGE의 raw_append='polar'(11D, "구조 참조 위치")와 동일 신호.
+
+추가 채널은 이미 절대좌표/로터리중심 기준으로 계산된 값이라 ego-anchor 회전을 적용하면 안 되고
+(회전 불변 정의 자체가 깨짐), rotate6()에서 그대로 통과시킨다.
 """
 from __future__ import annotations
 
@@ -76,11 +94,12 @@ def rotate2(vec: torch.Tensor, rot: torch.Tensor) -> torch.Tensor:
 
 
 def rotate6(x: torch.Tensor, rot: torch.Tensor) -> torch.Tensor:
-    """x: [N,6] = [dx,dz,speed,dir_x,dir_z,accel], rot: [N,2,2].
-    위치변위쌍[0:2]·방향쌍[3:5]만 회전, speed[2]/accel[5]는 스칼라라 그대로 통과."""
+    """x: [N,6+E] = [dx,dz,speed,dir_x,dir_z,accel,extra...], rot: [N,2,2].
+    위치변위쌍[0:2]·방향쌍[3:5]만 회전, speed[2]/accel[5]/extra(raw_append 위치-통제 ablation
+    채널 — 이미 절대좌표/로터리중심 기준값이라 ego 회전과 무관해야 함)는 그대로 통과."""
     pos = rotate2(x[:, 0:2], rot)
     dirn = rotate2(x[:, 3:5], rot)
-    return torch.cat([pos[:, 0:1], pos[:, 1:2], x[:, 2:3], dirn[:, 0:1], dirn[:, 1:2], x[:, 5:6]], dim=-1)
+    return torch.cat([pos[:, 0:1], pos[:, 1:2], x[:, 2:3], dirn[:, 0:1], dirn[:, 1:2], x[:, 5:]], dim=-1)
 
 
 class SingleInputEmbedding(nn.Module):
@@ -121,12 +140,12 @@ class TSEMAAEncoder(nn.Module):
     """원본 AAEncoder(local_encoder.py) 대응 — agent-agent attention, 매 timestep 독립 호출.
     node_dim=6(회전은 pos/dir 쌍에만), edge_dim=2(rel_pos)."""
 
-    def __init__(self, embed_dim: int, num_heads: int = 8, dropout: float = 0.1):
+    def __init__(self, embed_dim: int, num_heads: int = 8, dropout: float = 0.1, node_dim: int = 6):
         super().__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
-        self.center_embed = SingleInputEmbedding(in_channel=6, out_channel=embed_dim)
-        self.nbr_embed = MultipleInputEmbedding(in_channels=[6, 2], out_channel=embed_dim)
+        self.center_embed = SingleInputEmbedding(in_channel=node_dim, out_channel=embed_dim)
+        self.nbr_embed = MultipleInputEmbedding(in_channels=[node_dim, 2], out_channel=embed_dim)
         self.lin_q = nn.Linear(embed_dim, embed_dim)
         self.lin_k = nn.Linear(embed_dim, embed_dim)
         self.lin_v = nn.Linear(embed_dim, embed_dim)
@@ -294,16 +313,25 @@ class HiVTTSEMAdapted(nn.Module):
     벡터화해서 구성한다(파이썬 루프로 PyG Data를 만들지 않음).
     """
 
+    # 로터리 중심 world 고정 상수 — models/tsem_semantic_derivation.py::SemanticDerivation의
+    # CENTER_X/CENTER_Z와 동일 값(공업탑 전용). raw_append='polar' 계산에만 쓰인다.
+    _CENTER_X = 72.86
+    _CENTER_Z = -13.45
+
     def __init__(self, W: int = 10, K: int = 6, embed_dim: int = 64, num_heads: int = 8,
                  num_temporal_layers: int = 4, num_global_layers: int = 3, dropout: float = 0.1,
-                 num_classes: int = 3):
+                 num_classes: int = 3, raw_append: str = 'none'):
         super().__init__()
         self.W = W
         self.K = K
         self.N = 1 + K  # ego + K neighbors
         self.embed_dim = embed_dim
+        assert raw_append in ('none', 'pos', 'polar')
+        self.raw_append = raw_append
+        extra_dim = {'none': 0, 'pos': 2, 'polar': 3}[raw_append]
+        node_dim = 6 + extra_dim
 
-        self.aa_encoder = TSEMAAEncoder(embed_dim, num_heads, dropout)
+        self.aa_encoder = TSEMAAEncoder(embed_dim, num_heads, dropout, node_dim=node_dim)
         self.temporal_encoder = TemporalEncoder(W, embed_dim, num_heads, num_temporal_layers, dropout)
         # GlobalInteractor.rel_embed(원본) — rel_pos(2D)와 (cos,sin) 상대헤딩(2D) 두 스트림을
         # 합쳐 embed_dim으로 투영. MultipleInputEmbedding은 리스트로 별도 스트림을 받는다.
@@ -322,7 +350,7 @@ class HiVTTSEMAdapted(nn.Module):
         self.register_buffer('template_edge_index', template_edge_index)
 
     def _build_graph(self, batch: dict):
-        """batch(TSEMFutureStateDataset collate 결과) -> (x[T,Ntot,6], positions[Ntot,T,2],
+        """batch(TSEMFutureStateDataset collate 결과) -> (x[T,Ntot,6+extra_dim], positions[Ntot,T,2],
         rotate_angles[Ntot], padding_mask[Ntot,T], bos_mask[Ntot,T], edge_index[2,E_tot])"""
         device = batch['node_seq'].device
         B = batch['node_seq'].size(0)
@@ -371,6 +399,20 @@ class HiVTTSEMAdapted(nn.Module):
                                        torch.zeros_like(positions[:, 1:]))
 
         x_seq = torch.cat([pos_disp, speed.unsqueeze(-1), dir_rot, accel.unsqueeze(-1)], dim=-1)  # [Ntot,T,6]
+
+        if self.raw_append != 'none':
+            # 위치-통제 ablation 채널 — center/rotate 적용 전의 raw_flat(world-absolute) 기준.
+            raw_pos = raw_flat[..., 0:2]  # [Ntot,T,2]
+            if self.raw_append == 'pos':
+                extra = raw_pos
+            else:  # 'polar'
+                cx = raw_pos[..., 0:1] - self._CENTER_X
+                cz = raw_pos[..., 1:2] - self._CENTER_Z
+                rho = torch.sqrt(cx * cx + cz * cz + 1e-12)
+                theta = torch.atan2(cz, cx)
+                extra = torch.cat([rho, torch.sin(theta), torch.cos(theta)], dim=-1)
+            extra = torch.where(padding_flat.unsqueeze(-1), torch.zeros_like(extra), extra)
+            x_seq = torch.cat([x_seq, extra], dim=-1)  # [Ntot,T,6+extra_dim]
 
         # bos_mask: t가 valid고 t-1이 invalid(또는 t=0인데 valid)
         bos_mask = torch.zeros_like(padding_flat)
