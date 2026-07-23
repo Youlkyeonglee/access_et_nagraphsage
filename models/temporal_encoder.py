@@ -19,6 +19,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 
 class TemporalEncoder(nn.Module):
@@ -78,6 +79,11 @@ class TemporalEncoder(nn.Module):
                 dropout=dropout, batch_first=True,
             )
             self.transformer = nn.TransformerEncoder(layer, num_layers=2)
+            # nn.TransformerEncoder의 fused fast-path(_transformer_encoder_layer_fwd)는
+            # SDPA(및 아래 math 커널 강제)를 우회하는 별도 CUDA 커널을 쓰는데, _encode_nodes가
+            # 2-hop까지 펼친 대배치(특히 DataParallel replica)에서 CUBLAS_STATUS_EXECUTION_FAILED로
+            # 실패한다. fast-path를 끄면 항상 표준 SDPA 경로를 타 math 커널 강제가 적용된다.
+            torch.backends.mha.set_fastpath_enabled(False)
         else:
             raise ValueError(f"지원하지 않는 encoder_type: {encoder_type}")
 
@@ -105,7 +111,11 @@ class TemporalEncoder(nn.Module):
             B, T, _ = x.shape
             h = self.input_proj(x) + self.pos_enc[:T].unsqueeze(0)   # [B,T,hidden_dim]
             mask = nn.Transformer.generate_square_subsequent_mask(T).to(x.device)  # causal
-            output = self.transformer(h, mask=mask, is_causal=True)  # [B,T,hidden_dim]
+            # _encode_nodes가 2-hop 이웃까지 펼쳐(B*K1*K2 ≈ 1e5) SDPA에 넘기면 flash/mem-efficient
+            # 커널의 grid 차원 한계를 넘어 "CUDA error: invalid configuration argument"로 실패한다.
+            # T가 작아 비용이 무시할 만하므로 math 커널을 강제해 이 한계를 회피한다.
+            with sdpa_kernel([SDPBackend.MATH]):
+                output = self.transformer(h, mask=mask, is_causal=True)  # [B,T,hidden_dim]
             return self._aggregate(output)
 
     def _aggregate(self, output: torch.Tensor) -> torch.Tensor:
